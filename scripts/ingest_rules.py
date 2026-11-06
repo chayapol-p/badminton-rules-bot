@@ -67,6 +67,10 @@ CLAUSE_NUMBER_ONLY = re.compile(r"^(\d+(?:\.\d+)+)\.?$")
 CLAUSE_NUMBER_WITH_TEXT_ANY_DOT = re.compile(r"^(\d+(?:\.\d+)+)\.?\s+(\S.*)$")
 CLAUSE_NUMBER_WITH_TEXT_FINAL_DOT = re.compile(r"^(\d+(?:\.\d+)+)\.\s+(\S.*)$")
 
+# In the ITTO, a clause number and its text can share one PDF span ("5.2.2.     Get into the chair").
+# A real start has a final dot or two or more spaces; a wrapped reference ("16.7 applied") has neither
+CLAUSE_NUMBER_WITH_TEXT_ITTO = re.compile(r"^(\d+(?:\.\d+)+)(?:\.\s+|\s{2,})(\S.*)$")
+
 # A Law or section heading, such as "9. SERVICE" or "5. INSTRUCTIONS TO UMPIRES"
 SECTION_HEADING = re.compile(r"^(\d+)\.\s+([A-Z][A-Z ,&’'()/–-]+)$")
 
@@ -160,6 +164,11 @@ def build_chunks(document_info, lines):
         variant_marker = next((variant for marker, variant in ALTERNATIVE_VARIANTS.items() if text.startswith(marker)), None)
         if variant_marker:
             current_variant = variant_marker
+
+            # A new option starts with no heading, so the previous option's heading can't carry over
+            current_heading = None
+            current_section_number = None
+            hidden_number_count = 0
             start_chunk("intro", line["page"])
             current_chunk["lines"].append(text)
             continue
@@ -189,14 +198,14 @@ def build_chunks(document_info, lines):
             if remaining_text:
                 current_chunk["lines"].append(remaining_text)
             continue
-        # Wrapped lines in the ITTO can start with a reference such as "16.7 applied", so the
-        # number-plus-text form is trusted only in the Laws (final dot needed) and the Alternative Laws
+        # Each document marks a clause start differently. Wrapped lines in the ITTO can start
+        # with a reference such as "16.7 applied", so the ITTO needs a final dot or a wide gap
         if document_info["document"] == "alt":
             number_with_text_match = CLAUSE_NUMBER_WITH_TEXT_ANY_DOT.match(text)
         elif document_info["document"] == "laws":
             number_with_text_match = CLAUSE_NUMBER_WITH_TEXT_FINAL_DOT.match(text)
         else:
-            number_with_text_match = None
+            number_with_text_match = CLAUSE_NUMBER_WITH_TEXT_ITTO.match(text)
         if number_with_text_match:
             start_chunk(number_with_text_match.group(1), line["page"], line["is_italic"])
             current_chunk["lines"].append(number_with_text_match.group(2))
@@ -249,16 +258,30 @@ def to_records(document_info, chunks):
     return records
 
 
+def fill_headings_from_laws(alternative_records, law_records):
+    """Gives a numbered Alternative Laws clause with no heading the heading of the Law it changes."""
+    law_heading_by_number = {record["clause"]: record["heading"] for record in law_records if record["clause"].isdigit()}
+    for record in alternative_records:
+        section_number = record["clause"].split(".")[0]
+        if record["heading"] is None and section_number.isdigit():
+            record["heading"] = law_heading_by_number.get(section_number)
+
+
 # ===== Running all three documents =====
 
 def main() -> None:
     all_records = []
+    records_by_document = {}
     for document_info in DOCUMENTS:
         lines = read_lines(PDF_FOLDER / document_info["file_name"])
         chunks = build_chunks(document_info, lines)
         records = to_records(document_info, chunks)
+        records_by_document[document_info["document"]] = records
         print(f"{document_info['document']}: {len(records)} chunks")
         all_records.extend(records)
+
+    # The alternative service law sits under no heading of its own, so it borrows the Law's
+    fill_headings_from_laws(records_by_document["alt"], records_by_document["laws"])
 
     CHUNKS_FILE.write_text(json.dumps(all_records, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"saved {len(all_records)} chunks to {CHUNKS_FILE.relative_to(PROJECT_FOLDER)}")

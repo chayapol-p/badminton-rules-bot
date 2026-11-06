@@ -11,8 +11,8 @@ What it checks, in groups:
 5. Coverage: every golden answer location has a chunk with that clause, and the source PDFs
    still match their frozen hashes.
 
-Tests marked xfail describe a known ingest bug. They are strict: once the bug is fixed they
-pass, pytest reports it, and the marker comes off.
+A known ingest bug gets a test marked xfail(strict=True): pytest flags it the day the bug
+is fixed, and the marker comes off. None are open now.
 """
 
 import hashlib
@@ -32,8 +32,8 @@ CHUNKS_FILE = PROJECT_FOLDER / "data" / "rule_chunks.json"
 QUESTIONS_FILE = PROJECT_FOLDER / "evals" / "golden_questions.json"
 PDF_FOLDER = PROJECT_FOLDER / "data" / "bwf"
 
-## Expected shape of the ingest, checked by hand against the PDFs on 2-3 Nov
-EXPECTED_CHUNKS_PER_DOCUMENT = {"laws": 225, "itto": 481, "alt": 30}
+## Expected shape of the ingest, checked by hand against the PDFs on 2-3 Nov (ITTO recount 7 Nov)
+EXPECTED_CHUNKS_PER_DOCUMENT = {"laws": 225, "itto": 499, "alt": 30}
 EXPECTED_PARA_ONLY_COUNT = 22
 LAWS_SUB_CLAUSE_COUNTS = {1: 11, 2: 4, 3: 2, 4: 3, 5: 2, 6: 2, 7: 6, 8: 2, 9: 5, 10: 3,
                           11: 6, 12: 2, 13: 5, 14: 3, 15: 3, 16: 7, 17: 6}
@@ -55,8 +55,11 @@ KNOWN_PARA_ONLY = ["laws-9.1.6.1", "laws-9.1.6.2", "laws-13.4.6.2", "laws-16.5.3
                    "laws-14.2.3.1.1"]  # 14.2.3.1.1 ends with a plain "or", which once switched the flag off
 KNOWN_REGULAR = ["laws-9.1.6", "laws-14.2.3.1", "laws-16.5.2"]
 
-## A clause number that starts a new clause in the middle of another chunk's text
-BURIED_CLAUSE_NUMBER = re.compile(r"(?<![\d.])(\d+(?:\.\d+){1,4})\.\s{2,}\S")
+## A clause number that starts a new clause in the middle of another chunk's text: a final dot
+## then a capital or a quote ("fines. 3.5.15.4. The Referee"), or a wide gap after the number
+BURIED_CLAUSE_NUMBER = re.compile(r"(?<![\d.])(\d+(?:\.\d+){1,4})(?:\.\s+[A-Z“\"]|\.?\s{2,}\S)")
+## Text just before a number that makes it a reference ("Laws 2.2.2, 2.2.3 and"), not a clause start
+REFERENCE_BEFORE = re.compile(r"\b(?:Laws?|Instructions?|Sections?|Regulations?|Clauses?)\s+(?:\d+(?:\.\d+)*\s*(?:,|and|or|to|-|–)\s*)*$")
 CLAUSE_NUMBER = re.compile(r"^\d+(?:\.\d+)*$")
 
 
@@ -112,9 +115,9 @@ def test_known_clause_holds_its_text(chunk_id, phrase):
 def test_no_chunk_text_starts_with_a_clause_number():
     assert [chunk["id"] for chunk in CHUNKS if re.match(r"^\d+(?:\.\d+)+\.?\s", chunk["text"])] == []
 
-@pytest.mark.xfail(strict=True, reason="Known ingest bug: in the ITTO, a clause number in the middle of a PDF line stays inside the previous chunk (15 clauses, such as 5.2.2.1)")
 def test_no_clause_number_buried_inside_another_chunk():
-    buried = [(chunk["id"], match.group(1)) for chunk in CHUNKS for match in BURIED_CLAUSE_NUMBER.finditer(chunk["text"])]
+    buried = [(chunk["id"], match.group(1)) for chunk in CHUNKS for match in BURIED_CLAUSE_NUMBER.finditer(chunk["text"])
+              if not REFERENCE_BEFORE.search(chunk["text"][:match.start()])]
     assert buried == []
 
 
@@ -140,7 +143,6 @@ def test_laws_and_itto_heading_matches_the_clause_number():
     mismatched = [chunk["id"] for chunk in numbered if not (chunk["heading"] or "").startswith(chunk["clause"].split(".")[0] + ".")]
     assert mismatched == []
 
-@pytest.mark.xfail(strict=True, reason="Known ingest bug: an Alternative Laws option keeps the heading of the option before it (3 intro chunks and alternative-service 9.1.6)")
 def test_alternative_laws_heading_belongs_to_its_own_option():
     wrong = [chunk["id"] for chunk in CHUNKS if chunk["document"] == "alt" and chunk["clause"] == "intro" and chunk["heading"] is not None]
     wrong += [chunk["id"] for chunk in CHUNKS if chunk["document"] == "alt" and CLAUSE_NUMBER.match(chunk["clause"])
@@ -172,7 +174,6 @@ def test_known_regular_clause_is_not_flagged(chunk_id):
 def test_diagrams_a_to_f_are_each_one_chunk():
     assert {f"laws-Diagram {letter}" for letter in "ABCDEF"} <= set(CHUNKS_BY_ID)
 
-@pytest.mark.xfail(strict=True, reason="Known ingest bug: ITTO 5.2.2.1 (warm-up) is buried inside chunk 5.2.1")
 def test_every_numbered_golden_location_has_its_own_chunk():
     clause_keys = {(chunk["document"], chunk["clause"]) for chunk in CHUNKS}
     missing = [(question["id"], location["doc"], location["clause"])

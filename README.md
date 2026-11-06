@@ -88,8 +88,13 @@ Raw notes from each lab live in [`workshop/notes.md`](workshop/notes.md).
 - **Problem:** the Alternative Laws repeat the same clause numbers for each scoring option.
 - **Fix:** the chunk id carries the option, such as `alt-best-of-5-games-11:8.1.5`.
 
+**Clause numbers that share a line**
+- **Problem:** in the ITTO, a clause number and its text sometimes sit in one piece of PDF text ("5.2.2.     Get into the Umpire's chair"). 18 clauses hid inside the clause before them, including the warm-up rule.
+- **Fix:** in the ITTO, a clause starts at a number with a final dot, or a number followed by two or more spaces. A cross-reference that wraps onto a new line ("16.7 applied") has neither.
+- `tests/test_chunks.py` (32 tests) checks every chunk's shape, counts, clause numbers and tags, and that no clause number is left inside another chunk.
+
 **A golden set before any search**
-- 35 questions in 8 categories, written before any retrieval code. 12 use the rule book's own words, 23 are paraphrased.
+- 39 questions in 9 categories, written before any retrieval code. 13 use the rule book's own words, 26 are paraphrased. Each is tagged dev (27) or held-out (12), once.
 - `scripts/check_golden_questions.py` checks that every answer location still exists in the chunks.
 
 ### Open · outline, written up when we do it
