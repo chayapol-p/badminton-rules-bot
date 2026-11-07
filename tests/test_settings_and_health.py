@@ -1,8 +1,9 @@
 """
 Tests for settings loading and the /health endpoint.
 
-Fake keys come from environment variables, which override .env,
-so these tests never read or need your real keys.
+Test keys come from environment variables, which override .env, so these tests never
+read or need your real keys. The test keys are placeholders: settings load them, but
+nothing ever calls an API with them.
 """
 
 import pytest
@@ -12,11 +13,11 @@ from app.main import app
 from app.settings import MissingSettingError, load_settings
 
 
-# Start every test with fresh settings and fake keys
+# Start every test with fresh settings and placeholder keys
 @pytest.fixture(autouse=True)
-def fake_keys(monkeypatch):
-    monkeypatch.setenv("MISTRAL_API_KEY", "fake-mistral-key")
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "fake-anthropic-key")
+def placeholder_keys(monkeypatch):
+    monkeypatch.setenv("MISTRAL_API_KEY", "test-mistral-key")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
     load_settings.cache_clear()
     yield
     load_settings.cache_clear()
@@ -29,7 +30,7 @@ def test_health_returns_models_without_keys():
 
     assert response.status_code == 200
     assert response.json()["models"]["mistral_answer"] == "mistral-large-4-0"
-    assert "fake-mistral-key" not in response.text
+    assert "test-mistral-key" not in response.text
 
 
 # An empty key stops startup with a message naming the key and the fix
