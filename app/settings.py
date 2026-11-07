@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     mistral_answer_model: str = "mistral-large-4-0"
     mistral_draft_model: str = "mistral-small-2603"
     mistral_embedding_model: str = "mistral-embed-2312"
+    # Large 4 always thinks; this pins how much (low, medium or high), so every eval run uses the same setting
+    mistral_reasoning_effort: str = "low"
     claude_comparison_model: str = "claude-haiku-5-5"
     # The answer judge (Stage 2): another model family than the answer model, to avoid self-preference bias
     claude_judge_model: str = "claude-sonnet-5-5"

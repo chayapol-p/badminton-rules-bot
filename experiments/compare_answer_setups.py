@@ -82,12 +82,12 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
 # ===== One question =====
 
 def answer_and_grade(question: dict, search, top_k: int, mistral_client: Mistral, answer_model: str,
-                     anthropic_client: Anthropic, judge_model: str) -> tuple[dict, dict]:
+                     reasoning_effort: str, anthropic_client: Anthropic, judge_model: str) -> tuple[dict, dict]:
     """Returns one question's answer line (sources, answer, code checks) and its grade line (the judge's grade)."""
 
     # Retrieve, then answer from what was retrieved
     retrieved_chunks = search(question["question"], top_k)
-    reply = generate_answer(mistral_client, answer_model, question["question"], retrieved_chunks)
+    reply = generate_answer(mistral_client, answer_model, reasoning_effort, question["question"], retrieved_chunks)
     answer_line = {
         "id": question["id"],
         "split": question["split"],
@@ -99,6 +99,7 @@ def answer_and_grade(question: dict, search, top_k: int, mistral_client: Mistral
         "answer": None,
         "is_format_error": reply.is_format_error,
         "error_message": reply.error_message,
+        "thinking": reply.thinking,
         "citation_problems": [],
         "refusal_outcome": None,
         "answer_cost": call_cost(answer_model, reply.input_tokens, reply.output_tokens),
@@ -249,7 +250,8 @@ def run_answer_setup(top_k: int, label: str) -> dict:
     for question_number, question in enumerate(questions, start=1):
         print(f"{question_number}/{len(questions)} {question['id']}")
         answer_line, grade_line = answer_and_grade(question, search, top_k, mistral_client, settings.mistral_answer_model,
-                                                   anthropic_client, settings.claude_judge_model)
+                                                   settings.mistral_reasoning_effort, anthropic_client,
+                                                   settings.claude_judge_model)
         append_line(answers_path, answer_line)
         append_line(grades_path, grade_line)
         answer_lines.append(answer_line)
@@ -269,6 +271,7 @@ def run_answer_setup(top_k: int, label: str) -> dict:
         "split": "dev+probes",
         "top_k": top_k,
         "answer_model": settings.mistral_answer_model,
+        "reasoning_effort": settings.mistral_reasoning_effort,
         "judge_model": settings.claude_judge_model,
     }
     append_run("2", run_settings, scores, seconds)
