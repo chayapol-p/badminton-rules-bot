@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+from answer.answer_shape import RulesAnswer
 from answer.build_answer_prompt import ANSWER_RULES, build_answer_messages, describe_source, format_source
 from evals.golden_answer_chunks import CHUNKS_FILE
 from tests.sample_data import SAMPLE_CHUNKS
@@ -72,3 +73,11 @@ def test_alternative_laws_sample_matches_the_real_file():
         pytest.skip("data/rule_chunks.json is missing: run scripts.build_rule_chunks first")
     real_chunks_by_id = {chunk["id"]: chunk for chunk in json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))}
     assert ONE_GAME_CHANGE_OF_ENDS_CHUNK == real_chunks_by_id["alt-one-game-21:8.1"]
+
+
+# ===== The answer shape =====
+
+def test_the_model_writes_its_reasoning_before_it_decides():
+    """The model writes fields in schema order, so reasoning must come before refused and the answer."""
+    field_names = list(RulesAnswer.model_json_schema()["properties"])
+    assert field_names == ["reasoning", "refused", "answer", "citations"]

@@ -92,12 +92,13 @@ def describe_expected_answer(question: dict) -> str:
 
 
 def describe_reply(rules_answer: RulesAnswer) -> str:
-    """Returns the bot's reply as the judge reads it: refused or not, the answer, then each citation."""
+    """Returns the bot's reply as the judge reads it: its reasoning, refused or not, the answer, then each citation."""
     citation_lines = [f'- [{citation.chunk_id}] "{citation.quote}"' for citation in rules_answer.citations]
     citations_text = "\n".join(citation_lines)
     if not citation_lines:
         citations_text = "(none)"
-    return f"Refused: {rules_answer.refused}\nAnswer: {rules_answer.answer}\nCitations:\n{citations_text}"
+    return (f"Reasoning: {rules_answer.reasoning}\nRefused: {rules_answer.refused}\n"
+            f"Answer: {rules_answer.answer}\nCitations:\n{citations_text}")
 
 
 def build_judge_prompt(question: dict, rules_answer: RulesAnswer, retrieved_chunks: list[dict]) -> str:
