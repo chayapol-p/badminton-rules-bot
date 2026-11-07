@@ -8,9 +8,12 @@ dependencies = [
     "anthropic",
     "fastapi",
     "httpx",
+    "langchain-text-splitters",
     "mistralai",
+    "numpy",
     "pydantic-settings",
     "pymupdf>=2.0",
+    "rank-bm25",
     "uvicorn[standard]",
 ]
 

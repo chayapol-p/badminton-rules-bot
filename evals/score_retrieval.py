@@ -10,6 +10,9 @@ right clause to find, so the Stage 2 refusal check covers them instead.
 
 A search function takes a question and a number k, and returns up to k chunk dictionaries:
     search(question_text, top_k) -> list of chunks
+
+A result may be a clause chunk or a bigger window. A window lists the clause chunks it
+covers in "covers", and a location counts as found when a retrieved window covers its clause.
 """
 
 from collections import defaultdict
@@ -19,6 +22,14 @@ from evals.golden_answer_chunks import expected_chunk_ids
 
 
 # ===== Scoring one question =====
+
+def clause_ids_covered_by(retrieved_items):
+    """Returns the clause chunk ids the results cover: a clause chunk covers itself, a window covers several."""
+    covered_ids = []
+    for item in retrieved_items:
+        covered_ids.extend(item.get("covers", [item["id"]]))
+    return covered_ids
+
 
 def count_found_locations(retrieved_ids, expected_ids_per_location):
     """Returns how many answer locations have at least one of their chunks in the retrieved ids."""
@@ -44,7 +55,8 @@ def score_search(search, questions, chunks, top_k=5):
             continue
 
         # Run the search, then compare its chunk ids with the answer locations
-        retrieved_ids = [chunk["id"] for chunk in search(question["question"], top_k)[:top_k]]
+        retrieved_items = search(question["question"], top_k)[:top_k]
+        retrieved_ids = clause_ids_covered_by(retrieved_items)
         expected_ids_per_location = [expected_chunk_ids(location, chunks) for location in question["answer_locations"]]
         found_count = count_found_locations(retrieved_ids, expected_ids_per_location)
 
