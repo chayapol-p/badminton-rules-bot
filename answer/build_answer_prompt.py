@@ -7,7 +7,7 @@ text as printed. Answers quote and cite that text (data rule 4), and the model c
 chunk id, so code can check every citation against what the model was shown.
 
 Use:
-    messages = build_answer_messages(question_text, retrieved_chunks)
+    messages = build_answer_prompt(question_text, retrieved_chunks)
 """
 
 
@@ -49,8 +49,8 @@ def format_source(chunk: dict) -> str:
 
 # ===== The messages =====
 
-def build_answer_messages(question_text: str, retrieved_chunks: list[dict]) -> list[dict]:
-    """Returns the system and user messages for one question, with one source block per retrieved chunk."""
+def build_answer_prompt(question_text: str, retrieved_chunks: list[dict]) -> list[dict]:
+    """Returns the prompt for one answer call: the rules as the system message, then the sources and the question as the user message."""
     source_blocks = [format_source(chunk) for chunk in retrieved_chunks]
     sources_text = "\n\n".join(source_blocks)
     user_message = f"<sources>\n{sources_text}\n</sources>\n\n<question>\n{question_text}\n</question>"

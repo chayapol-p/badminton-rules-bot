@@ -31,7 +31,7 @@ import numpy
 from anthropic import Anthropic
 from mistralai.client import Mistral
 
-from answer.answer_with_mistral import answer_question
+from answer.generate_answer import generate_answer
 from answer.check_citations import find_citation_problems
 from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
 from app.settings import load_settings
@@ -87,7 +87,7 @@ def answer_and_grade(question: dict, search, top_k: int, mistral_client: Mistral
 
     # Retrieve, then answer from what was retrieved
     retrieved_chunks = search(question["question"], top_k)
-    reply = answer_question(mistral_client, answer_model, question["question"], retrieved_chunks)
+    reply = generate_answer(mistral_client, answer_model, question["question"], retrieved_chunks)
     answer_line = {
         "id": question["id"],
         "split": question["split"],

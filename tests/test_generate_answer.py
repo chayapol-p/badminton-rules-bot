@@ -5,7 +5,7 @@ Tests the Mistral answer call with a stub client, so no test ever calls the API.
 import json
 from types import SimpleNamespace
 
-from answer.answer_with_mistral import answer_question
+from answer.generate_answer import generate_answer
 from tests.sample_data import SAMPLE_CHUNKS
 
 
@@ -40,13 +40,13 @@ GOOD_REPLY_TEXT = json.dumps({
 # ===== Tests =====
 
 def test_a_reply_in_the_shape_is_parsed():
-    reply = answer_question(StubChatClient(GOOD_REPLY_TEXT), "test-model", "How tall are the posts?", SAMPLE_CHUNKS)
+    reply = generate_answer(StubChatClient(GOOD_REPLY_TEXT), "test-model", "How tall are the posts?", SAMPLE_CHUNKS)
     assert not reply.is_format_error
     assert reply.answer.citations[0].chunk_id == "laws-1.4"
 
 
 def test_a_reply_cut_off_mid_json_is_a_format_error_that_keeps_its_tokens():
-    reply = answer_question(StubChatClient(GOOD_REPLY_TEXT[:40], finish_reason="length"), "test-model",
+    reply = generate_answer(StubChatClient(GOOD_REPLY_TEXT[:40], finish_reason="length"), "test-model",
                             "How tall are the posts?", SAMPLE_CHUNKS)
     assert reply.is_format_error
     assert reply.answer is None
@@ -56,14 +56,14 @@ def test_a_reply_cut_off_mid_json_is_a_format_error_that_keeps_its_tokens():
 
 
 def test_a_reply_with_no_text_is_a_format_error():
-    reply = answer_question(StubChatClient(None), "test-model", "How tall are the posts?", SAMPLE_CHUNKS)
+    reply = generate_answer(StubChatClient(None), "test-model", "How tall are the posts?", SAMPLE_CHUNKS)
     assert reply.is_format_error
     assert reply.raw_reply == ""
 
 
 def test_the_request_sends_the_strict_schema_at_temperature_0():
     client = StubChatClient(GOOD_REPLY_TEXT)
-    answer_question(client, "test-model", "How tall are the posts?", SAMPLE_CHUNKS)
+    generate_answer(client, "test-model", "How tall are the posts?", SAMPLE_CHUNKS)
     request = client.requests[0]
     assert request["temperature"] == 0
     assert request["response_format"]["json_schema"]["strict"] is True

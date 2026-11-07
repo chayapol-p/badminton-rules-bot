@@ -7,7 +7,7 @@ import json
 import pytest
 
 from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import ANSWER_RULES, build_answer_messages, describe_source, format_source
+from answer.build_answer_prompt import ANSWER_RULES, build_answer_prompt, describe_source, format_source
 from evals.golden_answer_chunks import CHUNKS_FILE
 from tests.sample_data import SAMPLE_CHUNKS
 
@@ -54,14 +54,14 @@ def test_an_alternative_laws_clause_names_its_format_and_in_force_date():
 # ===== The messages =====
 
 def test_the_rules_go_in_the_system_message_and_the_question_in_its_tags():
-    messages = build_answer_messages("How tall are the posts?", SAMPLE_CHUNKS)
+    messages = build_answer_prompt("How tall are the posts?", SAMPLE_CHUNKS)
     assert messages[0] == {"role": "system", "content": ANSWER_RULES}
     assert messages[1]["role"] == "user"
     assert "<question>\nHow tall are the posts?\n</question>" in messages[1]["content"]
 
 
 def test_every_retrieved_chunk_is_in_the_sources():
-    user_message = build_answer_messages("any question", SAMPLE_CHUNKS)[1]["content"]
+    user_message = build_answer_prompt("any question", SAMPLE_CHUNKS)[1]["content"]
     for chunk in SAMPLE_CHUNKS:
         assert format_source(chunk) in user_message
 

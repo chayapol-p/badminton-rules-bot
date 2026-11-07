@@ -9,7 +9,7 @@ text, and the run records it instead of stopping. Network and API errors still s
 retries come in Stage 4.
 
 Use:
-    reply = answer_question(client, model, question_text, retrieved_chunks)
+    reply = generate_answer(client, model, question_text, retrieved_chunks)
 """
 
 from dataclasses import dataclass
@@ -19,7 +19,7 @@ from mistralai.extra import response_format_from_pydantic_model
 from pydantic import ValidationError
 
 from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import build_answer_messages
+from answer.build_answer_prompt import build_answer_prompt
 
 
 # Constants
@@ -43,13 +43,13 @@ class AnswerReply:
 
 # ===== One answer =====
 
-def answer_question(client: Mistral, model: str, question_text: str, retrieved_chunks: list[dict]) -> AnswerReply:
-    """Returns the model's answer to one question, written only from the retrieved chunks."""
+def generate_answer(client: Mistral, model: str, question_text: str, retrieved_chunks: list[dict]) -> AnswerReply:
+    """Generates the model's answer to one question from the retrieved chunks: the generate step after retrieve."""
 
     # Ask with the RulesAnswer schema, the same strict schema chat.parse would send
     response = client.chat.complete(
         model=model,
-        messages=build_answer_messages(question_text, retrieved_chunks),
+        messages=build_answer_prompt(question_text, retrieved_chunks),
         response_format=response_format_from_pydantic_model(RulesAnswer),
         temperature=0,
         max_tokens=MAX_ANSWER_TOKENS,
