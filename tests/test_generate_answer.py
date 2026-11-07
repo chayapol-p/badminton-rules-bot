@@ -61,10 +61,11 @@ def test_a_reply_with_no_text_is_a_format_error():
     assert reply.raw_reply == ""
 
 
-def test_the_request_sends_the_strict_schema_at_temperature_0():
+def test_the_request_sends_the_strict_schema_with_greedy_sampling():
     client = StubChatClient(GOOD_REPLY_TEXT)
     generate_answer(client, "test-model", "How tall are the posts?", SAMPLE_CHUNKS)
     request = client.requests[0]
     assert request["temperature"] == 0
+    assert request["top_p"] == 1, "Mistral rejects temperature 0 unless top_p is 1"
     assert request["response_format"]["json_schema"]["strict"] is True
     assert list(request["response_format"]["json_schema"]["schema"]["properties"]) == ["reasoning", "refused", "answer", "citations"]

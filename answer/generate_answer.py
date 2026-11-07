@@ -2,7 +2,8 @@
 Asks Mistral for one answer in the RulesAnswer shape, and returns it with the tokens it used.
 
 Fixed for every eval run (experiment rule 2): the pinned model from app/settings.py and
-temperature 0. The call sends RulesAnswer as a strict JSON schema, then parses the reply here,
+temperature 0. Mistral calls temperature 0 greedy sampling and rejects it unless top_p is exactly
+1 (400 error, code 3054), and the SDK sends no top_p of its own, so the call sets both. The call sends RulesAnswer as a strict JSON schema, then parses the reply here,
 not inside the SDK, so a reply that doesn't fit the shape still reports the tokens it cost.
 Such a reply comes back flagged as a format error, with the validation message and the raw
 text, and the run records it instead of stopping. Network and API errors still stop the run;
@@ -52,6 +53,7 @@ def generate_answer(client: Mistral, model: str, question_text: str, retrieved_c
         messages=build_answer_prompt(question_text, retrieved_chunks),
         response_format=response_format_from_pydantic_model(RulesAnswer),
         temperature=0,
+        top_p=1,
         max_tokens=MAX_ANSWER_TOKENS,
     )
     choice = response.choices[0]

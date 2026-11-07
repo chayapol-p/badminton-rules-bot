@@ -48,4 +48,6 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 
 ## Lab 6 · Evals and citations
 
+- Mistral Large 4 rejects temperature 0 unless top_p is exactly 1 (400, code 3054: "top_p must be 1 when using greedy sampling"). The SDK sends no top_p, so the server's default applied. Fixed in generate_answer (7 Nov).
+
 ## Lab 7 · React chat UI
