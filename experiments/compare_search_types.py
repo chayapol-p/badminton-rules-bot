@@ -113,14 +113,8 @@ def print_scores(scores, top_k):
 
 # ===== Running one setup =====
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Score one search setup on the golden questions.")
-    parser.add_argument("--search", choices=["keyword", "vector", "hybrid"], required=True)
-    parser.add_argument("--chunks", choices=["clauses", "windows", "sections"], default="clauses")
-    parser.add_argument("--field", choices=["search_text", "text", "search_text_with_parents"], default="search_text")
-    parser.add_argument("--split", choices=["dev", "held_out"], default="dev")
-    parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
-    arguments = parser.parse_args()
+def run_one_setup(search_type: str, chunk_kind: str, field: str, split: str, top_k: int) -> dict:
+    """Builds one search setup, scores it, prints the scores, logs the run and returns the scores."""
 
     # The scorer always reads clause chunks: a window or a section group counts through the clauses it covers
     clause_chunks = load_chunks()
@@ -129,14 +123,13 @@ def main() -> None:
         "windows": build_windows(clause_chunks),
         "sections": build_section_groups(clause_chunks),
     }
-    items = items_by_chunk_kind[arguments.chunks]
-    questions = load_questions(arguments.split)
+    items = items_by_chunk_kind[chunk_kind]
+    questions = load_questions(split)
     model = load_settings().mistral_embedding_model
 
     # Build the search, then score it and time the whole run
     started = time.perf_counter()
-    search = build_search(arguments.search, items, arguments.chunks, arguments.field, questions, model)
-    top_k = arguments.top_k
+    search = build_search(search_type, items, chunk_kind, field, questions, model)
     scores = score_search(search, questions, clause_chunks, top_k)
     scores["by_wording"] = scores_by_wording(search, questions, clause_chunks, top_k)
     scores["words_returned"] = average_words_returned(search, questions, top_k)
@@ -144,9 +137,21 @@ def main() -> None:
 
     # Print for reading now, and log for comparing later
     print_scores(scores, top_k)
-    settings = {"search": arguments.search, "chunks": arguments.chunks, "field": arguments.field,
-                "split": arguments.split, "top_k": top_k}
+    settings = {"search": search_type, "chunks": chunk_kind, "field": field, "split": split, "top_k": top_k}
     append_run("1", settings, scores, seconds)
+    return scores
+
+
+def main() -> None:
+    """Runs the one setup named on the command line."""
+    parser = argparse.ArgumentParser(description="Score one search setup on the golden questions.")
+    parser.add_argument("--search", choices=["keyword", "vector", "hybrid"], required=True)
+    parser.add_argument("--chunks", choices=["clauses", "windows", "sections"], default="clauses")
+    parser.add_argument("--field", choices=["search_text", "text", "search_text_with_parents"], default="search_text")
+    parser.add_argument("--split", choices=["dev", "held_out"], default="dev")
+    parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
+    arguments = parser.parse_args()
+    run_one_setup(arguments.search, arguments.chunks, arguments.field, arguments.split, arguments.top_k)
 
 
 if __name__ == "__main__":
