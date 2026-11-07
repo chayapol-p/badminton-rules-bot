@@ -1,6 +1,6 @@
 # 0001 · Test section groups as a third chunking
 
-- **Status:** Proposed (runs pending)
+- **Status:** Rejected: clauses stay the chunk unit
 - **Date:** 2026-11-07
 - **Stage:** 1, search types
 
@@ -58,14 +58,23 @@ The 754 clauses give 373 groups (median 36 words, none over 300). Code:
 
 ## Evidence
 
-To run, one change each, on the dev split:
+Dev split. Each pair compares section groups with clauses at about the same number of words.
 
-- [ ] `--search keyword --chunks sections`
-- [ ] `--search vector --chunks sections` (after `scripts.build_embeddings` adds `section_groups`)
-- [ ] `--search hybrid --chunks sections`
+| Search | Section groups (top 5) | Clauses at equal words | Gap |
+|---|---|---|---|
+| Vector | 0.882 (405 words) | 0.924 (top 13, 403 words) | clauses +1 question |
+| Hybrid | 0.785 (456 words) | 0.847 (top 13, 456 words) | clauses +1.5 questions |
+| Keyword | 0.715 (433 words) | not run at equal words | |
 
-Accept if section groups beat clauses by 2 or more dev questions at a similar number of words
-returned, or match windows with clearly fewer words. Otherwise reject, and keep clauses.
+Section groups did match the best window run (hybrid, 0.875 at 1,583 words) with a quarter of the
+words, so structure beats fixed windows. But at equal words they never beat clauses, so the first
+part of the bar was not met.
+
+## Decision taken
+
+Rejected (Job, 2026-11-07). Clauses stay the chunk unit: they score as well or better at the same
+text size, and each result is one exact clause to cite. More text per answer is reached by raising
+`top_k`, not by bigger chunks (record 0006).
 
 ## Consequences
 

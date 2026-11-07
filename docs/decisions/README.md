@@ -22,11 +22,12 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 
 | # | Decision | Status |
 |---|---|---|
-| [0001](0001-test-section-groups-as-a-third-chunking.md) | Test section groups as a third chunking | Proposed |
+| [0001](0001-test-section-groups-as-a-third-chunking.md) | Test section groups as a third chunking | Rejected |
 | [0002](0002-name-each-alternative-laws-clause-by-its-format.md) | Name each Alternative Laws clause by its format | Accepted |
 | [0003](0003-add-a-context-header-to-every-chunk.md) | Add a context header to every chunk's search text | Accepted |
 | [0004](0004-use-rank-bm25-for-keyword-search.md) | Use rank_bm25 for keyword search, and keep the class simple | Accepted |
 | [0005](0005-search-vectors-exactly-first.md) | Search the vectors exactly first | Accepted |
+| [0006](0006-vector-search-on-clauses-goes-to-stage-2.md) | Vector search on clauses goes forward to Stage 2 | Accepted |
 
 ## Template
 
