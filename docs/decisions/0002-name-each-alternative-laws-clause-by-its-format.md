@@ -8,7 +8,7 @@
 
 The Alternative Laws repeat the same clause numbers once per format: clause 8.1 exists in the
 one-game-to-21 format and again in the best-of-5-games-to-11 format. Chunk ids built from the
-document and clause number alone (`alt-8.1`) collided, so search results and citations could not
+document and clause number alone collided, so search results and citations could not
 say which format a clause came from. The chunk field holding the format was first called `variant`,
 which did not say what varies.
 
@@ -16,7 +16,7 @@ which did not say what varies.
 
 Every chunk has an `alternative_format` field (empty for the Laws and the ITTO), and an Alternative
 Laws chunk id carries its format: `alt-<format>:<clause>`, as in `alt-best-of-5-games-11:8.1`.
-The field was renamed from `variant`, because the rule book calls these alternative formats.
+The field was renamed from `variant`, so its name says what varies: the format.
 
 ## Evidence
 
