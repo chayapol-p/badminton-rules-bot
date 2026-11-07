@@ -18,6 +18,7 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
+from evals.golden import expected_chunk_ids
 from retrieval.rule_links import expand_with_links, load_rule_map
 
 
@@ -39,11 +40,8 @@ rule_map = load_rule_map()
 # ===== Turn an answer location into chunk ids =====
 
 def location_ids(location):
-    """Chunk ids for one location: same document and clause (alternatives can match in several options)."""
-    return {
-        chunk["id"] for chunk in chunks
-        if chunk["document"] == location["doc"] and chunk["clause"] == location["clause"]
-    }
+    """Chunk ids for one location, with the matcher the scorer uses."""
+    return set(expected_chunk_ids(location, chunks))
 
 
 # ===== Follow the map from each location in turn =====

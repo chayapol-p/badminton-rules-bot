@@ -33,7 +33,9 @@ def load_questions(split_name):
 
 def expected_chunk_ids(location, chunks):
     """Returns the ids of chunks that hold one answer location (a document and a clause)."""
-    same_document = [chunk for chunk in chunks if chunk["document"] == location["doc"]]
+    # A location may name an Alternative Laws format ("variant"); then only that format counts
+    same_document = [chunk for chunk in chunks if chunk["document"] == location["doc"]
+                     and location.get("variant") in (None, chunk["variant"])]
     # Exact clause first, ignoring case, so "DIAGRAM A" finds the diagram chunk and nothing else
     by_clause = [chunk["id"] for chunk in same_document if chunk["clause"].lower() == location["clause"].lower()]
     if by_clause:

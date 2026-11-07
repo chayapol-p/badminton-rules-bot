@@ -1,10 +1,9 @@
 """
 Checks the golden question set against the ingested clause chunks.
 
-For every answer location in golden_questions.json, it finds the chunk that holds it:
-a chunk with the same document and clause number, or (for labels like "DIAGRAM A" or
-"In Force") a chunk of that document whose text contains the label. Any location with
-no chunk means the ingest lost a clause, or the question cites the wrong place.
+For every answer location in golden_questions.json, it finds the chunk that holds it,
+with the same matcher the scorer uses (evals/golden.py). Any location with no chunk
+means the ingest lost a clause, or the question cites the wrong place.
 
 Run from the project root (after scripts.ingest_rules):
     uv run python -m scripts.check_golden_questions
@@ -13,6 +12,8 @@ Run from the project root (after scripts.ingest_rules):
 import json
 from collections import Counter
 from pathlib import Path
+
+from evals.golden import expected_chunk_ids
 
 
 # Constants
@@ -31,19 +32,8 @@ chunks = json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))
 # ===== Find the chunk for one answer location =====
 
 def find_chunks(location):
-    """Returns the ids of chunks that hold this document and clause."""
-    same_document = [chunk for chunk in chunks if chunk["document"] == location["doc"]]
-    # Exact clause first, ignoring case, so "DIAGRAM A" finds the diagram chunk and nothing else
-    by_clause = [chunk["id"] for chunk in same_document if chunk["clause"].lower() == location["clause"].lower()]
-    if by_clause:
-        return by_clause
-
-    # Only labels such as "DIAGRAM A" or "In Force" may match by text. A clause number that
-    # appears only inside another chunk's text means the ingest lost that clause
-    if location["clause"][0].isdigit():
-        return []
-    label = location["clause"].lower()
-    return [chunk["id"] for chunk in same_document if label in chunk["text"].lower()]
+    """Returns the ids of chunks that hold this location, with the matcher the scorer uses."""
+    return expected_chunk_ids(location, chunks)
 
 
 # ===== Check every location, then the spread of questions =====
