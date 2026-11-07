@@ -25,7 +25,7 @@ from app.settings import load_settings
 from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.log_eval_run import append_run
 from evals.score_retrieval import score_search
-from retrieval.hybrid_search import HybridSearch
+from retrieval.hybrid_search import CANDIDATE_COUNT, HybridSearch
 from retrieval.keyword_search import KeywordSearch
 from retrieval.stored_embeddings import load_embeddings
 from retrieval.vector_search import VectorSearch
@@ -67,7 +67,7 @@ def build_vector_search(items, chunk_kind, field, questions, model):
     return VectorSearch(items, item_vectors, embedding_function=saved_question_vector)
 
 
-def build_search(search_type, items, chunk_kind, field, questions, model):
+def build_search(search_type, items, chunk_kind, field, questions, model, top_k):
     """Returns the search function for one setup: search(question_text, top_k) -> items."""
     if search_type == "keyword":
         return KeywordSearch(items, field).search
@@ -76,8 +76,10 @@ def build_search(search_type, items, chunk_kind, field, questions, model):
     if search_type == "vector":
         return vector_search.search
 
+    # Fusion can only return what the two searches hand it, so each hands over at least top_k
     keyword_search = KeywordSearch(items, field)
-    return HybridSearch(keyword_search, vector_search).search
+    candidate_count = max(CANDIDATE_COUNT, top_k)
+    return HybridSearch(keyword_search, vector_search, candidate_count=candidate_count).search
 
 
 # ===== Measuring one run =====
@@ -129,7 +131,7 @@ def run_one_setup(search_type: str, chunk_kind: str, field: str, split: str, top
 
     # Build the search, then score it and time the whole run
     started = time.perf_counter()
-    search = build_search(search_type, items, chunk_kind, field, questions, model)
+    search = build_search(search_type, items, chunk_kind, field, questions, model, top_k)
     scores = score_search(search, questions, clause_chunks, top_k)
     scores["by_wording"] = scores_by_wording(search, questions, clause_chunks, top_k)
     scores["words_returned"] = average_words_returned(search, questions, top_k)

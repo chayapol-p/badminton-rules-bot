@@ -40,6 +40,7 @@ STAGE_1_SETUPS = (
         ("hybrid", "clauses", "search_text", 3),
         ("keyword", "clauses", "search_text", 45),
         ("vector", "clauses", "search_text", 55),
+        ("hybrid", "clauses", "search_text", 50),
         ("vector", "clauses", "search_text", 13),
     ]
 )
