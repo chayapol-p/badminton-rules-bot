@@ -29,6 +29,7 @@ for chunk in chunks:
 9. Prefer words to symbols: built-in methods and keywords (`set.intersection()`, `issubset()`, `isdisjoint()`, `and`, `or`, `not`, `any()`, `all()`) instead of `&`, `|`, `^`, `~` or `<=` on sets. Bit flags from a library are the one exception: keep the `&` inside a small helper with a clear name, such as `is_italic_span()`. Type hints keep `X | None`.
 10. File names say what the file does or holds: `build_rule_chunks.py`, not `ingest.py`; `golden_answer_chunks.py`, not `golden.py`. Python modules stay lowercase with underscores (PEP 8). A test file is named after what it tests: `test_<module>.py`.
 11. Test words follow the standard test-double terms (Meszaros; Google's *Software Engineering at Google*): test data copied from the real files is a **sample** (`SAMPLE_CHUNKS`), a function that returns fixed results is a **stub** (`perfect_search`), and a value passed in but never used is a **placeholder** (`"test-mistral-key"`). Say **fake** only for a working stand-in with a shortcut inside (an in-memory database), and **mock** only for an object that records how it was called (`unittest.mock`).
+12. Code Job writes himself is marked with the standard `TODO` comment, which editors highlight and list: `# TODO (Stage 1, Step 2): fill the blank, then delete the raise line`. Never "YOUR TURN" or other custom markers.
 
 ## Experiment rules
 
