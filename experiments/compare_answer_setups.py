@@ -33,7 +33,7 @@ from mistralai.client import Mistral
 
 from answer.answer_with_mistral import answer_question
 from answer.check_citations import find_citation_problems
-from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
+from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, has_no_answer
 from app.settings import load_settings
 from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.judge_answers import grade_answer, judge_passed
@@ -93,7 +93,7 @@ def answer_and_grade(question: dict, search, top_k: int, mistral_client: Mistral
         "split": question["split"],
         "category": question["category"],
         "question": question["question"],
-        "should_refuse": should_refuse(question),
+        "has_no_answer": has_no_answer(question),
         "retrieved_ids": [chunk["id"] for chunk in retrieved_chunks],
         "words_returned": sum(len(chunk["text"].split()) for chunk in retrieved_chunks),
         "answer": None,
@@ -142,10 +142,10 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
     """Returns the run's scores: answers, diagrams, citations, refusals both ways, format errors, words and cost."""
 
     # Split the questions into the groups each score reads
-    answerable = [line for line in answer_lines if not line["should_refuse"]]
+    answerable = [line for line in answer_lines if not line["has_no_answer"]]
     text_answerable = [line for line in answerable if line["id"] not in IMAGE_ONLY_QUESTION_IDS]
     image_only = [line for line in answerable if line["id"] in IMAGE_ONLY_QUESTION_IDS]
-    no_answer = [line for line in answer_lines if line["should_refuse"]]
+    no_answer = [line for line in answer_lines if line["has_no_answer"]]
     golden_no_answer = [line for line in no_answer if line["split"] != "probe"]
     probes = [line for line in no_answer if line["split"] == "probe"]
     with_answer = [line for line in answer_lines if not line["is_format_error"]]

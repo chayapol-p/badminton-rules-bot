@@ -12,7 +12,7 @@ from experiments.compare_answer_setups import summarise_answer_run
 REFUSED_OUTCOMES = {"correct refusal", "false refusal"}
 
 
-def answer_line(question_id: str, split: str, category: str, should_refuse: bool, refusal_outcome: str | None,
+def answer_line(question_id: str, split: str, category: str, has_no_answer: bool, refusal_outcome: str | None,
                 citation_problems: list[dict]) -> dict:
     """Returns one answer line in the run's shape; a None outcome means the reply didn't fit the shape."""
     answer = None
@@ -22,7 +22,7 @@ def answer_line(question_id: str, split: str, category: str, should_refuse: bool
         "id": question_id,
         "split": split,
         "category": category,
-        "should_refuse": should_refuse,
+        "has_no_answer": has_no_answer,
         "words_returned": 100,
         "answer": answer,
         "is_format_error": answer is None,
