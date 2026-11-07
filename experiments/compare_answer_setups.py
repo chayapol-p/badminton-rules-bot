@@ -10,7 +10,8 @@ Writes, for each run:
   evals/answer_runs/<time>-<label>-answers.jsonl  per question: the sources, the answer and the code checks
   evals/answer_runs/<time>-<label>-grades.jsonl   per question: the judge's grade
 The two files are kept apart, so you can grade answers yourself before you see the judge's grades.
-Plus one line in evals/runs.jsonl.
+Each line is saved as soon as its question is done, so a crash partway keeps every answer
+already paid for. Only a finished run adds its line to evals/runs.jsonl.
 
 Needs the saved question and probe vectors (run scripts.build_embeddings first) and both API
 keys in .env. A run makes 33 answer calls and 33 judge calls.
@@ -217,11 +218,10 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
         print(f"  fail: {line['id']}  judge {judge_verdict}  refusal {line['refusal_outcome']}  citations {citation_verdict}")
 
 
-def write_lines(path: Path, lines: list[dict]) -> None:
-    """Writes one JSON object per line."""
-    with path.open("w", encoding="utf-8") as output_file:
-        for line in lines:
-            output_file.write(json.dumps(line, ensure_ascii=False) + "\n")
+def append_line(path: Path, line: dict) -> None:
+    """Adds one JSON object as the last line of the file, which is saved when the file closes."""
+    with path.open("a", encoding="utf-8") as output_file:
+        output_file.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
 # ===== Running one setup =====
@@ -235,7 +235,14 @@ def run_answer_setup(top_k: int, label: str) -> dict:
     mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value())
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
 
-    # Answer and grade each question, pausing between them for the rate limits
+    # Name the run first, so each answer can be saved the moment it's done
+    run_name = f"{datetime.now(timezone.utc):%Y%m%dT%H%M}-{label}"
+    ANSWER_RUNS_FOLDER.mkdir(parents=True, exist_ok=True)
+    answers_path = ANSWER_RUNS_FOLDER / f"{run_name}-answers.jsonl"
+    grades_path = ANSWER_RUNS_FOLDER / f"{run_name}-grades.jsonl"
+
+    # Answer and grade each question, and save both lines before asking the next one,
+    # so a crash partway loses nothing already paid for. Pause between questions for the rate limits
     started = time.perf_counter()
     answer_lines = []
     grade_lines = []
@@ -243,19 +250,17 @@ def run_answer_setup(top_k: int, label: str) -> dict:
         print(f"{question_number}/{len(questions)} {question['id']}")
         answer_line, grade_line = answer_and_grade(question, search, top_k, mistral_client, settings.mistral_answer_model,
                                                    anthropic_client, settings.claude_judge_model)
+        append_line(answers_path, answer_line)
+        append_line(grades_path, grade_line)
         answer_lines.append(answer_line)
         grade_lines.append(grade_line)
         time.sleep(SECONDS_BETWEEN_QUESTIONS)
     seconds = time.perf_counter() - started
 
-    # Score, print, then save the answers and grades apart, and log the run
+    # Score and print, then log the run: only a finished run gets a line in runs.jsonl
     passed_by_id = {line["id"]: line["passed"] for line in grade_lines}
     scores = summarise_answer_run(answer_lines, passed_by_id)
     print_scores(scores, answer_lines, passed_by_id)
-    run_name = f"{datetime.now(timezone.utc):%Y%m%dT%H%M}-{label}"
-    ANSWER_RUNS_FOLDER.mkdir(parents=True, exist_ok=True)
-    write_lines(ANSWER_RUNS_FOLDER / f"{run_name}-answers.jsonl", answer_lines)
-    write_lines(ANSWER_RUNS_FOLDER / f"{run_name}-grades.jsonl", grade_lines)
     run_settings = {
         "run": run_name,
         "search": "vector",
