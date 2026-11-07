@@ -24,6 +24,7 @@ SAMPLE_CHUNKS = [
         "page": 5,
         "text": "If the score becomes 20-all, the side which gains a two point lead first, shall win that game.",
         "search_text": "Laws of Badminton · 7. SCORING SYSTEM · Clause 7.4\nIf the score becomes 20-all, the side which gains a two point lead first, shall win that game.",
+        "search_text_with_parents": "Laws of Badminton · 7. SCORING SYSTEM · Clause 7.4\nIf the score becomes 20-all, the side which gains a two point lead first, shall win that game.",
     },
     {
         "id": "laws-7.5",
@@ -38,6 +39,7 @@ SAMPLE_CHUNKS = [
         "page": 5,
         "text": "If the score becomes 29-all, the side scoring the 30th point shall win that game.",
         "search_text": "Laws of Badminton · 7. SCORING SYSTEM · Clause 7.5\nIf the score becomes 29-all, the side scoring the 30th point shall win that game.",
+        "search_text_with_parents": "Laws of Badminton · 7. SCORING SYSTEM · Clause 7.5\nIf the score becomes 29-all, the side scoring the 30th point shall win that game.",
     },
     {
         "id": "laws-1.4",
@@ -52,6 +54,7 @@ SAMPLE_CHUNKS = [
         "page": 1,
         "text": "The posts shall be 1.55 metres in height from the surface of the court and shall remain vertical when the net is strained as provided in Law 1.10.",
         "search_text": "Laws of Badminton · 1. COURT AND COURT EQUIPMENT · Clause 1.4\nThe posts shall be 1.55 metres in height from the surface of the court and shall remain vertical when the net is strained as provided in Law 1.10.",
+        "search_text_with_parents": "Laws of Badminton · 1. COURT AND COURT EQUIPMENT · Clause 1.4\nThe posts shall be 1.55 metres in height from the surface of the court and shall remain vertical when the net is strained as provided in Law 1.10.",
     },
 ]
 

@@ -1,9 +1,10 @@
 """
 Embeds the chunks, the windows and the golden questions with mistral-embed, once, and saves them.
 
-Four sets, each saved to data/embeddings/<name>.npz:
+Five sets, each saved to data/embeddings/<name>.npz:
   clauses_search_text  each clause chunk's search_text (context header, then the clause)
   clauses_text         each clause chunk's text alone, for the context header comparison
+  clauses_search_text_with_parents   the header, the parent clauses, then the clause
   windows              each fixed-size window's text
   questions            each golden question, keyed by its id
 
@@ -65,6 +66,8 @@ def texts_to_embed():
     return {
         "clauses_search_text": ([chunk["id"] for chunk in chunks], [chunk["search_text"] for chunk in chunks]),
         "clauses_text": ([chunk["id"] for chunk in chunks], [chunk["text"] for chunk in chunks]),
+        "clauses_search_text_with_parents": ([chunk["id"] for chunk in chunks],
+                                             [chunk["search_text_with_parents"] for chunk in chunks]),
         "windows": ([window["id"] for window in windows], [window["text"] for window in windows]),
         "questions": ([question["id"] for question in questions], [question["question"] for question in questions]),
     }

@@ -4,7 +4,8 @@ Runs one search setup on the golden questions, prints its scores and adds one li
 One run changes one thing: the search type, the chunking or the text field.
   --search  keyword | vector | hybrid
   --chunks  clauses | windows
-  --field   search_text | text   (clauses only: with or without the context header)
+  --field   search_text | text | search_text_with_parents
+            (clauses only: the header, no header, or the header plus the parent clauses)
   --split   dev | held_out       (held_out only once, for the published number)
   --top-k   results per question  (default 5; raise it to compare at the same number of words)
 
@@ -113,7 +114,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Score one search setup on the golden questions.")
     parser.add_argument("--search", choices=["keyword", "vector", "hybrid"], required=True)
     parser.add_argument("--chunks", choices=["clauses", "windows"], default="clauses")
-    parser.add_argument("--field", choices=["search_text", "text"], default="search_text")
+    parser.add_argument("--field", choices=["search_text", "text", "search_text_with_parents"], default="search_text")
     parser.add_argument("--split", choices=["dev", "held_out"], default="dev")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
     arguments = parser.parse_args()

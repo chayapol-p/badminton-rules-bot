@@ -43,7 +43,7 @@ for chunk in chunks:
 1. The ingest output is tested (`tests/test_rule_chunks.py`). After any ingest change, diff `data/rule_chunks.json` against the old file and explain every change.
 2. A known bug gets a test marked `xfail(strict=True)` until it is fixed.
 3. Raw findings go to `workshop/notes.md`, one line each, with a number.
-4. Search reads `search_text` (a context header, then the clause). Answers quote and cite `text`, the clause as printed.
+4. Search reads `search_text` (a context header, then the clause), or `search_text_with_parents` (the header, the parent clauses, then the clause) once Stage 1 shows it helps. Answers quote and cite `text`, the clause as printed.
 
 ## Checks before every commit
 

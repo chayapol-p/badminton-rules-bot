@@ -12,6 +12,8 @@ What it does, in order:
    A clause alone often lacks its context ("…reaches 8 points" never says which format),
    so search reads the header too. This follows Anthropic's Contextual Retrieval, with a
    header built from the tags instead of written by a model.
+6. Writes a second search text that also names the parent clauses ("2.2 Feathered Shuttle"
+   for 2.2.6), so Stage 1 can measure what the parents add on top of the header.
 
   Input:  the three PDFs in data/bwf/ (downloaded by hand, never committed)
   Output: data/rule_chunks.json, one record per clause
@@ -100,6 +102,9 @@ ALTERNATIVE_FORMAT_NAMES = {
     "best-of-5-games-11": "best of 5 games to 11",
     "alternative-service": "alternative service law",
 }
+
+# A parent clause in the search text keeps only its first words, so a long parent can't drown the clause
+PARENT_WORD_LIMIT = 15
 
 # A small picture at the left margin is a hidden two-level clause number in the Laws
 NUMBER_PICTURE_MAX_WIDTH = 25
@@ -324,6 +329,56 @@ def add_search_text(records):
         record["search_text"] = f"{context_header(record)}\n{record['text']}"
 
 
+def parent_clause_numbers(clause):
+    """Returns the numbered parents below the Law heading, outermost first: "2.2.6" gives ["2.2"]."""
+    parts = clause.split(".")
+    parents = []
+    for depth in range(2, len(parts)):
+        parents.append(".".join(parts[:depth]))
+    return parents
+
+
+def find_parent_record(record, parent_clause, record_by_place):
+    """Returns the parent clause's record from the same document and format, or the Law it changes."""
+    same_place = (record["document"], record["alternative_format"], parent_clause)
+    if same_place in record_by_place:
+        return record_by_place[same_place]
+
+    # An Alternative Laws clause can sit under a Law the Alternative Laws never repeat (8.1.3 under 8.1)
+    if record["document"] == "alt":
+        return record_by_place.get(("laws", None, parent_clause))
+    return None
+
+
+def parents_line(record, record_by_place):
+    """Returns the parent clauses as one line ("2.2 Feathered Shuttle"), each cut to its first words."""
+    is_numbered_clause = record["clause"][0].isdigit()
+    if not is_numbered_clause:
+        return ""
+    parent_texts = []
+    for parent_clause in parent_clause_numbers(record["clause"]):
+        parent = find_parent_record(record, parent_clause, record_by_place)
+        if parent is None:
+            continue
+        first_words = " ".join(parent["text"].split()[:PARENT_WORD_LIMIT])
+        parent_texts.append(f"{parent_clause} {first_words}")
+    return " · ".join(parent_texts)
+
+
+def add_search_text_with_parents(records):
+    """Gives every record a search_text_with_parents: the header, the parent clauses, then the clause text."""
+    record_by_place = {}
+    for record in records:
+        record_by_place[(record["document"], record["alternative_format"], record["clause"])] = record
+
+    for record in records:
+        parents = parents_line(record, record_by_place)
+        if parents:
+            record["search_text_with_parents"] = f"{context_header(record)}\n{parents}\n{record['text']}"
+        else:
+            record["search_text_with_parents"] = record["search_text"]
+
+
 # ===== Running all three documents =====
 
 def main() -> None:
@@ -342,6 +397,7 @@ def main() -> None:
 
     # Last, once every tag is final: the header reads the headings filled in just above
     add_search_text(all_records)
+    add_search_text_with_parents(all_records)
 
     CHUNKS_FILE.write_text(json.dumps(all_records, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"saved {len(all_records)} chunks to {CHUNKS_FILE.relative_to(PROJECT_FOLDER)}")

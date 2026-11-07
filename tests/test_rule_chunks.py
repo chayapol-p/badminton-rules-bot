@@ -39,7 +39,8 @@ LAWS_SUB_CLAUSE_COUNTS = {1: 11, 2: 4, 3: 2, 4: 3, 5: 2, 6: 2, 7: 6, 8: 2, 9: 5,
                           11: 6, 12: 2, 13: 5, 14: 3, 15: 3, 16: 7, 17: 6}
 ALTERNATIVE_FORMATS = {"one-game-21", "best-of-3-games-21", "best-of-5-games-11", "alternative-service"}
 REQUIRED_FIELDS = {"id", "document", "document_title", "version", "in_force", "clause",
-                   "alternative_format", "heading", "para_only", "page", "text", "search_text"}
+                   "alternative_format", "heading", "para_only", "page", "text", "search_text",
+                   "search_text_with_parents"}
 
 ## Known clauses and a phrase each must hold, one per kind of ingest risk
 KNOWN_CLAUSE_TEXT = {
@@ -260,6 +261,16 @@ def test_same_clause_in_two_formats_reads_differently_to_search():
     assert "8 points" in best_of_three
     assert "best of 5 games to 11" in best_of_five
     assert "6 points" in best_of_five
+
+
+def test_parent_clauses_join_the_search_text_with_parents():
+    """2.2.6 names its parent 2.2, and 16.2.1 names 16.2 "Intervals:", the word its question needs."""
+    assert "2.2 Feathered Shuttle" in CHUNKS_BY_ID["laws-2.2.6"]["search_text_with_parents"]
+    assert "16.2 Intervals:" in CHUNKS_BY_ID["laws-16.2.1"]["search_text_with_parents"]
+
+def test_search_text_with_parents_ends_with_the_clause_text():
+    wrong = [chunk["id"] for chunk in CHUNKS if not chunk["search_text_with_parents"].endswith(chunk["text"])]
+    assert wrong == []
 
 
 # ===== 6. Coverage =====
