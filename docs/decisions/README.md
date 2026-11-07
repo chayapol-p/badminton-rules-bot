@@ -9,6 +9,8 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 
 ## How the log works
 
+- **Only Job's decisions.** A record is written when Job makes a choice. Options Claude suggests stay
+  out of the log until Job picks one.
 - **One decision per file**, named `NNNN-what-was-decided.md`, numbered in the order decided.
 - **Status:** Proposed (being tested) → Accepted, or Rejected. A later decision that replaces one
   gets a new file; the old file's status becomes "Superseded by NNNN", so the story stays readable.
@@ -21,6 +23,10 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | # | Decision | Status |
 |---|---|---|
 | [0001](0001-test-section-groups-as-a-third-chunking.md) | Test section groups as a third chunking | Proposed |
+| [0002](0002-name-each-alternative-laws-clause-by-its-format.md) | Name each Alternative Laws clause by its format | Accepted |
+| [0003](0003-add-a-context-header-to-every-chunk.md) | Add a context header to every chunk's search text | Accepted |
+| [0004](0004-use-rank-bm25-for-keyword-search.md) | Use rank_bm25 for keyword search, and keep the class simple | Accepted |
+| [0005](0005-search-vectors-exactly-first.md) | Search the vectors exactly first | Accepted |
 
 ## Template
 
