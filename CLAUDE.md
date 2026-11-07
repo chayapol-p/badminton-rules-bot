@@ -26,6 +26,8 @@ for chunk in chunks:
         candidates.append(chunk)
 ```
 
+9. Prefer words to symbols: built-in methods and keywords (`set.intersection()`, `issubset()`, `isdisjoint()`, `and`, `or`, `not`, `any()`, `all()`) instead of `&`, `|`, `^`, `~` or `<=` on sets. Bit flags from a library are the one exception: keep the `&` inside a small helper with a clear name, such as `is_italic_span()`. Type hints keep `X | None`.
+
 ## Experiment rules
 
 1. Change one thing per run, and keep everything else fixed.

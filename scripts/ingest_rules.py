@@ -92,8 +92,16 @@ ALTERNATIVE_VARIANTS = {
 NUMBER_PICTURE_MAX_WIDTH = 25
 NUMBER_PICTURE_MAX_HEIGHT = 15
 
+# PyMuPDF stores a span's font styles as bits in one number; this bit means italic
+ITALIC_FONT_FLAG = 2
+
 
 # ===== Reading a PDF into simple line records =====
+
+def is_italic_span(span):
+    """True when PyMuPDF marks the span's font as italic. Bit flags have no word form, so the & stays here."""
+    return (span["flags"] & ITALIC_FONT_FLAG) != 0
+
 
 def read_lines(pdf_path):
     """Returns every text line and small picture in reading order, as dictionaries."""
@@ -119,7 +127,7 @@ def read_lines(pdf_path):
                     "page": page_index + 1,
                     "text": " ".join(span["text"].strip() for span in spans),
                     "first_span": spans[0]["text"].strip(),
-                    "is_italic": all(span["flags"] & 2 for span in spans),
+                    "is_italic": all(is_italic_span(span) for span in spans),
                 })
     return lines
 

@@ -230,7 +230,8 @@ def test_known_regular_clause_is_not_flagged(chunk_id):
 # ===== 5. Coverage =====
 
 def test_diagrams_a_to_f_are_each_one_chunk():
-    assert {f"laws-Diagram {letter}" for letter in "ABCDEF"} <= set(CHUNKS_BY_ID)
+    diagram_ids = {f"laws-Diagram {letter}" for letter in "ABCDEF"}
+    assert diagram_ids.issubset(CHUNKS_BY_ID)
 
 def test_every_numbered_golden_location_has_its_own_chunk():
     clause_keys = {(chunk["document"], chunk["clause"]) for chunk in CHUNKS}

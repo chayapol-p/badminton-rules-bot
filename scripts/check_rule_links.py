@@ -44,6 +44,11 @@ def location_ids(location):
     return set(expected_chunk_ids(location, chunks))
 
 
+def was_reached(location_chunk_ids, reached_ids):
+    """True when at least one of the location's chunks is among the reached chunks."""
+    return not location_chunk_ids.isdisjoint(reached_ids)
+
+
 # ===== Follow the map from each location in turn =====
 
 results_by_category = defaultdict(list)
@@ -59,7 +64,7 @@ for question in golden_set["questions"]:
     for start in locations:
         context = expand_with_links(sorted(start), chunks_by_id, rule_map, question_is_para=question_is_para)
         reached_ids = {item["chunk"]["id"] for item in context}
-        if all(ids & reached_ids for ids in locations):
+        if all(was_reached(location_chunk_ids, reached_ids) for location_chunk_ids in locations):
             passed = True
             break
     results_by_category[question["category"]].append((question["id"], passed))
