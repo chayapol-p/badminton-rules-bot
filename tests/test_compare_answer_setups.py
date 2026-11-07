@@ -25,6 +25,7 @@ def answer_line(question_id: str, split: str, category: str, should_refuse: bool
         "should_refuse": should_refuse,
         "words_returned": 100,
         "answer": answer,
+        "is_format_error": answer is None,
         "citation_problems": citation_problems,
         "refusal_outcome": refusal_outcome,
         "answer_cost": 0.003,

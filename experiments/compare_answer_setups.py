@@ -96,14 +96,17 @@ def answer_and_grade(question: dict, search, top_k: int, mistral_client: Mistral
         "retrieved_ids": [chunk["id"] for chunk in retrieved_chunks],
         "words_returned": sum(len(chunk["text"].split()) for chunk in retrieved_chunks),
         "answer": None,
+        "is_format_error": reply.is_format_error,
+        "error_message": reply.error_message,
         "citation_problems": [],
         "refusal_outcome": None,
         "answer_cost": call_cost(answer_model, reply.input_tokens, reply.output_tokens),
         "judge_cost": 0.0,
     }
 
-    # A reply that didn't fit the shape can't be checked or graded: it counts as a fail
-    if reply.answer is None:
+    # A reply that didn't fit the shape can't be checked or graded: it counts as a fail, and its raw text is kept for Step 6
+    if reply.is_format_error:
+        answer_line["raw_reply"] = reply.raw_reply
         return answer_line, {"id": question["id"], "passed": False, "grade": None}
 
     # Code checks first, then the judge
@@ -144,7 +147,7 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
     no_answer = [line for line in answer_lines if line["should_refuse"]]
     golden_no_answer = [line for line in no_answer if line["split"] != "probe"]
     probes = [line for line in no_answer if line["split"] == "probe"]
-    with_answer = [line for line in answer_lines if line["answer"] is not None]
+    with_answer = [line for line in answer_lines if not line["is_format_error"]]
 
     # Answers the judge passed, overall and per category
     answers_passed = count_passed(text_answerable, passed_by_id)
