@@ -37,9 +37,9 @@ EXPECTED_CHUNKS_PER_DOCUMENT = {"laws": 225, "itto": 499, "alt": 30}
 EXPECTED_PARA_ONLY_COUNT = 22
 LAWS_SUB_CLAUSE_COUNTS = {1: 11, 2: 4, 3: 2, 4: 3, 5: 2, 6: 2, 7: 6, 8: 2, 9: 5, 10: 3,
                           11: 6, 12: 2, 13: 5, 14: 3, 15: 3, 16: 7, 17: 6}
-ALTERNATIVE_OPTIONS = {"one-game-21", "best-of-3-games-21", "best-of-5-games-11", "alternative-service"}
+ALTERNATIVE_FORMATS = {"one-game-21", "best-of-3-games-21", "best-of-5-games-11", "alternative-service"}
 REQUIRED_FIELDS = {"id", "document", "document_title", "version", "in_force", "clause",
-                   "variant", "heading", "para_only", "page", "text"}
+                   "alternative_format", "heading", "para_only", "page", "text"}
 
 ## Known clauses and a phrase each must hold, one per kind of ingest risk
 KNOWN_CLAUSE_TEXT = {
@@ -74,9 +74,9 @@ DOCUMENT_INFO = {document["document"]: document for document in DOCUMENTS}
 # ===== Helpers that name each check =====
 
 def expected_chunk_id(chunk):
-    """The id a chunk should have: document, then option (if any), then clause."""
-    if chunk["variant"]:
-        return f"{chunk['document']}-{chunk['variant']}:{chunk['clause']}"
+    """The id a chunk should have: document, then Alternative Laws format (if any), then clause."""
+    if chunk["alternative_format"]:
+        return f"{chunk['document']}-{chunk['alternative_format']}:{chunk['clause']}"
     return f"{chunk['document']}-{chunk['clause']}"
 
 
@@ -104,8 +104,8 @@ def is_heading_or_diagram(chunk):
     return is_heading or is_diagram
 
 
-def contains_option_marker(text):
-    """True when the text holds a line that opens an Alternative Laws option."""
+def contains_format_marker(text):
+    """True when the text holds a line that opens an Alternative Laws format."""
     markers = ["In case of 1 above", "In case of 2 above", "In the case of 3 above", "ALTERNATIVE SERVICE LAWS"]
     return any(marker in text for marker in markers)
 
@@ -182,16 +182,16 @@ def test_version_and_in_force_date_match_the_document():
             wrong.append(chunk["id"])
     assert wrong == []
 
-def test_only_alternative_laws_chunks_carry_an_option():
+def test_only_alternative_laws_chunks_carry_a_format():
     other_chunks = [chunk for chunk in CHUNKS if chunk["document"] != "alt"]
-    assert [chunk["id"] for chunk in other_chunks if chunk["variant"] is not None] == []
+    assert [chunk["id"] for chunk in other_chunks if chunk["alternative_format"] is not None] == []
 
-    option_chunks = [chunk for chunk in CHUNKS if chunk["document"] == "alt" and chunk["clause"] != "Introduction"]
-    assert {chunk["variant"] for chunk in option_chunks} == ALTERNATIVE_OPTIONS
+    format_chunks = [chunk for chunk in CHUNKS if chunk["document"] == "alt" and chunk["clause"] != "Introduction"]
+    assert {chunk["alternative_format"] for chunk in format_chunks} == ALTERNATIVE_FORMATS
 
-def test_option_markers_stay_in_their_intro_chunk():
+def test_format_markers_stay_in_their_intro_chunk():
     non_intro_chunks = [chunk for chunk in CHUNKS if chunk["clause"] != "intro"]
-    leaked = [chunk["id"] for chunk in non_intro_chunks if contains_option_marker(chunk["text"])]
+    leaked = [chunk["id"] for chunk in non_intro_chunks if contains_format_marker(chunk["text"])]
     assert leaked == []
 
 def test_laws_and_itto_heading_matches_the_clause_number():
@@ -199,10 +199,10 @@ def test_laws_and_itto_heading_matches_the_clause_number():
     mismatched = [chunk["id"] for chunk in numbered if not heading_matches_clause_number(chunk)]
     assert mismatched == []
 
-def test_alternative_laws_heading_belongs_to_its_own_option():
+def test_alternative_laws_heading_belongs_to_its_own_format():
     alternative_chunks = [chunk for chunk in CHUNKS if chunk["document"] == "alt"]
 
-    # An option's intro chunk carries no heading; a numbered clause carries its Law's heading
+    # A format's intro chunk carries no heading; a numbered clause carries its Law's heading
     intro_with_heading = [chunk["id"] for chunk in alternative_chunks if chunk["clause"] == "intro" and chunk["heading"] is not None]
     numbered = [chunk for chunk in alternative_chunks if has_numbered_clause(chunk)]
     wrong_heading = [chunk["id"] for chunk in numbered if not heading_matches_clause_number(chunk)]

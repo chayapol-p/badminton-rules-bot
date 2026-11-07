@@ -7,7 +7,7 @@ answer model must respect:
 
 - DEFAULT        the standard Law, when an alternative or a para exception exists for it
 - RULE           a matched clause with nothing attached
-- ALTERNATIVE    an Alternative Laws clause, with its option and in-force status
+- ALTERNATIVE    an Alternative Laws clause, with its format and in-force status
 - PARA EXCEPTION a Para Badminton clause, added only when the question is about para play
 - CITED          a clause that another clause names ("dealt with under Law 16.7")
 - DIAGRAM        the caption of a diagram that a clause names
@@ -49,8 +49,8 @@ LIST_HEADING_MAX_WORDS = 5
 ## How many items of the hit's list may come along, so a long list doesn't flood the prompt
 MAX_LIST_ITEMS = 6
 
-## Readable names for the Alternative Laws options
-OPTION_NAMES = {
+## Readable names for the Alternative Laws formats
+FORMAT_NAMES = {
     "one-game-21": "one game to 21",
     "best-of-3-games-21": "best of 3 games to 21",
     "best-of-5-games-11": "best of 5 games to 11",
@@ -157,11 +157,11 @@ def nearby_clauses(chunks_by_id, hit, question_is_para):
 # ===== Labelling a clause =====
 
 def alternative_label(chunk, today):
-    """ALTERNATIVE label with the option and whether it is in force on this date."""
-    option = OPTION_NAMES.get(chunk["variant"], chunk["variant"])
+    """ALTERNATIVE label with the format and whether it is in force on this date."""
+    format_name = FORMAT_NAMES.get(chunk["alternative_format"], chunk["alternative_format"])
     in_force = today >= date.fromisoformat(chunk["in_force"])
     status = f"in force from {chunk['in_force']}" if in_force else f"not in force until {chunk['in_force']}"
-    return f"ALTERNATIVE · {option} · only by prior arrangement · {status}"
+    return f"ALTERNATIVE · {format_name} · only by prior arrangement · {status}"
 
 
 # ===== Expanding search hits through the map =====
@@ -203,14 +203,17 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
             if hit["para_only"] and hit_id not in shown_para_ids:
                 shown_para_ids = [hit_id] + shown_para_ids
 
-            has_variants = alternative_ids or shown_para_ids
-            add(regular_id, "DEFAULT" if has_variants else "RULE", None if regular_id == hit_id else hit_id)
+            # The regular rule is the DEFAULT when an alternative or a para exception sits beside it
+            has_alternative_or_exception = bool(alternative_ids or shown_para_ids)
+            regular_label = "DEFAULT" if has_alternative_or_exception else "RULE"
+            linked_from = None if regular_id == hit_id else hit_id
+            add(regular_id, regular_label, linked_from)
             for alternative_id in alternative_ids:
                 add(alternative_id, alternative_label(chunks_by_id[alternative_id], today), regular_id)
             for para_id in shown_para_ids:
                 add(para_id, "PARA EXCEPTION", regular_id)
 
-        # A hit with no regular rule (such as an option's intro) still goes in
+        # A hit with no regular rule (such as a format's intro) still goes in
         add(hit_id, "RULE")
 
         # The clauses around the hit: the rest of its list, or the clause before and after

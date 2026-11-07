@@ -227,7 +227,7 @@
         {
           "doc": "alt",
           "clause": "7.2",
-          "variant": "best-of-5-games-11"
+          "alternative_format": "best-of-5-games-11"
         }
       ],
       "split": "held_out"
@@ -242,7 +242,7 @@
         {
           "doc": "alt",
           "clause": "16.2.1",
-          "variant": "best-of-3-games-21"
+          "alternative_format": "best-of-3-games-21"
         },
         {
           "doc": "laws",

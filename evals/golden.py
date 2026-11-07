@@ -33,10 +33,10 @@ def load_questions(split_name):
 
 def chunk_is_in_location_format(chunk, location):
     """True when the location names no Alternative Laws format, or names this chunk's format."""
-    wanted_format = location.get("variant")
+    wanted_format = location.get("alternative_format")
     if wanted_format is None:
         return True
-    return chunk["variant"] == wanted_format
+    return chunk["alternative_format"] == wanted_format
 
 
 def expected_chunk_ids(location, chunks):

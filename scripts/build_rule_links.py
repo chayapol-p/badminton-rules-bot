@@ -116,7 +116,7 @@ def find_override_links(chunks, chunks_by_id):
             continue
         replaced_law = find_clause(chunks_by_id, "laws", chunk["clause"])
         if replaced_law:
-            links.append(make_link(chunk, replaced_law, "overrides", f"same number, option {chunk['variant']}"))
+            links.append(make_link(chunk, replaced_law, "overrides", f"same number, format {chunk['alternative_format']}"))
     return links
 
 

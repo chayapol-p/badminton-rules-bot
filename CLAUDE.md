@@ -16,7 +16,7 @@ Every coding session in this repo follows these rules, by hand or with an AI cod
 ```python
 # Too much in one line
 same_document = [chunk for chunk in chunks if chunk["document"] == location["doc"]
-                 and location.get("variant") in (None, chunk["variant"])]
+                 and location.get("alternative_format") in (None, chunk["alternative_format"])]
 
 # Readable: a named helper and a plain loop with named steps
 candidates = []

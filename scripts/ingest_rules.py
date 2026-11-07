@@ -80,8 +80,9 @@ DIAGRAM_TITLE = re.compile(r"^DIAGRAM ([A-Z])$")
 # The running header and footer on every page
 PAGE_FURNITURE = re.compile(r"^(BWF Statutes, Section|Page \d+ of \d+)")
 
-# In the Alternative Laws, which scoring option or service rule a clause belongs to
-ALTERNATIVE_VARIANTS = {
+# In the Alternative Laws, the line that opens each format, and the format's name.
+# Each format (a scoring system, or the alternative service rule) repeats clause numbers
+ALTERNATIVE_FORMAT_MARKERS = {
     "In case of 1 above": "one-game-21",
     "In case of 2 above": "best-of-3-games-21",
     "In the case of 3 above": "best-of-5-games-11",
@@ -134,6 +135,14 @@ def read_lines(pdf_path):
 
 # ===== Turning lines into clause chunks =====
 
+def format_opened_by(text):
+    """Returns the Alternative Laws format this line opens, or None for any other line."""
+    for marker, format_name in ALTERNATIVE_FORMAT_MARKERS.items():
+        if text.startswith(marker):
+            return format_name
+    return None
+
+
 def build_chunks(document_info, lines):
     """Groups the lines of one document into one chunk per clause."""
     chunks = []
@@ -141,14 +150,14 @@ def build_chunks(document_info, lines):
     current_heading = None
     current_section_number = None
     hidden_number_count = 0
-    current_variant = None
+    current_format = None
 
     def start_chunk(clause, page, is_italic=None):
         nonlocal current_chunk
         current_chunk = {
             "clause": clause,
             "heading": current_heading,
-            "variant": current_variant,
+            "alternative_format": current_format,
             "page": page,
             "lines": [],
             "italic_flags": [] if is_italic is None else [is_italic],
@@ -168,12 +177,12 @@ def build_chunks(document_info, lines):
         if PAGE_FURNITURE.match(text):
             continue
 
-        # The Alternative Laws: a marker line opens a new option, with its own short intro chunk
-        variant_marker = next((variant for marker, variant in ALTERNATIVE_VARIANTS.items() if text.startswith(marker)), None)
-        if variant_marker:
-            current_variant = variant_marker
+        # The Alternative Laws: a marker line opens a new format, with its own short intro chunk
+        opened_format = format_opened_by(text)
+        if opened_format:
+            current_format = opened_format
 
-            # A new option starts with no heading, so the previous option's heading can't carry over
+            # A new format starts with no heading, so the previous format's heading can't carry over
             current_heading = None
             current_section_number = None
             hidden_number_count = 0
@@ -242,8 +251,11 @@ def to_records(document_info, chunks):
         if not text:
             continue
 
-        # The Alternative Laws repeat clause numbers per option, so the option goes in the id
-        clause_id = f"{chunk['variant']}:{chunk['clause']}" if chunk["variant"] else chunk["clause"]
+        # The Alternative Laws repeat clause numbers per format, so the format goes in the id
+        if chunk["alternative_format"]:
+            clause_id = f"{chunk['alternative_format']}:{chunk['clause']}"
+        else:
+            clause_id = chunk["clause"]
 
         # Para Badminton clauses are printed in italics, but only the Laws follow that rule.
         # A heading or diagram title has no font flags, and all([]) is True, so it needs at least one flag
@@ -257,7 +269,7 @@ def to_records(document_info, chunks):
             "version": document_info["version"],
             "in_force": document_info["in_force"],
             "clause": chunk["clause"],
-            "variant": chunk["variant"],
+            "alternative_format": chunk["alternative_format"],
             "heading": chunk["heading"],
             "para_only": is_para_only,
             "page": chunk["page"],
