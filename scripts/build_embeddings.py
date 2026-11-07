@@ -19,6 +19,7 @@ Run from the project root:
 """
 
 import argparse
+import itertools
 import json
 import time
 
@@ -40,26 +41,28 @@ SECONDS_BETWEEN_REQUESTS = 1.0
 
 # ===== Calling the embedding API in batches =====
 
-def embed_in_batches(client, model, texts, batch_size=BATCH_SIZE, pause_seconds=SECONDS_BETWEEN_REQUESTS):
-    """Returns one vector per text, in the same order, sending batch_size texts per request."""
+def embed_in_batches(client: Mistral, model: str, embedding_inputs: list[str],
+                     batch_size: int = BATCH_SIZE, pause_seconds: float = SECONDS_BETWEEN_REQUESTS) -> list[list[float]]:
+    """Returns one vector per embedding input, in the same order, sending batch_size inputs per request."""
     vectors = []
-    for batch_start in range(0, len(texts), batch_size):
-        batch = texts[batch_start:batch_start + batch_size]
-        response = client.embeddings.create(model=model, inputs=batch)
+    for batch_number, batch in enumerate(itertools.batched(embedding_inputs, batch_size)):
+
+        # Wait between requests, to stay under the rate limit; the first request goes right away
+        is_first_batch = batch_number == 0
+        if not is_first_batch:
+            time.sleep(pause_seconds)
+
+        # batched gives tuples, and the API takes a list
+        response = client.embeddings.create(model=model, inputs=list(batch))
         for item in response.data:
             vectors.append(item.embedding)
-
-        # Wait before the next request, but not after the last one
-        has_more_batches = batch_start + batch_size < len(texts)
-        if has_more_batches:
-            time.sleep(pause_seconds)
     return vectors
 
 
 # ===== The sets to embed =====
 
-def texts_to_embed():
-    """Returns each set's name, ids and texts."""
+def embedding_inputs_by_set():
+    """Returns each set's name, ids and embedding inputs."""
     chunks = load_chunks()
     windows = build_windows(chunks)
     questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
@@ -95,13 +98,13 @@ def main() -> None:
     model = settings.mistral_embedding_model
     client = Mistral(api_key=settings.mistral_api_key.get_secret_value())
 
-    for name, (ids, texts) in texts_to_embed().items():
+    for name, (ids, embedding_inputs) in embedding_inputs_by_set().items():
         if is_already_saved(name, model) and not arguments.force:
             print(f"{name}: already saved with {model}, skipped")
             continue
 
-        print(f"{name}: embedding {len(texts)} texts with {model}")
-        vectors = embed_in_batches(client, model, texts)
+        print(f"{name}: embedding {len(embedding_inputs)} inputs with {model}")
+        vectors = embed_in_batches(client, model, embedding_inputs)
         save_embeddings(name, ids, vectors, model)
         print(f"{name}: saved to {embeddings_file(name).name}")
 
