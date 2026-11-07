@@ -31,19 +31,32 @@ def load_questions(split_name):
 
 # ===== Matching an answer location to chunks =====
 
+def chunk_is_in_location_format(chunk, location):
+    """True when the location names no Alternative Laws format, or names this chunk's format."""
+    wanted_format = location.get("variant")
+    if wanted_format is None:
+        return True
+    return chunk["variant"] == wanted_format
+
+
 def expected_chunk_ids(location, chunks):
     """Returns the ids of chunks that hold one answer location (a document and a clause)."""
-    # A location may name an Alternative Laws format ("variant"); then only that format counts
-    same_document = [chunk for chunk in chunks if chunk["document"] == location["doc"]
-                     and location.get("variant") in (None, chunk["variant"])]
+
+    # Keep the chunks from the location's document, and from its format when it names one
+    candidates = []
+    for chunk in chunks:
+        is_same_document = chunk["document"] == location["doc"]
+        if is_same_document and chunk_is_in_location_format(chunk, location):
+            candidates.append(chunk)
+
     # Exact clause first, ignoring case, so "DIAGRAM A" finds the diagram chunk and nothing else
-    by_clause = [chunk["id"] for chunk in same_document if chunk["clause"].lower() == location["clause"].lower()]
+    wanted_clause = location["clause"].lower()
+    by_clause = [chunk["id"] for chunk in candidates if chunk["clause"].lower() == wanted_clause]
     if by_clause:
         return by_clause
 
     # Only labels such as "DIAGRAM A" or "In Force" may match by text. A clause number that
     # appears only inside another chunk's text means the ingest lost that clause
-    if location["clause"][0].isdigit():
+    if wanted_clause[0].isdigit():
         return []
-    label = location["clause"].lower()
-    return [chunk["id"] for chunk in same_document if label in chunk["text"].lower()]
+    return [chunk["id"] for chunk in candidates if wanted_clause in chunk["text"].lower()]

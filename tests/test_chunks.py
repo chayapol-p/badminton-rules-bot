@@ -71,6 +71,52 @@ GOLDEN_SET = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))
 DOCUMENT_INFO = {document["document"]: document for document in DOCUMENTS}
 
 
+# ===== Helpers that name each check =====
+
+def expected_chunk_id(chunk):
+    """The id a chunk should have: document, then option (if any), then clause."""
+    if chunk["variant"]:
+        return f"{chunk['document']}-{chunk['variant']}:{chunk['clause']}"
+    return f"{chunk['document']}-{chunk['clause']}"
+
+
+def has_valid_page(chunk):
+    """True when the page is a whole number above zero."""
+    return isinstance(chunk["page"], int) and chunk["page"] > 0
+
+
+def has_numbered_clause(chunk):
+    """True for a clause such as 9.1.6; false for intros, headings like Introduction, and diagrams."""
+    return CLAUSE_NUMBER.match(chunk["clause"]) is not None
+
+
+def heading_matches_clause_number(chunk):
+    """True when the heading starts with the clause's Law number: clause 9.1.6 sits under "9. ..."."""
+    law_number = chunk["clause"].split(".")[0]
+    heading = chunk["heading"] or ""
+    return heading.startswith(law_number + ".")
+
+
+def is_heading_or_diagram(chunk):
+    """True for a Law heading chunk (clause "9") or a diagram chunk (clause "Diagram A")."""
+    is_heading = re.match(r"^\d+$", chunk["clause"]) is not None
+    is_diagram = chunk["clause"].startswith("Diagram")
+    return is_heading or is_diagram
+
+
+def contains_option_marker(text):
+    """True when the text holds a line that opens an Alternative Laws option."""
+    markers = ["In case of 1 above", "In case of 2 above", "In the case of 3 above", "ALTERNATIVE SERVICE LAWS"]
+    return any(marker in text for marker in markers)
+
+
+def every_golden_location():
+    """Yields (question id, location) for every answer location in the golden set."""
+    for question in GOLDEN_SET["questions"]:
+        for location in question["answer_locations"]:
+            yield question["id"], location
+
+
 # ===== 1. Every chunk is well formed =====
 
 def test_every_chunk_has_every_field():
@@ -81,14 +127,12 @@ def test_chunk_ids_are_unique():
     assert len(CHUNKS_BY_ID) == len(CHUNKS)
 
 def test_chunk_id_is_document_option_and_clause():
-    def expected_id(chunk):
-        clause_part = f"{chunk['variant']}:{chunk['clause']}" if chunk["variant"] else chunk["clause"]
-        return f"{chunk['document']}-{clause_part}"
-    assert [chunk["id"] for chunk in CHUNKS if chunk["id"] != expected_id(chunk)] == []
+    wrong_ids = [chunk["id"] for chunk in CHUNKS if chunk["id"] != expected_chunk_id(chunk)]
+    assert wrong_ids == []
 
 def test_every_chunk_has_text_and_a_page():
     assert [chunk["id"] for chunk in CHUNKS if not chunk["text"].strip()] == []
-    assert [chunk["id"] for chunk in CHUNKS if not (isinstance(chunk["page"], int) and chunk["page"] > 0)] == []
+    assert [chunk["id"] for chunk in CHUNKS if not has_valid_page(chunk)] == []
 
 def test_no_page_footer_left_in_text():
     assert [chunk["id"] for chunk in CHUNKS if re.search(r"Page \d+ of \d+", chunk["text"])] == []
@@ -97,7 +141,9 @@ def test_no_page_footer_left_in_text():
 # ===== 2. Counts match the last checked ingest =====
 
 def test_chunk_count_per_document():
-    counts = {document: sum(1 for chunk in CHUNKS if chunk["document"] == document) for document in EXPECTED_CHUNKS_PER_DOCUMENT}
+    counts = {document: 0 for document in EXPECTED_CHUNKS_PER_DOCUMENT}
+    for chunk in CHUNKS:
+        counts[chunk["document"]] += 1
     assert counts == EXPECTED_CHUNKS_PER_DOCUMENT
 
 
@@ -116,38 +162,51 @@ def test_no_chunk_text_starts_with_a_clause_number():
     assert [chunk["id"] for chunk in CHUNKS if re.match(r"^\d+(?:\.\d+)+\.?\s", chunk["text"])] == []
 
 def test_no_clause_number_buried_inside_another_chunk():
-    buried = [(chunk["id"], match.group(1)) for chunk in CHUNKS for match in BURIED_CLAUSE_NUMBER.finditer(chunk["text"])
-              if not REFERENCE_BEFORE.search(chunk["text"][:match.start()])]
+    buried = []
+    for chunk in CHUNKS:
+        for match in BURIED_CLAUSE_NUMBER.finditer(chunk["text"]):
+            text_before_number = chunk["text"][:match.start()]
+            is_reference = REFERENCE_BEFORE.search(text_before_number) is not None
+            if not is_reference:
+                buried.append((chunk["id"], match.group(1)))
     assert buried == []
 
 
 # ===== 4. Tags =====
 
 def test_version_and_in_force_date_match_the_document():
-    wrong = [chunk["id"] for chunk in CHUNKS
-             if (chunk["version"], chunk["in_force"]) != (DOCUMENT_INFO[chunk["document"]]["version"], DOCUMENT_INFO[chunk["document"]]["in_force"])]
+    wrong = []
+    for chunk in CHUNKS:
+        document_info = DOCUMENT_INFO[chunk["document"]]
+        if chunk["version"] != document_info["version"] or chunk["in_force"] != document_info["in_force"]:
+            wrong.append(chunk["id"])
     assert wrong == []
 
 def test_only_alternative_laws_chunks_carry_an_option():
-    assert [chunk["id"] for chunk in CHUNKS if chunk["document"] != "alt" and chunk["variant"] is not None] == []
-    options_used = {chunk["variant"] for chunk in CHUNKS if chunk["document"] == "alt" and chunk["clause"] != "Introduction"}
-    assert options_used == ALTERNATIVE_OPTIONS
+    other_chunks = [chunk for chunk in CHUNKS if chunk["document"] != "alt"]
+    assert [chunk["id"] for chunk in other_chunks if chunk["variant"] is not None] == []
+
+    option_chunks = [chunk for chunk in CHUNKS if chunk["document"] == "alt" and chunk["clause"] != "Introduction"]
+    assert {chunk["variant"] for chunk in option_chunks} == ALTERNATIVE_OPTIONS
 
 def test_option_markers_stay_in_their_intro_chunk():
-    markers = ["In case of 1 above", "In case of 2 above", "In the case of 3 above", "ALTERNATIVE SERVICE LAWS"]
-    leaked = [chunk["id"] for chunk in CHUNKS if chunk["clause"] != "intro" and any(marker in chunk["text"] for marker in markers)]
+    non_intro_chunks = [chunk for chunk in CHUNKS if chunk["clause"] != "intro"]
+    leaked = [chunk["id"] for chunk in non_intro_chunks if contains_option_marker(chunk["text"])]
     assert leaked == []
 
 def test_laws_and_itto_heading_matches_the_clause_number():
-    numbered = [chunk for chunk in CHUNKS if chunk["document"] in ("laws", "itto") and CLAUSE_NUMBER.match(chunk["clause"])]
-    mismatched = [chunk["id"] for chunk in numbered if not (chunk["heading"] or "").startswith(chunk["clause"].split(".")[0] + ".")]
+    numbered = [chunk for chunk in CHUNKS if chunk["document"] in ("laws", "itto") and has_numbered_clause(chunk)]
+    mismatched = [chunk["id"] for chunk in numbered if not heading_matches_clause_number(chunk)]
     assert mismatched == []
 
 def test_alternative_laws_heading_belongs_to_its_own_option():
-    wrong = [chunk["id"] for chunk in CHUNKS if chunk["document"] == "alt" and chunk["clause"] == "intro" and chunk["heading"] is not None]
-    wrong += [chunk["id"] for chunk in CHUNKS if chunk["document"] == "alt" and CLAUSE_NUMBER.match(chunk["clause"])
-              and not (chunk["heading"] or "").startswith(chunk["clause"].split(".")[0] + ".")]
-    assert wrong == []
+    alternative_chunks = [chunk for chunk in CHUNKS if chunk["document"] == "alt"]
+
+    # An option's intro chunk carries no heading; a numbered clause carries its Law's heading
+    intro_with_heading = [chunk["id"] for chunk in alternative_chunks if chunk["clause"] == "intro" and chunk["heading"] is not None]
+    numbered = [chunk for chunk in alternative_chunks if has_numbered_clause(chunk)]
+    wrong_heading = [chunk["id"] for chunk in numbered if not heading_matches_clause_number(chunk)]
+    assert intro_with_heading + wrong_heading == []
 
 def test_para_only_count_and_document():
     para_chunks = [chunk for chunk in CHUNKS if chunk["para_only"]]
@@ -156,9 +215,8 @@ def test_para_only_count_and_document():
 
 def test_headings_and_diagrams_are_never_para_only():
     # An empty list of font flags once counted as "all italic" and flagged these
-    flagged = [chunk["id"] for chunk in CHUNKS if chunk["para_only"]
-               and (re.match(r"^\d+$", chunk["clause"]) or chunk["clause"].startswith("Diagram"))]
-    assert flagged == []
+    para_chunks = [chunk for chunk in CHUNKS if chunk["para_only"]]
+    assert [chunk["id"] for chunk in para_chunks if is_heading_or_diagram(chunk)] == []
 
 @pytest.mark.parametrize("chunk_id", KNOWN_PARA_ONLY)
 def test_known_para_clause_is_flagged(chunk_id):
@@ -176,17 +234,21 @@ def test_diagrams_a_to_f_are_each_one_chunk():
 
 def test_every_numbered_golden_location_has_its_own_chunk():
     clause_keys = {(chunk["document"], chunk["clause"]) for chunk in CHUNKS}
-    missing = [(question["id"], location["doc"], location["clause"])
-               for question in GOLDEN_SET["questions"] for location in question["answer_locations"]
-               if CLAUSE_NUMBER.match(location["clause"]) and (location["doc"], location["clause"]) not in clause_keys]
+    missing = []
+    for question_id, location in every_golden_location():
+        is_numbered = CLAUSE_NUMBER.match(location["clause"]) is not None
+        if is_numbered and (location["doc"], location["clause"]) not in clause_keys:
+            missing.append((question_id, location["doc"], location["clause"]))
     assert missing == []
 
 def test_every_golden_location_maps_to_exactly_one_chunk():
     # A label must not match every chunk that mentions it ("as shown in Diagram A"), and an
     # Alternative Laws clause repeated across formats must name its format
     from evals.golden import expected_chunk_ids
-    locations = [(question["id"], location) for question in GOLDEN_SET["questions"] for location in question["answer_locations"]]
-    not_single = [(question_id, location) for question_id, location in locations if len(expected_chunk_ids(location, CHUNKS)) != 1]
+    not_single = []
+    for question_id, location in every_golden_location():
+        if len(expected_chunk_ids(location, CHUNKS)) != 1:
+            not_single.append((question_id, location))
     assert not_single == []
 
 def test_source_pdfs_match_their_frozen_hashes():
