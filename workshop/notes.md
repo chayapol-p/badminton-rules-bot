@@ -14,7 +14,7 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - Bugs found while building (Lab 2 material): 5-level number on the same line as its text merged into the parent; option headings leaked into the previous chunk; a plain "or" between italic clauses switched off the para flag; all([]) is True, so 15 Law headings and Diagrams B and C were flagged para (fixed: a chunk needs at least one font flag).
 - Fixed (7 Nov): each Alternative Laws option kept the previous option's heading. A new option now starts with no heading, and the alternative service law borrows the Law's (9. SERVICE).
 - Golden set: 39 questions in 9 categories, 13 exact-term / 26 paraphrased, each tagged dev (27) or held_out (12), stratified, seed 7.
-- Chunk tests (7 Nov): tests/test_rule_chunks.py, 32 tests on shape, counts, clause numbers, tags and coverage. Each Lab 0 bug has a regression test.
+- Chunk tests (7 Nov): tests/test_rule_chunks.py, 37 tests on shape, counts, clause numbers, tags and coverage. Each Lab 0 bug has a regression test.
 - Found by the chunk tests: in the ITTO, a clause number mid-line stays inside the previous chunk. 15 clauses lost, including 5.2.2.1 (warm-up). check_golden_questions hid it, because its text fallback matched "5.2.2.1" inside chunk 5.2.1. Fixed: clause numbers never match by text, only labels like DIAGRAM A.
 - Fixed (7 Nov): in the ITTO, a clause start is a number with a final dot, or a number and two or more spaces; a wrap reference ("16.7 applied") has neither. 18 clauses recovered (ITTO 481 -> 499), including 5.2.2.1. The rule map kept its 229 links; 3 cites and 1 outside-corpus reference moved to the recovered clauses.
 - Decided (7 Nov): keep the list joiners ("... or", "... and") that end 38 chunks. They carry the list's logic (A or B), so stripping them would change the meaning.
@@ -41,6 +41,8 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - Label bug found (Lab 4): for standing classes, Law 9.1.6.2 makes the alternative service law the rule, but the map still labels it "only by prior arrangement · not in force until 2027-01-04". The para exception changes what the alternative means for that class. Also unverified: which version of the alternative service law Standing Classes use before 2027.
 
 ## Lab 4 · Context enrichment
+
+- Context header (7 Nov): every chunk gets search_text = document · format · para flag · heading · clause number, then the clause. The same clause number (16.2.1) holds different rules per Alternative Laws format, and the clause text never names its format. Search reads search_text; answers cite text. Stage 1 compares text against search_text.
 
 ## Lab 5 · Pick the approach
 

@@ -8,6 +8,10 @@ What it does, in order:
    are small pictures, not text, so each picture starts the next clause in order.
 4. Tags every chunk with its document, version, in-force date and Law heading,
    and marks Para Badminton clauses (printed in italics in the Laws).
+5. Writes a search text for every chunk: a short context header, then the clause text.
+   A clause alone often lacks its context ("…reaches 8 points" never says which format),
+   so search reads the header too. This follows Anthropic's Contextual Retrieval, with a
+   header built from the tags instead of written by a model.
 
   Input:  the three PDFs in data/bwf/ (downloaded by hand, never committed)
   Output: data/rule_chunks.json, one record per clause
@@ -87,6 +91,14 @@ ALTERNATIVE_FORMAT_MARKERS = {
     "In case of 2 above": "best-of-3-games-21",
     "In the case of 3 above": "best-of-5-games-11",
     "ALTERNATIVE SERVICE LAWS": "alternative-service",
+}
+
+# Readable names for the Alternative Laws formats, for the search text and the prompt labels
+ALTERNATIVE_FORMAT_NAMES = {
+    "one-game-21": "one game to 21",
+    "best-of-3-games-21": "best of 3 games to 21",
+    "best-of-5-games-11": "best of 5 games to 11",
+    "alternative-service": "alternative service law",
 }
 
 # A small picture at the left margin is a hidden two-level clause number in the Laws
@@ -287,6 +299,31 @@ def fill_headings_from_laws(alternative_records, law_records):
             record["heading"] = law_heading_by_number.get(section_number)
 
 
+# ===== Adding the context header that search reads =====
+
+def context_header(record):
+    """Returns the context a clause needs to be found: document, format, para flag, heading, number."""
+    parts = [record["document_title"]]
+    if record["alternative_format"]:
+        parts.append(ALTERNATIVE_FORMAT_NAMES[record["alternative_format"]])
+    if record["para_only"]:
+        parts.append("Para Badminton only")
+    if record["heading"]:
+        parts.append(record["heading"])
+
+    # Only real clause numbers, so labels such as "Diagram A" or "intro" don't turn into "Clause intro"
+    is_numbered_clause = record["clause"][0].isdigit()
+    if is_numbered_clause:
+        parts.append(f"Clause {record['clause']}")
+    return " · ".join(parts)
+
+
+def add_search_text(records):
+    """Gives every record a search_text: its context header, a new line, then its clause text."""
+    for record in records:
+        record["search_text"] = f"{context_header(record)}\n{record['text']}"
+
+
 # ===== Running all three documents =====
 
 def main() -> None:
@@ -302,6 +339,9 @@ def main() -> None:
 
     # The alternative service law sits under no heading of its own, so it borrows the Law's
     fill_headings_from_laws(records_by_document["alt"], records_by_document["laws"])
+
+    # Last, once every tag is final: the header reads the headings filled in just above
+    add_search_text(all_records)
 
     CHUNKS_FILE.write_text(json.dumps(all_records, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"saved {len(all_records)} chunks to {CHUNKS_FILE.relative_to(PROJECT_FOLDER)}")

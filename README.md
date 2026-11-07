@@ -24,9 +24,12 @@ The bot never searches whole PDFs. It searches **one clause at a time**. This is
   "heading": "9. SERVICE",
   "para_only": false,
   "page": 6,
-  "text": "the whole shuttle shall be below 1.15 metres from the surface of the court at the instant of being hit by the server’s racket;"
+  "text": "the whole shuttle shall be below 1.15 metres from the surface of the court at the instant of being hit by the server’s racket;",
+  "search_text": "Laws of Badminton · 9. SERVICE · Clause 9.1.6\nthe whole shuttle shall be below 1.15 metres …"
 }
 ```
+
+Search reads `search_text`: a short header with the document, the format, the para flag and the heading, then the clause. A clause alone often lacks that context. Clause 16.2.1 sets the interval at 8 points in the best-of-3 format and 6 in the best-of-5 one, and neither text names its format. The header follows Anthropic's [Contextual Retrieval](https://www.anthropic.com/news/contextual-retrieval), built from the tags instead of by a model.
 
 Because every chunk is one clause, every answer can cite it: *"Law 9.1.6, Laws of Badminton V5.0"*.
 
@@ -91,7 +94,7 @@ Raw notes from each lab live in [`workshop/notes.md`](workshop/notes.md).
 **Clause numbers that share a line**
 - **Problem:** in the ITTO, a clause number and its text sometimes sit in one piece of PDF text ("5.2.2.     Get into the Umpire's chair"). 18 clauses hid inside the clause before them, including the warm-up rule.
 - **Fix:** in the ITTO, a clause starts at a number with a final dot, or a number followed by two or more spaces. A cross-reference that wraps onto a new line ("16.7 applied") has neither.
-- `tests/test_rule_chunks.py` (32 tests) checks every chunk's shape, counts, clause numbers and tags, and that no clause number is left inside another chunk.
+- `tests/test_rule_chunks.py` (37 tests) checks every chunk's shape, counts, clause numbers and tags, and that no clause number is left inside another chunk.
 
 **A golden set before any search**
 - 39 questions in 9 categories, written before any retrieval code. 13 use the rule book's own words, 26 are paraphrased. Each is tagged dev (27) or held-out (12), once.

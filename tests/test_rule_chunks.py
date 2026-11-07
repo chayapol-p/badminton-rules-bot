@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.build_rule_chunks import DOCUMENTS
+from scripts.build_rule_chunks import ALTERNATIVE_FORMAT_NAMES, DOCUMENTS
 
 
 # Constants
@@ -39,7 +39,7 @@ LAWS_SUB_CLAUSE_COUNTS = {1: 11, 2: 4, 3: 2, 4: 3, 5: 2, 6: 2, 7: 6, 8: 2, 9: 5,
                           11: 6, 12: 2, 13: 5, 14: 3, 15: 3, 16: 7, 17: 6}
 ALTERNATIVE_FORMATS = {"one-game-21", "best-of-3-games-21", "best-of-5-games-11", "alternative-service"}
 REQUIRED_FIELDS = {"id", "document", "document_title", "version", "in_force", "clause",
-                   "alternative_format", "heading", "para_only", "page", "text"}
+                   "alternative_format", "heading", "para_only", "page", "text", "search_text"}
 
 ## Known clauses and a phrase each must hold, one per kind of ingest risk
 KNOWN_CLAUSE_TEXT = {
@@ -227,7 +227,42 @@ def test_known_regular_clause_is_not_flagged(chunk_id):
     assert CHUNKS_BY_ID[chunk_id]["para_only"] is False
 
 
-# ===== 5. Coverage =====
+# ===== 5. Search text: the context header, then the clause text =====
+
+def test_search_text_is_a_header_then_the_clause_text():
+    wrong = []
+    for chunk in CHUNKS:
+        header, _, clause_text = chunk["search_text"].partition("\n")
+        is_well_formed = header.startswith(chunk["document_title"]) and clause_text == chunk["text"]
+        if not is_well_formed:
+            wrong.append(chunk["id"])
+    assert wrong == []
+
+def test_alternative_laws_search_text_names_its_format():
+    unnamed = []
+    for chunk in CHUNKS:
+        if chunk["alternative_format"] is None:
+            continue
+        format_name = ALTERNATIVE_FORMAT_NAMES[chunk["alternative_format"]]
+        if format_name not in chunk["search_text"]:
+            unnamed.append(chunk["id"])
+    assert unnamed == []
+
+def test_para_search_text_says_para():
+    para_chunks = [chunk for chunk in CHUNKS if chunk["para_only"]]
+    assert [chunk["id"] for chunk in para_chunks if "Para Badminton only" not in chunk["search_text"]] == []
+
+def test_same_clause_in_two_formats_reads_differently_to_search():
+    # 16.2.1 sets the interval at 8 points in one format and 6 in another; only the header names which
+    best_of_three = CHUNKS_BY_ID["alt-best-of-3-games-21:16.2.1"]["search_text"]
+    best_of_five = CHUNKS_BY_ID["alt-best-of-5-games-11:16.2.1"]["search_text"]
+    assert "best of 3 games to 21" in best_of_three
+    assert "8 points" in best_of_three
+    assert "best of 5 games to 11" in best_of_five
+    assert "6 points" in best_of_five
+
+
+# ===== 6. Coverage =====
 
 def test_diagrams_a_to_f_are_each_one_chunk():
     diagram_ids = {f"laws-Diagram {letter}" for letter in "ABCDEF"}

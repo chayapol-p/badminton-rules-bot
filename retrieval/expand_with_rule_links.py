@@ -31,6 +31,8 @@ import json
 from datetime import date
 from pathlib import Path
 
+from scripts.build_rule_chunks import ALTERNATIVE_FORMAT_NAMES
+
 
 # Constants
 ## Path to each resource
@@ -48,14 +50,6 @@ LIST_HEADING_MAX_WORDS = 5
 
 ## How many items of the hit's list may come along, so a long list doesn't flood the prompt
 MAX_LIST_ITEMS = 6
-
-## Readable names for the Alternative Laws formats
-FORMAT_NAMES = {
-    "one-game-21": "one game to 21",
-    "best-of-3-games-21": "best of 3 games to 21",
-    "best-of-5-games-11": "best of 5 games to 11",
-    "alternative-service": "alternative service law",
-}
 
 ## Short document names for citations
 DOCUMENT_NAMES = {"laws": "Laws", "itto": "ITTO", "alt": "Alternative Laws"}
@@ -158,7 +152,7 @@ def nearby_clauses(chunks_by_id, hit, question_is_para):
 
 def alternative_label(chunk, today):
     """ALTERNATIVE label with the format and whether it is in force on this date."""
-    format_name = FORMAT_NAMES.get(chunk["alternative_format"], chunk["alternative_format"])
+    format_name = ALTERNATIVE_FORMAT_NAMES[chunk["alternative_format"]]
     in_force = today >= date.fromisoformat(chunk["in_force"])
     status = f"in force from {chunk['in_force']}" if in_force else f"not in force until {chunk['in_force']}"
     return f"ALTERNATIVE · {format_name} · only by prior arrangement · {status}"
