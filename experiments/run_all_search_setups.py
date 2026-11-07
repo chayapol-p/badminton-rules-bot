@@ -42,6 +42,7 @@ STAGE_1_SETUPS = (
         ("vector", "clauses", "search_text", 55),
         ("hybrid", "clauses", "search_text", 50),
         ("vector", "clauses", "search_text", 13),
+        ("hybrid", "clauses", "search_text", 13),
     ]
 )
 SPLIT = "dev"
