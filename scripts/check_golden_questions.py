@@ -2,10 +2,10 @@
 Checks the golden question set against the ingested clause chunks.
 
 For every answer location in golden_questions.json, it finds the chunk that holds it,
-with the same matcher the scorer uses (evals/golden.py). Any location with no chunk
+with the same matcher the scorer uses (evals/golden_answer_chunks.py). Any location with no chunk
 means the ingest lost a clause, or the question cites the wrong place.
 
-Run from the project root (after scripts.ingest_rules):
+Run from the project root (after scripts.build_rule_chunks):
     uv run python -m scripts.check_golden_questions
 """
 
@@ -13,7 +13,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from evals.golden import expected_chunk_ids
+from evals.golden_answer_chunks import expected_chunk_ids
 
 
 # Constants

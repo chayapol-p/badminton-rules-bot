@@ -10,7 +10,7 @@ It also checks the para filter both ways: for a regular-play question (para_filt
 Para Badminton clause may arrive; for a para question (para_question), the map runs with
 question_is_para=True, as if the para flag on the question were already right.
 
-Run from the project root (after scripts.ingest_rules and scripts.build_rule_links):
+Run from the project root (after scripts.build_rule_chunks and scripts.build_rule_links):
     uv run python -m scripts.check_rule_links
 """
 
@@ -18,8 +18,8 @@ import json
 from collections import defaultdict
 from pathlib import Path
 
-from evals.golden import expected_chunk_ids
-from retrieval.rule_links import expand_with_links, load_rule_map
+from evals.golden_answer_chunks import expected_chunk_ids
+from retrieval.expand_with_rule_links import expand_with_links, load_rule_map
 
 
 # Constants

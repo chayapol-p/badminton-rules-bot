@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.ingest_rules import DOCUMENTS
+from scripts.build_rule_chunks import DOCUMENTS
 
 
 # Constants
@@ -245,7 +245,7 @@ def test_every_numbered_golden_location_has_its_own_chunk():
 def test_every_golden_location_maps_to_exactly_one_chunk():
     # A label must not match every chunk that mentions it ("as shown in Diagram A"), and an
     # Alternative Laws clause repeated across formats must name its format
-    from evals.golden import expected_chunk_ids
+    from evals.golden_answer_chunks import expected_chunk_ids
     not_single = []
     for question_id, location in every_golden_location():
         if len(expected_chunk_ids(location, CHUNKS)) != 1:
@@ -256,5 +256,5 @@ def test_source_pdfs_match_their_frozen_hashes():
     for document, frozen in GOLDEN_SET["corpus_frozen"].items():
         pdf_path = PDF_FOLDER / frozen["file"]
         if not pdf_path.exists():
-            pytest.skip("PDFs are not in this clone; run scripts.ingest_rules after fetching them")
+            pytest.skip("PDFs are not in this clone; run scripts.build_rule_chunks after fetching them")
         assert hashlib.sha256(pdf_path.read_bytes()).hexdigest() == frozen["sha256"], f"{document} PDF changed"

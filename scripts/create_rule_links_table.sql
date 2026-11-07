@@ -15,7 +15,7 @@ create index if not exists rule_links_to_id on rule_links (to_id);
 -- One hop for a list of search hits ($1 is a text array of chunk ids):
 -- links that start at a hit, plus alternatives and para exceptions that point at a hit.
 -- When a hit is itself an alternative, run it again with the Law it overrides, to get
--- the other alternatives of that Law (retrieval/rule_links.py does both steps)
+-- the other alternatives of that Law (retrieval/expand_with_rule_links.py does both steps)
 select * from rule_links
 where from_id = any($1)
    or (to_id = any($1) and relation in ('overrides', 'para_exception_of'));

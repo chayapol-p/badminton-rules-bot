@@ -1,5 +1,5 @@
 """
-Tests for the rule map (scripts/build_rule_links.py) and for following it (retrieval/rule_links.py).
+Tests for the rule map (scripts/build_rule_links.py) and for following it (retrieval/expand_with_rule_links.py).
 
 They read data/rule_chunks.json, which is never committed, so they are skipped when
 the chunks have not been built yet. They make no API calls.
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from retrieval.rule_links import expand_with_links, format_for_prompt, index_links
+from retrieval.expand_with_rule_links import expand_with_links, format_for_prompt, index_links
 from scripts.build_rule_links import build_rule_links
 
 
@@ -29,7 +29,7 @@ AFTER_ALTERNATIVES = date(2027, 2, 1)
 @pytest.fixture(scope="module")
 def corpus():
     if not CHUNKS_FILE.exists():
-        pytest.skip("data/rule_chunks.json is missing: run scripts.ingest_rules first")
+        pytest.skip("data/rule_chunks.json is missing: run scripts.build_rule_chunks first")
     chunks = json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))
     rule_map = build_rule_links(chunks)
     link_keys = {(link["from_id"], link["to_id"], link["relation"]) for link in rule_map["links"]}

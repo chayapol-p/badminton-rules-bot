@@ -15,7 +15,7 @@ It finds four kinds of link (the "relation" field):
 It also lists references to BWF documents that are not in the corpus (such as Section
 4.1.5, Vocabulary), so the bot can say where an answer lives instead of guessing it.
 
-  Input:  data/rule_chunks.json (from scripts.ingest_rules)
+  Input:  data/rule_chunks.json (from scripts.build_rule_chunks)
   Output: data/rule_links.json
 
 Run from the project root:

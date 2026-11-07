@@ -27,6 +27,7 @@ for chunk in chunks:
 ```
 
 9. Prefer words to symbols: built-in methods and keywords (`set.intersection()`, `issubset()`, `isdisjoint()`, `and`, `or`, `not`, `any()`, `all()`) instead of `&`, `|`, `^`, `~` or `<=` on sets. Bit flags from a library are the one exception: keep the `&` inside a small helper with a clear name, such as `is_italic_span()`. Type hints keep `X | None`.
+10. File names say what the file does or holds: `build_rule_chunks.py`, not `ingest.py`; `golden_answer_chunks.py`, not `golden.py`. Python modules stay lowercase with underscores (PEP 8). A test file is named after what it tests: `test_<module>.py`.
 
 ## Experiment rules
 
@@ -38,7 +39,7 @@ for chunk in chunks:
 
 ## Data rules
 
-1. The ingest output is tested (`tests/test_chunks.py`). After any ingest change, diff `data/rule_chunks.json` against the old file and explain every change.
+1. The ingest output is tested (`tests/test_rule_chunks.py`). After any ingest change, diff `data/rule_chunks.json` against the old file and explain every change.
 2. A known bug gets a test marked `xfail(strict=True)` until it is fixed.
 3. Raw findings go to `workshop/notes.md`, one line each, with a number.
 

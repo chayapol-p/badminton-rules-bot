@@ -45,7 +45,7 @@ flowchart LR
     E --> F[React chat UI]
 ```
 
-1. **Ingest** (`scripts/ingest_rules.py`): reads each PDF line by line with PyMuPDF, then cuts it into clauses. Runs once.
+1. **Ingest** (`scripts/build_rule_chunks.py`): reads each PDF line by line with PyMuPDF, then cuts it into clauses. Runs once.
 2. **Search** (`retrieval/`): finds the clauses that match a question, by words (BM25) and by meaning (vectors in pgvector).
 3. **Agent** *(planned)*: decides what to search, reads the clauses, and answers with citations.
 4. **Serve** (`app/`): FastAPI. Today it has only `/health`. `/chat` comes later.
@@ -91,7 +91,7 @@ Raw notes from each lab live in [`workshop/notes.md`](workshop/notes.md).
 **Clause numbers that share a line**
 - **Problem:** in the ITTO, a clause number and its text sometimes sit in one piece of PDF text ("5.2.2.     Get into the Umpire's chair"). 18 clauses hid inside the clause before them, including the warm-up rule.
 - **Fix:** in the ITTO, a clause starts at a number with a final dot, or a number followed by two or more spaces. A cross-reference that wraps onto a new line ("16.7 applied") has neither.
-- `tests/test_chunks.py` (32 tests) checks every chunk's shape, counts, clause numbers and tags, and that no clause number is left inside another chunk.
+- `tests/test_rule_chunks.py` (32 tests) checks every chunk's shape, counts, clause numbers and tags, and that no clause number is left inside another chunk.
 
 **A golden set before any search**
 - 39 questions in 9 categories, written before any retrieval code. 13 use the rule book's own words, 26 are paraphrased. Each is tagged dev (27) or held-out (12), once.
@@ -142,7 +142,7 @@ bwf-alternative-laws-2027-v2.0.pdf
 **Build and check the chunks.**
 
 ```bash
-uv run python -m scripts.ingest_rules            # writes data/rule_chunks.json
+uv run python -m scripts.build_rule_chunks            # writes data/rule_chunks.json
 uv run python -m scripts.check_golden_questions  # every answer location found?
 ```
 

@@ -13,7 +13,7 @@ What it does, in order:
   Output: data/rule_chunks.json, one record per clause
 
 Run from the project root:
-    uv run python -m scripts.ingest_rules
+    uv run python -m scripts.build_rule_chunks
 """
 
 import json
