@@ -19,6 +19,7 @@ Only what is specific to this repo:
 4. Tune on the dev questions. Score the held-out questions once, for the published number. Never re-split.
 5. One dev question is about 4 points of recall. Call a win only at 2 or more questions apart.
 6. Every decision Job makes gets a record in `docs/decisions/` (MADR format; see its README): the options weighed, the decision and the runs behind it. Claude's suggestions get no record until Job picks one.
+7. When a run compares chunkings or search types, run every search type at matched word budgets in the same batch (add them to `experiments/run_all_search_setups.py`), so one batch settles the question.
 
 ## Data rules
 
