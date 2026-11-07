@@ -33,7 +33,8 @@ chunks = json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))
 def find_chunks(location):
     """Returns the ids of chunks that hold this document and clause."""
     same_document = [chunk for chunk in chunks if chunk["document"] == location["doc"]]
-    by_clause = [chunk["id"] for chunk in same_document if chunk["clause"] == location["clause"]]
+    # Exact clause first, ignoring case, so "DIAGRAM A" finds the diagram chunk and nothing else
+    by_clause = [chunk["id"] for chunk in same_document if chunk["clause"].lower() == location["clause"].lower()]
     if by_clause:
         return by_clause
 

@@ -181,6 +181,14 @@ def test_every_numbered_golden_location_has_its_own_chunk():
                if CLAUSE_NUMBER.match(location["clause"]) and (location["doc"], location["clause"]) not in clause_keys]
     assert missing == []
 
+def test_label_locations_map_to_one_chunk_each():
+    # A label must not match every chunk that mentions it ("as shown in Diagram A")
+    from evals.golden import expected_chunk_ids
+    labels = {(location["doc"], location["clause"]) for question in GOLDEN_SET["questions"]
+              for location in question["answer_locations"] if not CLAUSE_NUMBER.match(location["clause"])}
+    too_wide = {label: expected_chunk_ids({"doc": label[0], "clause": label[1]}, CHUNKS) for label in labels}
+    assert {label: ids for label, ids in too_wide.items() if len(ids) != 1} == {}
+
 def test_source_pdfs_match_their_frozen_hashes():
     for document, frozen in GOLDEN_SET["corpus_frozen"].items():
         pdf_path = PDF_FOLDER / frozen["file"]
