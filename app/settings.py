@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     mistral_draft_model: str = "mistral-small-2603"
     mistral_embedding_model: str = "mistral-embed-2312"
     claude_comparison_model: str = "claude-haiku-5-5"
+    # The answer judge (Stage 2): another model family than the answer model, to avoid self-preference bias
+    claude_judge_model: str = "claude-sonnet-5-5"
 
     # Database address: Supabase > Connect > Session pooler. Optional, because only vector search needs it.
     database_url: SecretStr | None = None

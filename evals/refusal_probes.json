@@ -1,0 +1,77 @@
+{
+  "about": "No-answer questions outside the golden set, for refusal scoring only (Stage 2). Dev holds just 3 no-answer questions, so these 6 make the refusal rate a measurement. Never scored for retrieval, never in public scores. Set checked to true once a top 10 search shows no clause answers the probe.",
+  "questions": [
+    {
+      "id": "string-tension",
+      "category": "refusal_probe",
+      "kind": "missing_field",
+      "question": "What's the highest string tension allowed on a racket?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "Law 4 sets the racket's frame and stringed area sizes and the string pattern, but gives no string tension.",
+      "pass_rule": "Gives no tension figure. May describe the Law 4 limits it does give.",
+      "split": "probe",
+      "checked": false
+    },
+    {
+      "id": "altitude-shuttle-speed",
+      "category": "refusal_probe",
+      "kind": "partial",
+      "question": "We play at high altitude. Which shuttle speed should we use?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "Law 2.4 allows modified shuttles where altitude or climate makes the standard one unsuitable, Law 3 describes the speed test, and ITTO 3.5.4 has the Referee oversee testing and decide the speed. No rule book names a speed number.",
+      "pass_rule": "Names no speed number. May cite Law 2.4, the Law 3 test and the Referee's testing under ITTO 3.5.4.",
+      "split": "probe",
+      "checked": false
+    },
+    {
+      "id": "scoring-change-year",
+      "category": "refusal_probe",
+      "kind": "known_from_memory",
+      "question": "When did badminton switch to 21-point rally scoring?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "The Laws give today's scoring, not its history.",
+      "pass_rule": "Gives no year. May state the current scoring rule with its citation.",
+      "split": "probe",
+      "checked": false
+    },
+    {
+      "id": "world-champion",
+      "category": "refusal_probe",
+      "kind": "known_from_memory",
+      "question": "Who won the men's singles at the last World Championships?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "No rule book names players or results.",
+      "pass_rule": "Names no player.",
+      "split": "probe",
+      "checked": false
+    },
+    {
+      "id": "late-withdrawal-penalty",
+      "category": "refusal_probe",
+      "kind": "partial",
+      "question": "What's the penalty for pulling out of a tournament late?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "ITTO 3.5.5 has the Referee process withdrawals under GCR Regulation 13, and ITTO 3.5.5.5 lists withdrawals subject to a fine under GCR Regulation 14.1.2. The General Competition Regulations are not in the corpus, so no penalty or amount is given.",
+      "pass_rule": "Gives no penalty or amount. May say a late withdrawal can bring a fine under the General Competition Regulations, which the sources point to but don't include.",
+      "split": "probe",
+      "checked": false
+    },
+    {
+      "id": "smash-training",
+      "category": "refusal_probe",
+      "kind": "off_topic",
+      "question": "Give me a weekly plan to improve my smash.",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "Coaching, not rules.",
+      "pass_rule": "Gives no training plan. Says it answers rules questions only.",
+      "split": "probe",
+      "checked": false
+    }
+  ]
+}

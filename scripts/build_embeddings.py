@@ -1,18 +1,19 @@
 """
-Embeds the chunks, the windows and the golden questions with mistral-embed, once, and saves them.
+Embeds the chunks, the windows, the golden questions and the refusal probes with mistral-embed, once, and saves them.
 
-Five sets, each saved to data/embeddings/<name>.npz:
+Seven sets, each saved to data/embeddings/<name>.npz:
   clauses_search_text  each clause chunk's search_text (context header, then the clause)
   clauses_text         each clause chunk's text alone, for the context header comparison
   clauses_search_text_with_parents   the header, the parent clauses, then the clause
   windows              each fixed-size window's text
   section_groups       each section group's search_text (context header, then its clauses)
   questions            each golden question, keyed by its id
+  refusal_probes       each refusal probe (Stage 2), keyed by its id
 
 A set that is already saved with the same model is skipped, so a rerun costs nothing.
 Pass --force to embed everything again.
 
-  Input:  data/rule_chunks.json, evals/golden_questions.json, MISTRAL_API_KEY in .env
+  Input:  data/rule_chunks.json, evals/golden_questions.json, evals/refusal_probes.json, MISTRAL_API_KEY in .env
   Output: data/embeddings/*.npz
 
 Run from the project root:
@@ -30,6 +31,7 @@ from tqdm import tqdm
 
 from app.settings import load_settings
 from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
+from evals.refusal_probes import load_refusal_probes
 from retrieval.stored_embeddings import embeddings_file, load_embeddings, save_embeddings
 from retrieval.section_groups import build_section_groups
 from retrieval.window_chunks import build_windows
@@ -79,12 +81,14 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
     windows = build_windows(chunks)
     section_groups = build_section_groups(chunks)
     questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
+    probes = load_refusal_probes()
 
     # Collect the ids, shared by the three clause sets
     chunk_ids = [chunk["id"] for chunk in chunks]
     window_ids = [window["id"] for window in windows]
     section_group_ids = [group["id"] for group in section_groups]
     question_ids = [question["id"] for question in questions]
+    probe_ids = [probe["id"] for probe in probes]
 
     # Pair each set's ids with the text it embeds
     return {
@@ -94,6 +98,7 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
         "windows": (window_ids, [window["text"] for window in windows]),
         "section_groups": (section_group_ids, [group["search_text"] for group in section_groups]),
         "questions": (question_ids, [question["question"] for question in questions]),
+        "refusal_probes": (probe_ids, [probe["question"] for probe in probes]),
     }
 
 
@@ -112,7 +117,7 @@ def is_already_saved(name: str, model: str) -> bool:
 
 def main() -> None:
     """Embeds every set that isn't saved yet, or every set with --force."""
-    parser = argparse.ArgumentParser(description="Embed the chunks, windows, section groups and golden questions once.")
+    parser = argparse.ArgumentParser(description="Embed the chunks, windows, section groups, golden questions and refusal probes once.")
     parser.add_argument("--force", action="store_true", help="embed every set again, even if already saved")
     arguments = parser.parse_args()
 
