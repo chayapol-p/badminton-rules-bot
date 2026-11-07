@@ -3,7 +3,7 @@ Runs one search setup on the golden questions, prints its scores and adds one li
 
 One run changes one thing: the search type, the chunking or the text field.
   --search  keyword | vector | hybrid
-  --chunks  clauses | windows
+  --chunks  clauses | windows | sections   (sections: x.x groups, split to stay under 300 words)
   --field   search_text | text | search_text_with_parents
             (clauses only: the header, no header, or the header plus the parent clauses)
   --split   dev | held_out       (held_out only once, for the published number)
@@ -29,6 +29,7 @@ from retrieval.hybrid_search import HybridSearch
 from retrieval.keyword_search import KeywordSearch
 from retrieval.stored_embeddings import load_embeddings
 from retrieval.vector_search import VectorSearch
+from retrieval.section_groups import build_section_groups
 from retrieval.window_chunks import build_windows
 
 
@@ -43,6 +44,8 @@ def embedding_set_name(chunk_kind, field):
     """Returns the saved embedding set that matches the chunking and the field."""
     if chunk_kind == "windows":
         return "windows"
+    if chunk_kind == "sections":
+        return "section_groups"
     return f"clauses_{field}"
 
 
@@ -113,16 +116,20 @@ def print_scores(scores, top_k):
 def main() -> None:
     parser = argparse.ArgumentParser(description="Score one search setup on the golden questions.")
     parser.add_argument("--search", choices=["keyword", "vector", "hybrid"], required=True)
-    parser.add_argument("--chunks", choices=["clauses", "windows"], default="clauses")
+    parser.add_argument("--chunks", choices=["clauses", "windows", "sections"], default="clauses")
     parser.add_argument("--field", choices=["search_text", "text", "search_text_with_parents"], default="search_text")
     parser.add_argument("--split", choices=["dev", "held_out"], default="dev")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
     arguments = parser.parse_args()
 
-    # The scorer always reads clause chunks: a window counts through the clauses it covers
+    # The scorer always reads clause chunks: a window or a section group counts through the clauses it covers
     clause_chunks = load_chunks()
-    is_window_run = arguments.chunks == "windows"
-    items = build_windows(clause_chunks) if is_window_run else clause_chunks
+    items_by_chunk_kind = {
+        "clauses": clause_chunks,
+        "windows": build_windows(clause_chunks),
+        "sections": build_section_groups(clause_chunks),
+    }
+    items = items_by_chunk_kind[arguments.chunks]
     questions = load_questions(arguments.split)
     model = load_settings().mistral_embedding_model
 

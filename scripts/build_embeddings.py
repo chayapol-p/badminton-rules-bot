@@ -6,6 +6,7 @@ Five sets, each saved to data/embeddings/<name>.npz:
   clauses_text         each clause chunk's text alone, for the context header comparison
   clauses_search_text_with_parents   the header, the parent clauses, then the clause
   windows              each fixed-size window's text
+  section_groups       each section group's search_text (context header, then its clauses)
   questions            each golden question, keyed by its id
 
 A set that is already saved with the same model is skipped, so a rerun costs nothing.
@@ -30,6 +31,7 @@ from tqdm import tqdm
 from app.settings import load_settings
 from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
 from retrieval.stored_embeddings import embeddings_file, load_embeddings, save_embeddings
+from retrieval.section_groups import build_section_groups
 from retrieval.window_chunks import build_windows
 
 
@@ -75,11 +77,13 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
     # Load the sources; read the questions file directly, because load_questions keeps one split and every split needs a vector
     chunks = load_chunks()
     windows = build_windows(chunks)
+    section_groups = build_section_groups(chunks)
     questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
 
     # Collect the ids, shared by the three clause sets
     chunk_ids = [chunk["id"] for chunk in chunks]
     window_ids = [window["id"] for window in windows]
+    section_group_ids = [group["id"] for group in section_groups]
     question_ids = [question["id"] for question in questions]
 
     # Pair each set's ids with the text it embeds
@@ -88,6 +92,7 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
         "clauses_text": (chunk_ids, [chunk["text"] for chunk in chunks]),
         "clauses_search_text_with_parents": (chunk_ids, [chunk["search_text_with_parents"] for chunk in chunks]),
         "windows": (window_ids, [window["text"] for window in windows]),
+        "section_groups": (section_group_ids, [group["search_text"] for group in section_groups]),
         "questions": (question_ids, [question["question"] for question in questions]),
     }
 
@@ -107,7 +112,7 @@ def is_already_saved(name: str, model: str) -> bool:
 
 def main() -> None:
     """Embeds every set that isn't saved yet, or every set with --force."""
-    parser = argparse.ArgumentParser(description="Embed the chunks, windows and golden questions once.")
+    parser = argparse.ArgumentParser(description="Embed the chunks, windows, section groups and golden questions once.")
     parser.add_argument("--force", action="store_true", help="embed every set again, even if already saved")
     arguments = parser.parse_args()
 
