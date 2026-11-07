@@ -35,11 +35,12 @@ STAGE_1_SETUPS = (
     + [(search, "clauses", "text", 5) for search in SEARCH_TYPES]
     + [(search, "clauses", "search_text_with_parents", 5) for search in SEARCH_TYPES]
 
-    # Fewer results, and clauses at about the windows' 1,590 words per question
+    # Fewer results; clauses at about the windows' 1,590 words, and at the section groups' 405
     + [
         ("hybrid", "clauses", "search_text", 3),
         ("keyword", "clauses", "search_text", 45),
         ("vector", "clauses", "search_text", 55),
+        ("vector", "clauses", "search_text", 13),
     ]
 )
 SPLIT = "dev"
