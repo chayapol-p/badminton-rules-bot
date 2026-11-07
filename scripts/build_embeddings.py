@@ -69,22 +69,30 @@ def embed_in_batches(client: Mistral, model: str, embedding_inputs: list[str], p
 
 # ===== The sets to embed =====
 
-def embedding_inputs_by_set():
-    """Returns each set's name, ids and embedding inputs."""
+def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
+    """Returns each set's name, with its ids and embedding inputs."""
+
+    # Load the sources; read the questions file directly, because load_questions keeps one split and every split needs a vector
     chunks = load_chunks()
     windows = build_windows(chunks)
     questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
+
+    # Collect the ids, shared by the three clause sets
+    chunk_ids = [chunk["id"] for chunk in chunks]
+    window_ids = [window["id"] for window in windows]
+    question_ids = [question["id"] for question in questions]
+
+    # Pair each set's ids with the text it embeds
     return {
-        "clauses_search_text": ([chunk["id"] for chunk in chunks], [chunk["search_text"] for chunk in chunks]),
-        "clauses_text": ([chunk["id"] for chunk in chunks], [chunk["text"] for chunk in chunks]),
-        "clauses_search_text_with_parents": ([chunk["id"] for chunk in chunks],
-                                             [chunk["search_text_with_parents"] for chunk in chunks]),
-        "windows": ([window["id"] for window in windows], [window["text"] for window in windows]),
-        "questions": ([question["id"] for question in questions], [question["question"] for question in questions]),
+        "clauses_search_text": (chunk_ids, [chunk["search_text"] for chunk in chunks]),
+        "clauses_text": (chunk_ids, [chunk["text"] for chunk in chunks]),
+        "clauses_search_text_with_parents": (chunk_ids, [chunk["search_text_with_parents"] for chunk in chunks]),
+        "windows": (window_ids, [window["text"] for window in windows]),
+        "questions": (question_ids, [question["question"] for question in questions]),
     }
 
 
-def is_already_saved(name, model):
+def is_already_saved(name: str, model: str) -> bool:
     """True when the set is saved and was made by this model."""
     if not embeddings_file(name).exists():
         return False
@@ -98,6 +106,7 @@ def is_already_saved(name, model):
 # ===== Running every set =====
 
 def main() -> None:
+    """Embeds every set that isn't saved yet, or every set with --force."""
     parser = argparse.ArgumentParser(description="Embed the chunks, windows and golden questions once.")
     parser.add_argument("--force", action="store_true", help="embed every set again, even if already saved")
     arguments = parser.parse_args()
@@ -106,7 +115,7 @@ def main() -> None:
     model = settings.mistral_embedding_model
     client = Mistral(api_key=settings.mistral_api_key.get_secret_value())
 
-    for name, (ids, embedding_inputs) in embedding_inputs_by_set().items():
+    for name, (ids, embedding_inputs) in build_embedding_inputs_by_set().items():
         if is_already_saved(name, model) and not arguments.force:
             print(f"{name}: already saved with {model}, skipped")
             continue
