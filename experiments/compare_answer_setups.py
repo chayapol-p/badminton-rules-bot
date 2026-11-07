@@ -5,6 +5,8 @@ One run changes one thing (experiment rule 1). Fixed here: vector search on the 
 search_text (decision record 0006), the answer model at temperature 0, and the judge.
   --top-k   clauses handed to the model per question (default 5)
   --label   a short name for the run, used in its file names (default: top<k>)
+  --dry-run answer only the first question, for a cheap live check of the API settings before a
+            full run. It saves its files under a "-dry-run" name and never logs to runs.jsonl
 
 Writes, for each run:
   evals/answer_runs/<time>-<label>-answers.jsonl  per question: the sources, the answer and the code checks
@@ -17,6 +19,7 @@ Needs the saved question and probe vectors (run scripts.build_embeddings first) 
 keys in .env. A run makes 33 answer calls and 33 judge calls.
 
 Run from the project root:
+    uv run python -m experiments.compare_answer_setups --top-k 5 --dry-run
     uv run python -m experiments.compare_answer_setups --top-k 5
 """
 
@@ -227,11 +230,15 @@ def append_line(path: Path, line: dict) -> None:
 
 # ===== Running one setup =====
 
-def run_answer_setup(top_k: int, label: str) -> dict:
+def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
     questions = load_questions("dev") + load_refusal_probes()
+
+    # A dry run asks one question, to meet any API error that only the live server raises for under a cent
+    if is_dry_run:
+        questions = questions[:1]
     search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
     mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value())
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
@@ -274,8 +281,13 @@ def run_answer_setup(top_k: int, label: str) -> dict:
         "reasoning_effort": settings.mistral_reasoning_effort,
         "judge_model": settings.claude_judge_model,
     }
-    append_run("2", run_settings, scores, seconds)
     print(f"saved {run_name}-answers.jsonl and {run_name}-grades.jsonl in evals/answer_runs/")
+
+    # A dry run checks the settings, not the setup: it never counts as a result
+    if is_dry_run:
+        print("dry run: not logged to evals/runs.jsonl")
+        return scores
+    append_run("2", run_settings, scores, seconds)
     return scores
 
 
@@ -284,11 +296,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Answer, check and grade the dev questions and refusal probes.")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
     parser.add_argument("--label", help="a short name for the run (default: top<k>)")
+    parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     arguments = parser.parse_args()
     label = arguments.label
     if label is None:
         label = f"top{arguments.top_k}"
-    run_answer_setup(arguments.top_k, label)
+    if arguments.dry_run:
+        label = f"{label}-dry-run"
+    run_answer_setup(arguments.top_k, label, arguments.dry_run)
 
 
 if __name__ == "__main__":
