@@ -50,5 +50,6 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 
 - Mistral Large 4 rejects temperature 0 unless top_p is exactly 1 (400, code 3054: "top_p must be 1 when using greedy sampling"). The SDK sends no top_p, so the server's default applied. Fixed in generate_answer (7 Nov).
 - Mistral Large 4 always thinks and always sends message.content as a list of chunks (thinking, then text), whatever reasoning_effort says (Mistral's reasoning docs). Run 1 crashed writing a ThinkChunk to JSON. Now the answer text is parsed, the thinking is kept as text, and reasoning_effort is pinned to low (Large 4 takes low, medium or high; Mistral recommends high) (7 Nov).
+- Claude Sonnet 5.5 rejects thinking {"type": "disabled"} (400); the API says to send {"type": "between_tools"} to turn thinking off before responding. Fixed in the judge (7 Nov).
 
 ## Lab 7 · React chat UI

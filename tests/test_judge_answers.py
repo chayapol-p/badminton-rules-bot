@@ -2,8 +2,10 @@
 Tests the judge's prompt and its overall grade, without calling the API.
 """
 
+from types import SimpleNamespace
+
 from answer.answer_shape import Citation, RulesAnswer
-from evals.judge_answers import JudgeGrade, RubricLine, build_judge_prompt, judge_passed
+from evals.judge_answers import JudgeGrade, RubricLine, build_judge_prompt, grade_answer, judge_passed
 from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
 
 
@@ -59,3 +61,28 @@ def test_the_prompt_never_names_the_answer_model():
     """Hiding who wrote the answer keeps the judge from favouring or doubting a model by name."""
     prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS)
     assert "mistral" not in prompt.lower()
+
+
+# ===== The request =====
+
+class StubJudgeClient:
+    """Stub: grades every reply as a pass on all three lines, and records the request."""
+
+    def __init__(self):
+        self.requests = []
+        self.messages = SimpleNamespace(parse=self.parse)
+
+    def parse(self, **request):
+        self.requests.append(request)
+        usage = SimpleNamespace(input_tokens=1200, output_tokens=80)
+        return SimpleNamespace(parsed_output=grade_with(True, True, True), usage=usage)
+
+
+def test_the_judge_request_turns_thinking_off_the_way_sonnet_5_5_accepts():
+    """Sonnet 5.5 rejects a temperature and rejects thinking type "disabled"; "between_tools" turns it off."""
+    client = StubJudgeClient()
+    reply = grade_answer(client, "claude-sonnet-5-5", SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS)
+    request = client.requests[0]
+    assert request["thinking"] == {"type": "between_tools"}
+    assert "temperature" not in request
+    assert judge_passed(reply.grade)

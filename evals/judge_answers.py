@@ -13,6 +13,8 @@ Two settings to know:
   Running the same setup twice shows how much answers and grades move together (Step 5).
 - Thinking is off: each line is a narrow pass-or-fail question, and the reason fields hold the
   explanation. If the judge disagrees with your grades, thinking is one setting to try.
+  On Sonnet 5.5, "off" is spelled {"type": "between_tools"}: the API rejects {"type": "disabled"}
+  with a 400 and names between_tools as the way to turn thinking off before responding.
 
 Use:
     reply = grade_answer(client, model, question, rules_answer, retrieved_chunks)
@@ -125,7 +127,7 @@ def grade_answer(client: Anthropic, model: str, question: dict, rules_answer: Ru
         system=JUDGE_RULES,
         messages=[{"role": "user", "content": build_judge_prompt(question, rules_answer, retrieved_chunks)}],
         output_format=JudgeGrade,
-        thinking={"type": "disabled"},
+        thinking={"type": "between_tools"},
     )
     return GradeReply(
         grade=response.parsed_output,
