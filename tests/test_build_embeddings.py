@@ -27,12 +27,12 @@ class StubEmbeddingClient:
 def test_vectors_come_back_in_the_same_order_as_the_inputs():
     client = StubEmbeddingClient()
     embedding_inputs = ["a", "bb", "ccc", "dddd", "eeeee"]
-    vectors = embed_in_batches(client, "test-model", embedding_inputs, batch_size=2, pause_seconds=0)
+    vectors = embed_in_batches(client, "test-model", embedding_inputs, progress_label="test", batch_size=2, pause_seconds=0)
     assert vectors == [[1], [2], [3], [4], [5]]
 
 
 def test_inputs_are_sent_in_batches_of_the_given_size():
     client = StubEmbeddingClient()
     embedding_inputs = ["a", "bb", "ccc", "dddd", "eeeee"]
-    embed_in_batches(client, "test-model", embedding_inputs, batch_size=2, pause_seconds=0)
+    embed_in_batches(client, "test-model", embedding_inputs, progress_label="test", batch_size=2, pause_seconds=0)
     assert client.batches == [["a", "bb"], ["ccc", "dddd"], ["eeeee"]]

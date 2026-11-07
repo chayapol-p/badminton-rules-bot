@@ -21,9 +21,11 @@ Run from the project root:
 import argparse
 import itertools
 import json
+import math
 import time
 
 from mistralai.client import Mistral
+from tqdm import tqdm
 
 from app.settings import load_settings
 from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
@@ -41,11 +43,17 @@ SECONDS_BETWEEN_REQUESTS = 1.0
 
 # ===== Calling the embedding API in batches =====
 
-def embed_in_batches(client: Mistral, model: str, embedding_inputs: list[str],
+def embed_in_batches(client: Mistral, model: str, embedding_inputs: list[str], progress_label: str,
                      batch_size: int = BATCH_SIZE, pause_seconds: float = SECONDS_BETWEEN_REQUESTS) -> list[list[float]]:
     """Returns one vector per embedding input, in the same order, sending batch_size inputs per request."""
     vectors = []
-    for batch_number, batch in enumerate(itertools.batched(embedding_inputs, batch_size)):
+
+    # Show a progress bar, because a set takes up to a minute
+    batch_count = math.ceil(len(embedding_inputs) / batch_size)
+    progress_bar = tqdm(itertools.batched(embedding_inputs, batch_size), total=batch_count,
+                        desc=progress_label, unit="batch")
+
+    for batch_number, batch in enumerate(progress_bar):
 
         # Wait between requests, to stay under the rate limit; the first request goes right away
         is_first_batch = batch_number == 0
@@ -104,7 +112,7 @@ def main() -> None:
             continue
 
         print(f"{name}: embedding {len(embedding_inputs)} inputs with {model}")
-        vectors = embed_in_batches(client, model, embedding_inputs)
+        vectors = embed_in_batches(client, model, embedding_inputs, progress_label=name)
         save_embeddings(name, ids, vectors, model)
         print(f"{name}: saved to {embeddings_file(name).name}")
 
