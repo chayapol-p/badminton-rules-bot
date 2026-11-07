@@ -61,7 +61,7 @@ def build_vector_search(items, chunk_kind, field, questions, model):
         """Returns the saved vector of a golden question, found by its text."""
         return question_vector_by_text[question_text]
 
-    return VectorSearch(items, item_vectors, embed_question=saved_question_vector)
+    return VectorSearch(items, item_vectors, embedding_function=saved_question_vector)
 
 
 def build_search(search_type, items, chunk_kind, field, questions, model):
