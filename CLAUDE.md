@@ -11,7 +11,7 @@ Every coding session in this repo follows these rules, by hand or with an AI cod
 5. Write Pythonic loops: `for` over items, with `enumerate` when an index is needed, never `while` with index arithmetic.
 6. Use the packages a real team would install (`mistralai`, `rank_bm25`, `numpy`, `httpx`, `pytest`, `fastapi`). Write by hand only what a reader must understand to trust the results: rank fusion, the scorers, the citation check, the agent loop, the retry helper and the streaming endpoint.
 7. Keys live in `.env` and are never written in code.
-8. Keep one-line comprehensions and conditions for the obvious cases only: one loop and one simple condition. Anything more (two loops, `and` or `or`, a lookup or call inside the condition) becomes a plain `for` loop with named steps, or a small helper whose name says what it checks.
+8. Keep one-line comprehensions and conditions for the obvious cases only: one loop and one simple condition. Anything more (two loops, `and` or `or`, a lookup or call inside the condition) becomes a plain `for` loop with named steps, or a small helper whose name says what it checks. An inline `if … else` inside a call counts too: name the condition first (`is_hit = found_count > 0`), then use it.
 
 ```python
 # Too much in one line
