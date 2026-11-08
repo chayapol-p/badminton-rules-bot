@@ -29,7 +29,10 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0005](0005-search-vectors-exactly-first.md) | Search the vectors exactly first | Accepted |
 | [0006](0006-vector-search-on-clauses-goes-to-stage-2.md) | Vector search on clauses goes forward to Stage 2 | Accepted |
 | [0007](0007-grade-with-code-checks-first-and-the-judge-for-the-rest.md) | Grade with code checks first, and the judge only for what code can't decide | Accepted |
-| [0008](0008-facts-stated-in-the-question-count-as-given.md) | Facts in the question count as given; a false premise is corrected, then answered | Proposed |
+| [0008](0008-facts-stated-in-the-question-count-as-given.md) | Facts in the question count as given; a false premise is corrected, then answered | Accepted |
+| [0009](0009-top-5-plus-rule-links.md) | Keep top_k at 5, and add the clauses the hits link to | Accepted |
+| [0010](0010-quote-clause-text-only.md) | Quote only clause text, never a source's first line | Accepted |
+| [0011](0011-complete-answers-rule-not-adopted.md) | The "complete answers" rule is not adopted | Rejected |
 
 ## Template
 

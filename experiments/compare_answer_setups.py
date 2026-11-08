@@ -2,13 +2,12 @@
 Answers the dev questions and the probes with one setup, checks and grades every answer, prints the scores and logs the run.
 
 One run changes one thing (experiment rule 1). Fixed here: vector search on the clauses'
-search_text (decision record 0006), the answer model at temperature 0, and the judge.
-  --top-k   clauses search hands on per question (default 5)
-  --follow-rule-links  add the clauses each hit links to: cited clauses, alternatives and para
-            exceptions (retrieval/expand_with_rule_links.py, one hop, no neighbours)
+search_text (decision record 0006), the top 5 plus the clauses they link to (record 0009), the answer
+rules with the quote rule (record 0010), the answer model at temperature 0, and the judge.
+  --top-k   clauses search hands on per question, before the rule links are added (default 5)
   --rule    an extra answer rule to test, by name (answer/build_answer_prompt.py EXTRA_ANSWER_RULES);
             repeat it for more than one
-  --label   a short name for the run, used in its file names (default: top<k>, then -links and each rule name)
+  --label   a short name for the run, used in its file names (default: top<k>, then each rule name)
   --dry-run answer only the first question, for a cheap live check of the API settings before a
             full run. It saves its files under a "-dry-run" name and never logs to runs.jsonl
 
@@ -36,6 +35,7 @@ from statistics import mean
 import numpy
 from anthropic import Anthropic
 from mistralai.client import Mistral
+from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from collections.abc import Callable
 
@@ -63,6 +63,10 @@ DEFAULT_TOP_K = 5
 
 ## Pause between questions, to stay under the APIs' requests-per-second limits
 SECONDS_BETWEEN_QUESTIONS = 1.0
+
+## The SDK's own retry on a rate limit (429) or a server error: wait 2 s, doubling up to 60 s, for at
+## most 5 minutes. Top 15 hit Mistral's rate limit on 8 Nov and lost the run at question 15
+MISTRAL_RETRY = RetryConfig("backoff", BackoffStrategy(2_000, 60_000, 2.0, 300_000), retry_connection_errors=True)
 
 ## Questions whose pass rule needs an image: a text-only answer fails them until images arrive in Week 4
 IMAGE_ONLY_QUESTION_IDS = {"doubles-court-size", "service-judge-height-signal"}
@@ -100,19 +104,15 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
 
 
 def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str, dict],
-                            follows_rule_links: bool) -> Callable[[str], list[dict]]:
-    """Returns the retrieve step: the top k from search, plus the clauses they link to when asked."""
-    rule_map = None
-    if follows_rule_links:
-        rule_map = load_rule_map()
+                            rule_map: dict) -> Callable[[str], list[dict]]:
+    """Returns the retrieve step: the top k from search, plus the clauses they link to (record 0009)."""
 
     def retrieve(question_text: str) -> list[dict]:
         """Returns the clauses handed to the answer model for one question."""
         hits = search(question_text, top_k)
-        if rule_map is None:
-            return hits
 
-        # One hop along the rule map, without the clauses before and after each hit
+        # One hop along the rule map (cited clauses, alternatives, para exceptions), without the
+        # clauses before and after each hit
         hit_ids = [chunk["id"] for chunk in hits]
         context = expand_with_links(hit_ids, chunk_by_id, rule_map, question_is_para=False, include_nearby=False)
         return [item["chunk"] for item in context]
@@ -303,8 +303,7 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
 
 # ===== Running one setup =====
 
-def run_answer_setup(top_k: int, follows_rule_links: bool, extra_rule_names: list[str], label: str,
-                     is_dry_run: bool) -> dict:
+def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry_run: bool) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
@@ -315,9 +314,9 @@ def run_answer_setup(top_k: int, follows_rule_links: bool, extra_rule_names: lis
         questions = questions[:1]
     search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
-    retrieve = build_retrieve_function(search, top_k, chunk_by_id, follows_rule_links)
+    retrieve = build_retrieve_function(search, top_k, chunk_by_id, load_rule_map())
     answer_rules = build_answer_rules(extra_rule_names)
-    mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value())
+    mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value(), retry_config=MISTRAL_RETRY)
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
 
     # Name the run first, so each answer can be saved the moment it's done
@@ -355,7 +354,7 @@ def run_answer_setup(top_k: int, follows_rule_links: bool, extra_rule_names: lis
         "field": "search_text",
         "split": "dev+probes",
         "top_k": top_k,
-        "rule_links": follows_rule_links,
+        "rule_links": True,
         "extra_rules": extra_rule_names,
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,
@@ -375,22 +374,18 @@ def main() -> None:
     """Runs the one setup named on the command line."""
     parser = argparse.ArgumentParser(description="Answer, check and grade the dev questions and probes.")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
-    parser.add_argument("--follow-rule-links", action="store_true", help="add the clauses each hit links to")
     parser.add_argument("--rule", action="append", default=[], choices=list(EXTRA_ANSWER_RULES),
                         help="an extra answer rule to test; repeat for more than one")
-    parser.add_argument("--label", help="a short name for the run (default: top<k>, then -links and each rule name)")
+    parser.add_argument("--label", help="a short name for the run (default: top<k>, then each rule name)")
     parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     arguments = parser.parse_args()
     # Name the run by what it changed, unless a label is given
     label = arguments.label
     if label is None:
-        label_parts = [f"top{arguments.top_k}"]
-        if arguments.follow_rule_links:
-            label_parts.append("links")
-        label = "-".join(label_parts + arguments.rule)
+        label = "-".join([f"top{arguments.top_k}"] + arguments.rule)
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_answer_setup(arguments.top_k, arguments.follow_rule_links, arguments.rule, label, arguments.dry_run)
+    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run)
 
 
 if __name__ == "__main__":

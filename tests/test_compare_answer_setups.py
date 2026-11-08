@@ -7,6 +7,7 @@ import pytest
 from evals.golden_answer_chunks import load_chunks
 from evals.token_costs import call_cost
 from experiments.compare_answer_setups import build_retrieve_function, check_and_grade, summarise_answer_run
+from retrieval.expand_with_rule_links import load_rule_map
 from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
 from tests.test_judge_answers import POSTS_REPLY, StubJudgeClient
 
@@ -150,8 +151,9 @@ def test_a_clean_answer_is_judged_and_its_cost_counted():
 
 # ===== The retrieve step =====
 
-def test_without_rule_links_retrieve_hands_on_the_search_hits():
-    retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, False)
+def test_with_no_links_retrieve_hands_on_the_search_hits():
+    empty_rule_map = {"outgoing": {}, "incoming": {}, "outside": {}}
+    retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, empty_rule_map)
     assert retrieve("any question") == SAMPLE_CHUNKS[:2]
 
 
@@ -159,7 +161,8 @@ def test_rule_links_bring_the_clause_a_hit_cites():
     """Run 1: ITTO 5.4.13 says "(Law 16.2.1)", but Law 16.2.1 never reached the model."""
     try:
         chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
-        retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["itto-5.4.13"]], 1, chunk_by_id, True)
+        retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["itto-5.4.13"]], 1, chunk_by_id,
+                                           load_rule_map())
     except FileNotFoundError:
         pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
     retrieved_ids = [chunk["id"] for chunk in retrieve("How many coaches at the 11-point break?")]

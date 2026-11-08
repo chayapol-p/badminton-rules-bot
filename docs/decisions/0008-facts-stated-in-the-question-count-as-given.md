@@ -1,6 +1,6 @@
 # 0008 · Facts in the question count as given; a false premise is corrected, then answered
 
-- **Status:** Proposed (needs the new baseline run and the re-judge)
+- **Status:** Accepted (8 Nov)
 - **Date:** 2026-11-08
 - **Stage:** 2 (answers, citations and refusals)
 
@@ -40,7 +40,8 @@ their own line.
 Run 1 re-judged with the new rubric (8 Nov): the judge still failed coaches-at-interval, now for the
 link "11-point interval = Law 16.2.1". Law 16.2.1 wasn't among the bot's 5 sources, so the link came
 from memory. Job flipped his hand grade to fail: the judge matches 10 of 10. This case can't show the
-rule change helps; the false-premise probes will.
+rule change helps; the false-premise probes did: 2 of 3 corrected on the new baseline, 3 of 3 with
+rule links (`20261108T0931-top5-links-quote-clause-only`), and no-answer probes 9 of 9.
 
 ## Consequences
 - The judge and the number check now treat the question the same way.

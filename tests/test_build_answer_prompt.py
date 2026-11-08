@@ -94,9 +94,8 @@ def test_no_extra_rules_leaves_the_standing_rules_unchanged():
     assert build_answer_rules([]) == ANSWER_RULES
 
 
-def test_extra_rules_are_numbered_on_after_rule_7():
-    rules_text = build_answer_rules(["quote-clause-only", "complete-answers"])
+def test_extra_rules_are_numbered_on_after_the_standing_rules():
+    rules_text = build_answer_rules(["complete-answers"])
     assert rules_text.startswith(ANSWER_RULES)
-    assert f"\n8. {EXTRA_ANSWER_RULES['quote-clause-only']}" in rules_text
     assert rules_text.endswith(f"\n9. {EXTRA_ANSWER_RULES['complete-answers']}")
-    assert "\n7. " in ANSWER_RULES and "\n8. " not in ANSWER_RULES
+    assert "\n8. " in ANSWER_RULES and "\n9. " not in ANSWER_RULES
