@@ -1,6 +1,6 @@
 # 0012 · Fix three pass rules that asked for more than the question or the corpus
 
-- **Status:** Accepted (Job, 8 Nov)
+- **Status:** Accepted (Job, 8 Nov); the service-height-override pass rule is superseded by 0016
 - **Date:** 2026-11-08
 - **Stage:** 2 (answers, citations and refusals)
 

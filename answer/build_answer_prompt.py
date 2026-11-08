@@ -57,10 +57,28 @@ def describe_source(chunk: dict) -> str:
     return " · ".join(parts)
 
 
-def parent_lines(chunk: dict) -> str:
-    """Returns the clauses above this one, as search_text_with_parents holds them ("4.2 The stringed area:"), or ""."""
+## A parent clause this short, or ending in a colon, only names the subject of the clauses below it
+PARENT_HEADING_MAX_WORDS = 5
+
+
+def is_parent_heading(parent_text: str) -> bool:
+    """True for a parent clause that only names a subject ("4.2 The stringed area:"), not a rule of its own."""
+    return parent_text.endswith(":") or len(parent_text.split()) <= PARENT_HEADING_MAX_WORDS
+
+
+def parent_headings(chunk: dict) -> str:
+    """Returns the headings above this clause, as search_text_with_parents holds them ("4.2 The stringed area:"), or "".
+
+    8 Nov: a full parent rule shown here got quoted as if it were the clause (string-tension quoted Law 4.1
+    under 4.1.2), so only parents that name a subject are kept.
+    """
     lines_after_header = chunk["search_text_with_parents"].split("\n", 1)[1]
-    return lines_after_header.removesuffix(chunk["text"]).strip()
+    parents_text = lines_after_header.removesuffix(chunk["text"]).strip()
+    headings = []
+    for parent_text in parents_text.split(" · "):
+        if parent_text and is_parent_heading(parent_text):
+            headings.append(parent_text)
+    return " · ".join(headings)
 
 
 def format_source(chunk: dict) -> str:

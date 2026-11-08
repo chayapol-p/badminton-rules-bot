@@ -37,6 +37,7 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0013](0013-the-bots-words-about-itself-are-not-rule-claims.md) | The judge doesn't count the bot's words about itself as rule claims | Accepted |
 | [0014](0014-the-judge-grades-what-the-user-sees-by-majority-of-3.md) | The judge grades what the user sees, by a majority of 3 votes | Accepted |
 | [0015](0015-three-fixes-become-the-default.md) | List items, the para rule and the value-conditions rule become the default | Accepted |
+| [0016](0016-racket-angle-is-context-for-a-height-question.md) | The racket angle is context for a question about serve height | Accepted |
 
 ## Template
 

@@ -7,7 +7,8 @@ import json
 import pytest
 
 from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import ANSWER_RULES, EXTRA_ANSWER_RULES, build_answer_prompt, build_answer_rules, describe_source, format_source
+from answer.build_answer_prompt import (ANSWER_RULES, EXTRA_ANSWER_RULES, build_answer_prompt, build_answer_rules,
+                                        describe_source, format_source, parent_headings)
 from evals.golden_answer_chunks import CHUNKS_FILE
 from tests.sample_data import SAMPLE_CHUNKS
 
@@ -99,3 +100,12 @@ def test_extra_rules_are_numbered_on_after_the_standing_rules():
     assert rules_text.startswith(ANSWER_RULES)
     assert rules_text.endswith(f"\n11. {EXTRA_ANSWER_RULES['complete-answers']}")
     assert "\n10. " in ANSWER_RULES and "\n11. " not in ANSWER_RULES
+
+
+# ===== The heading above a clause =====
+
+def test_only_parents_that_name_a_subject_are_shown():
+    """A full parent rule gets quoted as if it were the clause, so only headings are shown."""
+    chunk = {"text": "shall not exceed 280 mm.",
+             "search_text_with_parents": "Laws · 4. RACKET · Clause 4.2.2\n4.1 The racket shall be a frame not exceeding 680 mm · 4.2 The stringed area:\nshall not exceed 280 mm."}
+    assert parent_headings(chunk) == "4.2 The stringed area:"

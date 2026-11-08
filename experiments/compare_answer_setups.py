@@ -8,7 +8,7 @@ model at temperature 0, and the judge (record 0014).
   --top-k   clauses search hands on per question, before the rule links are added (default 5)
   --rule    an extra answer rule to test, by name (answer/build_answer_prompt.py EXTRA_ANSWER_RULES);
             repeat it for more than one
-  --show-parents  show the clause above each source ("Under: 4.2 The stringed area:") to the
+  --show-parents  show the heading above each source ("Under: 4.2 The stringed area:") to the
             bot and the judge; search still reads search_text (record 0006)
   --label   a short name for the run, used in its file names (default: top<k>, then each rule name)
   --dry-run answer only the first question, for a cheap live check of the API settings before a
@@ -42,7 +42,7 @@ from mistralai.client import Mistral
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import EXTRA_ANSWER_RULES, build_answer_rules, parent_lines
+from answer.build_answer_prompt import EXTRA_ANSWER_RULES, build_answer_rules, parent_headings
 from answer.generate_answer import MAX_ANSWER_TOKENS, generate_answer
 from answer.check_citations import find_citation_problems
 from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
@@ -133,7 +133,7 @@ def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str,
             return retrieved_chunks
 
         # A copy of each clause that carries the clauses above it, for the source block to show
-        return [dict(chunk, parents=parent_lines(chunk)) for chunk in retrieved_chunks]
+        return [dict(chunk, parents=parent_headings(chunk)) for chunk in retrieved_chunks]
 
     return retrieve
 
