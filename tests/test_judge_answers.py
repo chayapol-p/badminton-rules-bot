@@ -5,7 +5,7 @@ Tests the judge's prompt and its overall grade, without calling the API.
 from types import SimpleNamespace
 
 from answer.answer_shape import Citation, RulesAnswer
-from evals.judge_answers import JudgeGrade, RubricLine, build_judge_prompt, grade_answer, judge_passed
+from evals.judge_answers import JUDGE_RULES, JudgeGrade, RubricLine, build_judge_prompt, grade_answer, judge_passed
 from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
 
 
@@ -66,6 +66,11 @@ def test_the_code_warnings_reach_the_judge_as_hints():
 def test_without_warnings_the_code_notes_say_none():
     prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, [])
     assert "<code_notes>\nNone\n</code_notes>" in prompt
+
+
+def test_facts_stated_in_the_question_count_as_given():
+    """Run 1: the judge failed "11-point interval", which came from the question, not the sources."""
+    assert "or stated in the question" in JUDGE_RULES
 
 
 def test_the_prompt_never_names_the_answer_model():
