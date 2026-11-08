@@ -82,11 +82,12 @@ def parent_headings(chunk: dict) -> str:
 
 
 def format_source(chunk: dict) -> str:
-    """Returns one source block: the chunk id in square brackets, where it comes from, the clause above it when the retrieve step added it, then the clause text."""
-    # 8 Nov: clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:")
+    """Returns one source block: the chunk id in square brackets, where it comes from, the headings above it, then the clause text."""
+    # 8 Nov: clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:"), record 0017
     under_line = ""
-    if chunk.get("parents"):
-        under_line = f"Under: {chunk['parents']}\n"
+    headings = parent_headings(chunk)
+    if headings:
+        under_line = f"Under: {headings}\n"
     return f"[{chunk['id']}] {describe_source(chunk)}\n{under_line}{chunk['text']}"
 
 

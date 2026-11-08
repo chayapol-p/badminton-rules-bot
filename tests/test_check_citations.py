@@ -7,7 +7,7 @@ import json
 import pytest
 
 from answer.answer_shape import Citation, RulesAnswer
-from answer.check_citations import find_citation_problem, find_citation_problems
+from answer.check_citations import find_citation_problem, find_citation_problems, normalise_text
 from evals.golden_answer_chunks import CHUNKS_FILE
 from tests.sample_data import SAMPLE_CHUNKS
 
@@ -104,3 +104,8 @@ def test_service_height_sample_matches_the_real_file():
         pytest.skip("data/rule_chunks.json is missing: run scripts.build_rule_chunks first")
     real_chunks_by_id = {chunk["id"]: chunk for chunk in json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))}
     assert SERVICE_HEIGHT_CHUNK == real_chunks_by_id["laws-9.1.6"]
+
+
+def test_three_dots_match_the_ellipsis_character():
+    """8 Nov: red-card quoted "..." where ITTO 5.17.4 prints "…"."""
+    assert normalise_text("call: “… [name of player]") == normalise_text('call: "... [name of player]')

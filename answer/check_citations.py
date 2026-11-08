@@ -18,7 +18,8 @@ from answer.answer_shape import Citation, RulesAnswer
 
 # Constants
 ## Curly quote marks and long dashes, and the plain characters they become
-TYPOGRAPHIC_REPLACEMENTS = {"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-"}
+## 8 Nov: red-card quoted "..." where ITTO 5.17.4 prints the one-character ellipsis "…"
+TYPOGRAPHIC_REPLACEMENTS = {"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", "…": "..."}
 
 ## Any run of spaces, tabs and line breaks
 WHITESPACE_PATTERN = re.compile(r"\s+")
@@ -27,7 +28,7 @@ WHITESPACE_PATTERN = re.compile(r"\s+")
 # ===== Normalising text before comparing =====
 
 def normalise_text(text: str) -> str:
-    """Returns the text in lower case, with straight quote marks and dashes, and single spaces."""
+    """Returns the text in lower case, with straight quote marks and dashes, three dots for "…", and single spaces."""
     for typographic_character, plain_character in TYPOGRAPHIC_REPLACEMENTS.items():
         text = text.replace(typographic_character, plain_character)
     return WHITESPACE_PATTERN.sub(" ", text).strip().lower()

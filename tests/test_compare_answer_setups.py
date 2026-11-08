@@ -155,7 +155,7 @@ def test_a_clean_answer_is_judged_and_its_cost_counted():
 
 def test_with_no_links_retrieve_hands_on_the_search_hits():
     empty_rule_map = {"outgoing": {}, "incoming": {}, "outside": {}}
-    retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, empty_rule_map, False)
+    retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, empty_rule_map)
     assert retrieve("any question") == SAMPLE_CHUNKS[:2]
 
 
@@ -164,7 +164,7 @@ def test_rule_links_bring_the_clause_a_hit_cites():
     try:
         chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
         retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["itto-5.4.13"]], 1, chunk_by_id,
-                                           load_rule_map(), False)
+                                           load_rule_map())
     except FileNotFoundError:
         pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
     retrieved_ids = [chunk["id"] for chunk in retrieve("How many coaches at the 11-point break?")]
@@ -177,20 +177,17 @@ def test_a_found_list_heading_brings_its_items():
     try:
         chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
         retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["laws-13.3.10"]], 1, chunk_by_id,
-                                           load_rule_map(), False)
+                                           load_rule_map())
     except FileNotFoundError:
         pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
     retrieved_ids = [chunk["id"] for chunk in retrieve("Shuttle stuck on the net in Wheelchair Badminton?")]
     assert "laws-13.3.10.1" in retrieved_ids
 
 
-def test_show_parents_puts_the_clause_above_into_the_source_block():
+def test_a_source_block_shows_the_heading_above_a_fragment_clause():
     """8 Nov: clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:")."""
     try:
         chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
-        retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["laws-4.2.2"]], 1, chunk_by_id,
-                                           load_rule_map(), True)
     except FileNotFoundError:
-        pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
-    stringed_area = [chunk for chunk in retrieve("How big can the strings be?") if chunk["id"] == "laws-4.2.2"][0]
-    assert "Under: 4.2 The stringed area:" in format_source(stringed_area)
+        pytest.skip("data/rule_chunks.json is missing: run scripts.build_rule_chunks first")
+    assert "Under: 4.2 The stringed area:" in format_source(chunk_by_id["laws-4.2.2"])

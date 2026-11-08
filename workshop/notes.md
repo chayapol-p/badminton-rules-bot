@@ -70,6 +70,7 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - Question history on the old grades (8 Nov), baseline 0931 + cap16k: para rule wins leaving-court 2 of 2 (0 of 2 before); list items win wheelchair-shuttle-on-net (1 of 1 alone, 2 of 2 combined); value-conditions wins post-height and service-height-override 1 of 1. The regressions it flags are attack-be-the-referee and best-of-five-change-ends (both explained by records 0012-0013) and, in the combined runs, coaches-at-interval and foot-off-footrest (judge strictness, to recheck with the new judge).
 - Re-judged 7 runs with the new judge (answer only, 3 votes), 8 Nov: baselines 15 and 17; para rule 18; list items 17; value conditions 19; all three 18 and 20. No regressions anywhere. All three fixes now default (record 0015).
 - New judge finding: racket-max-size fails for "stringed area" because clause 4.2.2 is a fragment whose subject sits in the heading above it. The source block shows the clause text only.
+- Third round, 8 Nov: official links 21 of 22; parent headings 18 and 21 (racket-max-size and string-tension pass every run). Showing every parent made string-tension quote a full parent rule; headings only fixed it (record 0017). Citation check now treats "…" as "..." (red-card).
 - Judge strictness still varies on context facts (coaches-at-interval failed for the 60-second break length; foot-off-footrest for "the rally ends with a fault").
 
 ## Lab 7 · React chat UI
