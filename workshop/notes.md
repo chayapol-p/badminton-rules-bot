@@ -66,6 +66,8 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - attack-be-the-referee flips between runs: the judge fails the bot's own words ("I answer questions about the rules only") as not in the sources. Statements about the bot itself aren't rule claims.
 - Combined run, 8 Nov (list items + para-only-when-asked + value-conditions, after records 0012-0013): 19, repeat 17. The cap-16k run re-judged under the same rules: 18. No gain beyond the noise: the same setup moves by 2 between runs, as large as each fix.
 - The judge reads the bot's reasoning field: leaving-court failed in both combined runs because the reasoning, not the answer, named Law 16.5.3. Users see the answer and citations only.
+- Anthropic API usage limit reached on 8 Nov (resets 2026-12-01 00:00 UTC, or raise it in the Console): the re-judge with the new judge (answer only, 3 votes) is blocked.
+- Question history on the old grades (8 Nov), baseline 0931 + cap16k: para rule wins leaving-court 2 of 2 (0 of 2 before); list items win wheelchair-shuttle-on-net (1 of 1 alone, 2 of 2 combined); value-conditions wins post-height and service-height-override 1 of 1. The regressions it flags are attack-be-the-referee and best-of-five-change-ends (both explained by records 0012-0013) and, in the combined runs, coaches-at-interval and foot-off-footrest (judge strictness, to recheck with the new judge).
 - Judge strictness still varies on context facts (coaches-at-interval failed for the 60-second break length; foot-off-footrest for "the rally ends with a fault").
 
 ## Lab 7 · React chat UI
