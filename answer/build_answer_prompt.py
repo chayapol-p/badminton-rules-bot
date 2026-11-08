@@ -34,8 +34,10 @@ EXTRA_ANSWER_RULES = {
     # Run 1: post-height left out "stay vertical", and umpire-overrule the review system, though both were in the
     # sources. Tested 8 Nov: 16 of 22, a tie, and neither question passed, so it isn't a standing rule (record 0011)
     "complete-answers": "Give every condition in the cited clauses that bears on the question, not only the headline number.",
-    # 8 Nov: leaving-court and service-height-override added Wheelchair Badminton rules to general questions
-    "para-default": "Answer with the standard rules. Mention a Para Badminton rule only when the question is about para play (wheelchair, standing classes), even when a para source is shown.",
+    # 8 Nov: leaving-court and service-height-override added Wheelchair Badminton rules to general questions.
+    # A first wording ("Answer with the standard rules. Mention…") fixed both but made best-of-five-change-ends
+    # state the standard rule in an Alternative Laws question, so the first sentence is gone
+    "para-only-when-asked": "Mention a Para Badminton rule only when the question is about para play (wheelchair, standing classes), even when a para source is shown.",
     # 8 Nov: post-height gave 1.55 m but left out "and shall remain vertical when the net is strained"
     "value-conditions": "When a clause attaches a condition to a value (and…, when…, unless…), state the condition together with the value.",
 }
