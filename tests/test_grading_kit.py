@@ -1,8 +1,8 @@
 """
-Tests the grading kit: code-check failures, the sample swap, the printout order and the grades template.
+Tests the grading kit: the sample swap, the printout order and the grades template. The code checks have their own tests.
 """
 
-from evals.grading_kit import code_check_failures, format_answer_for_grading, pick_grading_sample, template_lines
+from evals.grading_kit import format_answer_for_grading, pick_grading_sample, template_lines
 from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
 
 
@@ -34,22 +34,6 @@ CLEAN_POSTS_LINE = answer_line("post-height", "direct_lookup", "answered", [])
 QUOTE_PROBLEM = [{"chunk_id": "laws-1.4", "problem": "quote not in clause", "quote": "x", "clause_text": "y"}]
 
 
-# ===== Step 1: code checks =====
-
-def test_a_clean_answer_has_no_code_failures():
-    assert code_check_failures(CLEAN_POSTS_LINE) == []
-
-
-def test_wrong_refusals_and_citation_problems_are_code_failures():
-    line = answer_line("deuce-end", "direct_lookup", "false refusal", QUOTE_PROBLEM)
-    assert code_check_failures(line) == ["false refusal", "citation [laws-1.4] quote not in clause"]
-
-
-def test_a_format_error_is_a_code_failure():
-    line = dict(CLEAN_POSTS_LINE, is_format_error=True, answer=None)
-    assert code_check_failures(line) == ["format error"]
-
-
 # ===== Step 2: the sample =====
 
 def test_a_failed_answer_is_swapped_for_the_next_clean_one_in_its_category():
@@ -58,7 +42,8 @@ def test_a_failed_answer_is_swapped_for_the_next_clean_one_in_its_category():
         answer_line("deuce-end", "direct_lookup", "answered", QUOTE_PROBLEM),
         answer_line("feather-count", "direct_lookup", "answered", []),
     ]
-    sample, swap_notes = pick_grading_sample(answer_lines, ["post-height", "deuce-end"])
+    failures_by_id = {"post-height": [], "deuce-end": ["citation [laws-1.4] quote not in clause"], "feather-count": []}
+    sample, swap_notes = pick_grading_sample(answer_lines, ["post-height", "deuce-end"], failures_by_id)
     assert [line["id"] for line in sample] == ["post-height", "feather-count"]
     assert swap_notes == ["deuce-end failed the code checks; feather-count takes its place"]
 
@@ -66,11 +51,17 @@ def test_a_failed_answer_is_swapped_for_the_next_clean_one_in_its_category():
 # ===== The printout =====
 
 def test_the_printout_puts_code_checks_then_answer_then_question_then_citations():
-    printout = format_answer_for_grading(CLEAN_POSTS_LINE, SAMPLE_QUESTIONS[1], CHUNK_BY_ID)
+    printout = format_answer_for_grading(CLEAN_POSTS_LINE, SAMPLE_QUESTIONS[1], CHUNK_BY_ID, [])
     positions = [printout.index(label) for label in ["Code checks", "Bot answer", "Question", "Expected", "Citations", "clause:"]]
     assert positions == sorted(positions)
     assert "Also shown, not cited: laws-7.4" in printout
     assert "judge" not in printout.lower()
+    assert "warnings: none" in printout
+
+
+def test_the_printout_shows_the_code_warnings():
+    printout = format_answer_for_grading(CLEAN_POSTS_LINE, SAMPLE_QUESTIONS[1], CHUNK_BY_ID, ["golden answer numbers not in the reply: 11"])
+    assert "warnings: golden answer numbers not in the reply: 11" in printout
 
 
 # ===== The grades template =====

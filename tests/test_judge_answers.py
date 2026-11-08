@@ -42,7 +42,7 @@ def test_the_answer_passes_only_when_every_rubric_line_passes():
 # ===== The prompt =====
 
 def test_the_prompt_holds_the_expected_answer_the_sources_and_the_reply():
-    prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS)
+    prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, [])
     assert SAMPLE_QUESTIONS[1]["answer"] in prompt
     assert "[laws-1.4]" in prompt
     assert '- [laws-1.4] "The posts shall be 1.55 metres in height"' in prompt
@@ -51,15 +51,26 @@ def test_the_prompt_holds_the_expected_answer_the_sources_and_the_reply():
 
 
 def test_a_question_without_an_answer_shows_why_and_its_pass_rule():
-    prompt = build_judge_prompt(SAMPLE_QUESTIONS[2], CEILING_REPLY, SAMPLE_CHUNKS)
+    prompt = build_judge_prompt(SAMPLE_QUESTIONS[2], CEILING_REPLY, SAMPLE_CHUNKS, [])
     assert SAMPLE_QUESTIONS[2]["why_unanswerable"] in prompt
     assert SAMPLE_QUESTIONS[2]["pass_rule"] in prompt
     assert "Citations:\n(none)" in prompt
 
 
+def test_the_code_warnings_reach_the_judge_as_hints():
+    prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, ["golden answer numbers not in the reply: 11"])
+    assert "<code_notes>\ngolden answer numbers not in the reply: 11\n" in prompt
+    assert "context numbers" in prompt
+
+
+def test_without_warnings_the_code_notes_say_none():
+    prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, [])
+    assert "<code_notes>\nNone\n</code_notes>" in prompt
+
+
 def test_the_prompt_never_names_the_answer_model():
     """Hiding who wrote the answer keeps the judge from favouring or doubting a model by name."""
-    prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS)
+    prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, [])
     assert "mistral" not in prompt.lower()
 
 
@@ -81,7 +92,7 @@ class StubJudgeClient:
 def test_the_judge_request_turns_thinking_off_the_way_sonnet_5_5_accepts():
     """Sonnet 5.5 rejects a temperature and rejects thinking type "disabled"; "between_tools" turns it off."""
     client = StubJudgeClient()
-    reply = grade_answer(client, "claude-sonnet-5-5", SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS)
+    reply = grade_answer(client, "claude-sonnet-5-5", SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, [])
     request = client.requests[0]
     assert request["thinking"] == {"type": "between_tools"}
     assert "temperature" not in request

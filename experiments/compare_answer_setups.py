@@ -10,13 +10,14 @@ search_text (decision record 0006), the answer model at temperature 0, and the j
 
 Writes, for each run:
   evals/answer_runs/<time>-<label>-answers.jsonl  per question: the sources, the answer and the code checks
-  evals/answer_runs/<time>-<label>-grades.jsonl   per question: the judge's grade
+  evals/answer_runs/<time>-<label>-grades.jsonl   per question: the judge's grade, or none when the code checks failed it
 The two files are kept apart, so you can grade answers yourself before you see the judge's grades.
 Each line is saved as soon as its question is done, so a crash partway keeps every answer
 already paid for. Only a finished run adds its line to evals/runs.jsonl.
 
 Needs the saved question and probe vectors (run scripts.build_embeddings first) and both API
-keys in .env. A run makes 33 answer calls and 33 judge calls.
+keys in .env. A run makes 33 answer calls, and a judge call only for each answer that passes the
+code checks (evals/code_checks.py): code decides what it can, the judge grades the rest.
 
 Run from the project root:
     uv run python -m experiments.compare_answer_setups --top-k 5 --dry-run
@@ -39,6 +40,7 @@ from answer.check_citations import find_citation_problems
 from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
 from app.settings import load_settings
 from evals.golden_answer_chunks import load_chunks, load_questions
+from evals.code_checks import find_code_failures
 from evals.judge_answers import grade_answer, judge_passed
 from evals.log_eval_run import append_run
 from evals.refusal_probes import load_refusal_probes
@@ -56,6 +58,16 @@ SECONDS_BETWEEN_QUESTIONS = 1.0
 
 ## Questions whose pass rule needs an image: a text-only answer fails them until images arrive in Week 4
 IMAGE_ONLY_QUESTION_IDS = {"doubles-court-size", "service-judge-height-signal"}
+
+## Each code check, and the start of its failure messages
+CODE_CHECK_PREFIXES = {
+    "format error": ("format error",),
+    "wrong refusal": ("missed refusal", "false refusal"),
+    "citation problem": ("citation",),
+    "number from nowhere": ("numbers from nowhere",),
+    "wrong clause": ("wrong clause",),
+}
+CODE_CHECK_NAMES = list(CODE_CHECK_PREFIXES)
 
 ## Where each run's answers and grades go
 ANSWER_RUNS_FOLDER = Path(__file__).resolve().parent.parent / "evals" / "answer_runs"
@@ -84,9 +96,10 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
 
 # ===== One question =====
 
-def answer_and_grade(question: dict, search, top_k: int, mistral_client: Mistral, answer_model: str,
-                     reasoning_effort: str, anthropic_client: Anthropic, judge_model: str) -> tuple[dict, dict]:
-    """Returns one question's answer line (sources, answer, code checks) and its grade line (the judge's grade)."""
+def answer_and_grade(question: dict, search, top_k: int, chunks: list[dict], chunk_by_id: dict[str, dict],
+                     mistral_client: Mistral, answer_model: str, reasoning_effort: str,
+                     anthropic_client: Anthropic, judge_model: str) -> tuple[dict, dict]:
+    """Returns one question's answer line (sources, answer, code checks) and its grade line (the judge's grade, if judged)."""
 
     # Retrieve, then answer from what was retrieved
     retrieved_chunks = search(question["question"], top_k)
@@ -105,6 +118,8 @@ def answer_and_grade(question: dict, search, top_k: int, mistral_client: Mistral
         "thinking": reply.thinking,
         "citation_problems": [],
         "refusal_outcome": None,
+        "code_failures": ["format error"],
+        "code_warnings": [],
         "answer_cost": call_cost(answer_model, reply.input_tokens, reply.output_tokens),
         "judge_cost": 0.0,
     }
@@ -112,22 +127,39 @@ def answer_and_grade(question: dict, search, top_k: int, mistral_client: Mistral
     # A reply that didn't fit the shape can't be checked or graded: it counts as a fail, and its raw text is kept for Step 6
     if reply.is_format_error:
         answer_line["raw_reply"] = reply.raw_reply
-        return answer_line, {"id": question["id"], "passed": False, "grade": None}
+        return answer_line, {"id": question["id"], "passed": False, "judged": False, "grade": None}
 
-    # Code checks first, then the judge
+    # Code checks first: an answer they fail has failed, and isn't sent to the judge
     answer_line["answer"] = reply.answer.model_dump()
     answer_line["citation_problems"] = find_citation_problems(reply.answer, retrieved_chunks)
     answer_line["refusal_outcome"] = refusal_outcome(question, reply.answer.refused)
-    grade_reply = grade_answer(anthropic_client, judge_model, question, reply.answer, retrieved_chunks)
+    failures, warnings = find_code_failures(answer_line, question, chunks, chunk_by_id)
+    answer_line["code_failures"] = failures
+    answer_line["code_warnings"] = warnings
+    if failures:
+        return answer_line, {"id": question["id"], "passed": False, "judged": False, "grade": None}
+
+    # Then the judge, for what only it can grade, with the code warnings to weigh
+    grade_reply = grade_answer(anthropic_client, judge_model, question, reply.answer, retrieved_chunks, warnings)
     answer_line["judge_cost"] = call_cost(judge_model, grade_reply.input_tokens, grade_reply.output_tokens)
-    grade_line = {"id": question["id"], "passed": judge_passed(grade_reply.grade), "grade": grade_reply.grade.model_dump()}
+    grade_line = {"id": question["id"], "passed": judge_passed(grade_reply.grade), "judged": True,
+                  "grade": grade_reply.grade.model_dump()}
     return answer_line, grade_line
 
 
 # ===== Scoring a run =====
 
+def failed_check(answer_line: dict, check_name: str) -> bool:
+    """True when one of the answer's code failures belongs to the named check."""
+    prefixes = CODE_CHECK_PREFIXES[check_name]
+    for failure in answer_line["code_failures"]:
+        if failure.startswith(prefixes):
+            return True
+    return False
+
+
 def count_passed(answer_lines: list[dict], passed_by_id: dict[str, bool]) -> int:
-    """Returns how many of the answers the judge passed."""
+    """Returns how many of the answers passed: the code checks, then the judge."""
     passed_count = 0
     for line in answer_lines:
         if passed_by_id[line["id"]]:
@@ -161,7 +193,14 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
         same_category = [line for line in text_answerable if line["category"] == category]
         by_category[category] = {"passed": count_passed(same_category, passed_by_id), "questions": len(same_category)}
 
-    # Code checks: citations, and refusals counted both ways
+    # Code checks: what failed them, by check, and how many answers went on to the judge
+    code_failed = [line for line in answer_lines if line["code_failures"]]
+    code_failures_by_check = {}
+    for check_name in CODE_CHECK_NAMES:
+        failed_lines = [line for line in code_failed if failed_check(line, check_name)]
+        code_failures_by_check[check_name] = len(failed_lines)
+
+    # Citations, and refusals counted both ways
     citations_clean = [line for line in with_answer if not line["citation_problems"]]
     correct_refusals = [line for line in golden_no_answer if line["refusal_outcome"] == CORRECT_REFUSAL]
     correct_probe_refusals = [line for line in probes if line["refusal_outcome"] == CORRECT_REFUSAL]
@@ -183,7 +222,10 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
         "refusals_needed": len(golden_no_answer),
         "probe_refusals_correct": len(correct_probe_refusals),
         "probes": len(probes),
-        "no_answer_judged_passed": count_passed(golden_no_answer + probes, passed_by_id),
+        "no_answer_passed": count_passed(golden_no_answer + probes, passed_by_id),
+        "code_failed": len(code_failed),
+        "code_failures_by_check": code_failures_by_check,
+        "judge_calls": len(answer_lines) - len(code_failed),
         "false_refusals": len(false_refusals),
         "format_errors": len(answer_lines) - len(with_answer),
         "words_returned": round(mean(line["words_returned"] for line in answer_lines)),
@@ -201,26 +243,21 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
     for category, numbers in scores["by_category"].items():
         print(f"  {category:16} {numbers['passed']} of {numbers['questions']}")
     print(f"citations clean {scores['citation_pass_rate']}  · format errors {scores['format_errors']}")
+    print(f"code checks failed {scores['code_failed']}  {scores['code_failures_by_check']}  · judge calls {scores['judge_calls']}")
     print(f"refusals {scores['refusals_correct']} of {scores['refusals_needed']}  · probes {scores['probe_refusals_correct']} "
-          f"of {scores['probes']}  · no-answer judged passed {scores['no_answer_judged_passed']} of "
+          f"of {scores['probes']}  · no-answer passed {scores['no_answer_passed']} of "
           f"{scores['refusals_needed'] + scores['probes']}  · false refusals {scores['false_refusals']}")
     print(f"words per question {scores['words_returned']}  · cost per question ${scores['cost_per_question']}"
           f"  · total ${scores['total_cost']}")
 
-    # One line per failure: what went wrong, so Step 6 can tag a cause
+    # One line per failure: the code checks it failed, or the judge's fail, so Step 6 can tag a cause
     for line in answer_lines:
-        problems = [problem["problem"] for problem in line["citation_problems"]]
-        judged_failed = not passed_by_id[line["id"]]
-        if not judged_failed and not problems:
+        if passed_by_id[line["id"]]:
             continue
-
-        judge_verdict = "pass"
-        if judged_failed:
-            judge_verdict = "fail"
-        citation_verdict = "clean"
-        if problems:
-            citation_verdict = ", ".join(problems)
-        print(f"  fail: {line['id']}  judge {judge_verdict}  refusal {line['refusal_outcome']}  citations {citation_verdict}")
+        reason = "judge fail"
+        if line["code_failures"]:
+            reason = "; ".join(line["code_failures"])
+        print(f"  fail: {line['id']}  {reason}")
 
 
 def append_line(path: Path, line: dict) -> None:
@@ -241,6 +278,7 @@ def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
     if is_dry_run:
         questions = questions[:1]
     search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
+    chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
     mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value())
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
 
@@ -257,9 +295,9 @@ def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
     grade_lines = []
     for question_number, question in enumerate(questions, start=1):
         print(f"{question_number}/{len(questions)} {question['id']}")
-        answer_line, grade_line = answer_and_grade(question, search, top_k, mistral_client, settings.mistral_answer_model,
-                                                   settings.mistral_reasoning_effort, anthropic_client,
-                                                   settings.claude_judge_model)
+        answer_line, grade_line = answer_and_grade(question, search, top_k, chunks, chunk_by_id, mistral_client,
+                                                   settings.mistral_answer_model, settings.mistral_reasoning_effort,
+                                                   anthropic_client, settings.claude_judge_model)
         append_line(answers_path, answer_line)
         append_line(grades_path, grade_line)
         answer_lines.append(answer_line)

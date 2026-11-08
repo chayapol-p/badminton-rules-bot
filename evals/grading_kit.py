@@ -1,14 +1,15 @@
 """
 The grading kit: lets the code checks fail what they can, then prints the rest for grading by hand, without the judge's grades.
 
-Step 1, code checks. An answer with a format error, a wrong refusal (missed or false) or a
-citation problem has already failed. These are listed first and are not graded by hand.
+Step 1, code checks (evals/code_checks.py, the same checks the run uses). An answer with a format
+error, a wrong refusal, a citation problem, a number from nowhere or no citation of a clause that
+holds the answer has already failed. These are listed first and are not graded by hand.
 
 Step 2, grading by hand. The kit takes the 10 Step 4 answers and swaps any answer the code
 checks failed for the next clean answer in the same category, so your grades test the judge on
 the part only it can grade: are the key facts right, is every fact in the sources, is the pass
-rule followed. For each answer it prints, in this order: the code checks, the bot's answer, the
-question with its golden answer and pass rule, then each citation with the clause it quotes.
+rule followed. For each answer it prints, in this order: the code checks and any warning, the
+bot's answer, the question with its golden answer and pass rule, then each citation with its clause.
 
   Input:  evals/answer_runs/<run>-answers.jsonl, evals/golden_questions.json,
           evals/refusal_probes.json, data/rule_chunks.json
@@ -24,7 +25,7 @@ import json
 import textwrap
 from pathlib import Path
 
-from answer.check_refusals import FALSE_REFUSAL, MISSED_REFUSAL
+from evals.code_checks import find_code_failures
 from evals.compare_judge_with_my_grades import HUMAN_GRADES_FILE, read_lines
 from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
 from evals.refusal_probes import load_refusal_probes
@@ -46,31 +47,14 @@ GRADING_SAMPLE_IDS = [
     "attack-be-the-referee",
 ]
 
-## Refusal outcomes the code already counts as a fail
-WRONG_REFUSALS = {MISSED_REFUSAL, FALSE_REFUSAL}
-
 ## Line width for wrapped text
 WRAP_WIDTH = 100
 
 
-# ===== Step 1: what the code checks already failed =====
-
-def code_check_failures(answer_line: dict) -> list[str]:
-    """Returns what the code checks failed for one answer: a format error, a wrong refusal, or each citation problem."""
-    if answer_line["is_format_error"]:
-        return ["format error"]
-
-    failures = []
-    if answer_line["refusal_outcome"] in WRONG_REFUSALS:
-        failures.append(answer_line["refusal_outcome"])
-    for problem in answer_line["citation_problems"]:
-        failures.append(f"citation [{problem['chunk_id']}] {problem['problem']}")
-    return failures
-
-
 # ===== Step 2: which answers to grade by hand =====
 
-def pick_grading_sample(answer_lines: list[dict], preferred_ids: list[str]) -> tuple[list[dict], list[str]]:
+def pick_grading_sample(answer_lines: list[dict], preferred_ids: list[str],
+                        failures_by_id: dict[str, list[str]]) -> tuple[list[dict], list[str]]:
     """Returns the answers to grade, swapping any the code checks failed for the next clean answer in the same category, plus a note per swap."""
     answer_line_by_id = {line["id"]: line for line in answer_lines}
     picked_ids = set()
@@ -79,7 +63,7 @@ def pick_grading_sample(answer_lines: list[dict], preferred_ids: list[str]) -> t
 
     for preferred_id in preferred_ids:
         preferred_line = answer_line_by_id[preferred_id]
-        if not code_check_failures(preferred_line):
+        if not failures_by_id[preferred_id]:
             sample.append(preferred_line)
             picked_ids.add(preferred_id)
             continue
@@ -88,7 +72,7 @@ def pick_grading_sample(answer_lines: list[dict], preferred_ids: list[str]) -> t
         for line in answer_lines:
             is_same_category = line["category"] == preferred_line["category"]
             is_free = line["id"] not in picked_ids and line["id"] not in preferred_ids
-            if is_same_category and is_free and not code_check_failures(line):
+            if is_same_category and is_free and not failures_by_id[line["id"]]:
                 sample.append(line)
                 picked_ids.add(line["id"])
                 swap_notes.append(f"{preferred_id} failed the code checks; {line['id']} takes its place")
@@ -112,11 +96,16 @@ def describe_expected(question: dict) -> str:
     return f"No answer: refuse. Why: {reason}"
 
 
-def format_answer_for_grading(answer_line: dict, question: dict, chunk_by_id: dict[str, dict]) -> str:
+def format_answer_for_grading(answer_line: dict, question: dict, chunk_by_id: dict[str, dict], warnings: list[str]) -> str:
     """Returns one answer as plain text: code checks, the bot's answer, the question and what it needs, then each citation with its clause."""
     answer = answer_line["answer"]
+
+    # A warning is a hint for you, as for the judge: a missing golden number may only be context
+    warning_text = "none"
+    if warnings:
+        warning_text = "; ".join(warnings)
     blocks = [f"===== {answer_line['id']} ({answer_line['category']}) =====",
-              f"  Code checks: citations clean · refusal: {answer_line['refusal_outcome']}",
+              f"  Code checks: passed · refusal: {answer_line['refusal_outcome']} · warnings: {warning_text}",
               wrap(f"Bot answer (refused: {answer['refused']})", answer["answer"]),
               wrap("Question", answer_line["question"]),
               wrap("Expected", describe_expected(question)),
@@ -184,12 +173,21 @@ def main() -> None:
     answer_lines = read_lines(ANSWER_RUNS_FOLDER / f"{arguments.run}-answers.jsonl")
     golden_questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
     question_by_id = {question["id"]: question for question in golden_questions + load_refusal_probes()}
-    chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
+    chunks = load_chunks()
+    chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
+
+    # Run the code checks on every answer
+    failures_by_id = {}
+    warnings_by_id = {}
+    for line in answer_lines:
+        failures, warnings = find_code_failures(line, question_by_id[line["id"]], chunks, chunk_by_id)
+        failures_by_id[line["id"]] = failures
+        warnings_by_id[line["id"]] = warnings
 
     # Step 1: what the code checks already failed, across the whole run
     print("===== Step 1: failed by the code checks (no need to grade) =====")
     for line in answer_lines:
-        failures = code_check_failures(line)
+        failures = failures_by_id[line["id"]]
         if not failures:
             continue
 
@@ -200,13 +198,13 @@ def main() -> None:
         print(f"  {line['id']}: {'; '.join(failures)}{note}")
 
     # Step 2: the answers to grade by hand
-    sample, swap_notes = pick_grading_sample(answer_lines, GRADING_SAMPLE_IDS)
+    sample, swap_notes = pick_grading_sample(answer_lines, GRADING_SAMPLE_IDS, failures_by_id)
     print("\n===== Step 2: grade these by hand =====")
     for note in swap_notes:
         print(f"  note: {note}")
     for line in sample:
         print()
-        print(format_answer_for_grading(line, question_by_id[line["id"]], chunk_by_id))
+        print(format_answer_for_grading(line, question_by_id[line["id"]], chunk_by_id, warnings_by_id[line["id"]]))
 
     if arguments.write_template:
         added_count = refresh_grades_file(arguments.run, [line["id"] for line in sample])

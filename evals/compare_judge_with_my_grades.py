@@ -9,7 +9,8 @@ Grade before you open the run's -grades.jsonl file, so the judge's verdict can't
   Output: printed: how many grades match, then each disagreement with both reasons
 
 Trust the judge when it matches at least 9 of your 10 grades (a starting bar). Below that, fix
-the rubric line behind the disagreements and regrade.
+the rubric line behind the disagreements and regrade. An answer the code checks failed was never
+sent to the judge, so it is listed apart and left out of the count.
 
 Run from the project root:
     uv run python -m evals.compare_judge_with_my_grades --run 20261107T1200-top5
@@ -42,9 +43,6 @@ def read_lines(path: Path) -> list[dict]:
 
 def judge_reasons(grade_line: dict) -> str:
     """Returns the reasons of the rubric lines the judge failed, or its pass when it failed none."""
-    if grade_line["grade"] is None:
-        return "no grade: the answer didn't fit the shape"
-
     failed_reasons = []
     for line_name, rubric_line in grade_line["grade"].items():
         if not rubric_line["passed"]:
@@ -55,10 +53,16 @@ def judge_reasons(grade_line: dict) -> str:
 
 
 def compare_grades(my_grades: list[dict], judge_grade_by_id: dict[str, dict]) -> dict:
-    """Returns how many of your grades the judge matched, and each disagreement with both reasons."""
+    """Returns how many of your grades the judge matched, each disagreement with both reasons, and the answers it never graded."""
     disagreements = []
+    not_judged_ids = []
     for my_grade in my_grades:
         judge_grade = judge_grade_by_id[my_grade["id"]]
+
+        # No grade means the code checks failed the answer before the judge saw it
+        if judge_grade["grade"] is None:
+            not_judged_ids.append(my_grade["id"])
+            continue
         if judge_grade["passed"] != my_grade["passed"]:
             disagreements.append({
                 "id": my_grade["id"],
@@ -67,7 +71,9 @@ def compare_grades(my_grades: list[dict], judge_grade_by_id: dict[str, dict]) ->
                 "judge": judge_grade["passed"],
                 "judge_reason": judge_reasons(judge_grade),
             })
-    return {"matched": len(my_grades) - len(disagreements), "graded": len(my_grades), "disagreements": disagreements}
+    compared_count = len(my_grades) - len(not_judged_ids)
+    return {"matched": compared_count - len(disagreements), "graded": compared_count,
+            "disagreements": disagreements, "not_judged_ids": not_judged_ids}
 
 
 # ===== Running =====
@@ -89,6 +95,8 @@ def main() -> None:
 
     comparison = compare_grades(my_grades, judge_grade_by_id)
     print(f"judge matches {comparison['matched']} of your {comparison['graded']} grades")
+    if comparison["not_judged_ids"]:
+        print(f"not judged, failed by the code checks: {', '.join(comparison['not_judged_ids'])}")
     for disagreement in comparison["disagreements"]:
         print(f"\n{disagreement['id']}: you {disagreement['mine']}, judge {disagreement['judge']}")
         print(f"  you:   {disagreement['my_reason']}")

@@ -13,7 +13,7 @@ REFUSED_OUTCOMES = {"correct refusal", "false refusal"}
 
 
 def answer_line(question_id: str, split: str, category: str, should_refuse: bool, refusal_outcome: str | None,
-                citation_problems: list[dict]) -> dict:
+                citation_problems: list[dict], code_failures: list[str]) -> dict:
     """Returns one answer line in the run's shape; a None outcome means the reply didn't fit the shape."""
     answer = None
     if refusal_outcome is not None:
@@ -28,20 +28,22 @@ def answer_line(question_id: str, split: str, category: str, should_refuse: bool
         "is_format_error": answer is None,
         "citation_problems": citation_problems,
         "refusal_outcome": refusal_outcome,
+        "code_failures": code_failures,
         "answer_cost": 0.003,
         "judge_cost": 0.009,
     }
 
 
 ANSWER_LINES = [
-    answer_line("post-height", "dev", "direct_lookup", False, "answered", []),
-    answer_line("deuce-end", "dev", "direct_lookup", False, "false refusal", []),
-    answer_line("red-card", "dev", "cross_reference", False, None, []),
-    answer_line("doubles-court-size", "dev", "diagram", False, "answered", [{"chunk_id": "x", "problem": "not retrieved"}]),
-    answer_line("service-judge-height-signal", "dev", "diagram", False, "false refusal", []),
-    answer_line("ceiling-height", "dev", "unanswerable", True, "correct refusal", []),
-    answer_line("spin-serve-ban-date", "dev", "unanswerable", True, "missed refusal", []),
-    answer_line("string-tension", "probe", "refusal_probe", True, "correct refusal", []),
+    answer_line("post-height", "dev", "direct_lookup", False, "answered", [], []),
+    answer_line("deuce-end", "dev", "direct_lookup", False, "false refusal", [], ["false refusal"]),
+    answer_line("red-card", "dev", "cross_reference", False, None, [], ["format error"]),
+    answer_line("doubles-court-size", "dev", "diagram", False, "answered", [{"chunk_id": "x", "problem": "not retrieved"}],
+                ["citation [x] not retrieved", "numbers from nowhere: 13.4"]),
+    answer_line("service-judge-height-signal", "dev", "diagram", False, "false refusal", [], ["false refusal"]),
+    answer_line("ceiling-height", "dev", "unanswerable", True, "correct refusal", [], []),
+    answer_line("spin-serve-ban-date", "dev", "unanswerable", True, "missed refusal", [], ["missed refusal"]),
+    answer_line("string-tension", "probe", "refusal_probe", True, "correct refusal", [], []),
 ]
 
 PASSED_BY_ID = {
@@ -73,7 +75,15 @@ def test_refusals_are_counted_both_ways_and_probes_apart():
     assert scores["probe_refusals_correct"] == 1
     assert scores["probes"] == 1
     assert scores["false_refusals"] == 1, "the image-only false refusal is left out"
-    assert scores["no_answer_judged_passed"] == 2
+    assert scores["no_answer_passed"] == 2
+
+
+def test_code_failures_are_counted_by_check_and_only_clean_answers_reach_the_judge():
+    scores = summarise_answer_run(ANSWER_LINES, PASSED_BY_ID)
+    assert scores["code_failed"] == 5
+    assert scores["code_failures_by_check"] == {"format error": 1, "wrong refusal": 3, "citation problem": 1,
+                                                "number from nowhere": 1, "wrong clause": 0}
+    assert scores["judge_calls"] == 3
 
 
 def test_citations_are_scored_only_on_replies_that_fit_the_shape():

@@ -17,7 +17,7 @@ Two settings to know:
   with a 400 and names between_tools as the way to turn thinking off before responding.
 
 Use:
-    reply = grade_answer(client, model, question, rules_answer, retrieved_chunks)
+    reply = grade_answer(client, model, question, rules_answer, retrieved_chunks, code_warnings)
     passed = judge_passed(reply.grade)
 """
 
@@ -37,11 +37,11 @@ MAX_GRADE_TOKENS = 1024
 ## The grading rules, sent as the system message on every call
 JUDGE_RULES = """You grade answers from a badminton rules bot. The bot may use only the sources it was given.
 
-You get the question, the expected answer (or why the question has no answer in the sources), a pass rule when there is one, the sources the bot was shown, and the bot's reply.
+You get the question, the expected answer (or why the question has no answer in the sources), a pass rule when there is one, the sources the bot was shown, the bot's reply, and any notes from the code checks.
 
 Grade three lines, each pass or fail, with one sentence of reason:
 1. key_facts. For a question with an expected answer: the reply states the expected answer's key facts; wording may differ. For a question with no answer: the reply does not give the missing fact (no number, date, name or ruling that the sources don't hold).
-2. only_from_sources. Every fact in the reply is in the sources. A true fact that isn't in the sources still fails.
+2. only_from_sources. Every claim in the reply is in the sources. Code has already checked that every number is in the sources, so look at the claims themselves. A true claim that isn't in the sources still fails.
 3. follows_pass_rule. The reply follows the pass rule. Pass when there is no pass rule.
 
 Judge the content only. Length, tone and formatting don't matter."""
@@ -103,29 +103,35 @@ def describe_reply(rules_answer: RulesAnswer) -> str:
             f"Answer: {rules_answer.answer}\nCitations:\n{citations_text}")
 
 
-def build_judge_prompt(question: dict, rules_answer: RulesAnswer, retrieved_chunks: list[dict]) -> str:
-    """Returns the user message for grading one reply."""
+def build_judge_prompt(question: dict, rules_answer: RulesAnswer, retrieved_chunks: list[dict], code_warnings: list[str]) -> str:
+    """Returns the user message for grading one reply, with the code checks' warnings for the judge to weigh."""
     sources_text = "\n\n".join(format_source(chunk) for chunk in retrieved_chunks)
     pass_rule = question.get("pass_rule", "None")
+
+    # A warning is a hint, not a verdict: a missing golden number can be context, not a key fact
+    code_notes = "None"
+    if code_warnings:
+        code_notes = "\n".join(code_warnings) + "\n(These may be context numbers rather than key facts: decide by the expected answer.)"
     return (
         f"<question>\n{question['question']}\n</question>\n\n"
         f"<expected_answer>\n{describe_expected_answer(question)}\n</expected_answer>\n\n"
         f"<pass_rule>\n{pass_rule}\n</pass_rule>\n\n"
         f"<sources>\n{sources_text}\n</sources>\n\n"
-        f"<reply>\n{describe_reply(rules_answer)}\n</reply>"
+        f"<reply>\n{describe_reply(rules_answer)}\n</reply>\n\n"
+        f"<code_notes>\n{code_notes}\n</code_notes>"
     )
 
 
 # ===== One grade =====
 
 def grade_answer(client: Anthropic, model: str, question: dict, rules_answer: RulesAnswer,
-                 retrieved_chunks: list[dict]) -> GradeReply:
+                 retrieved_chunks: list[dict], code_warnings: list[str]) -> GradeReply:
     """Returns the judge's grade for one reply."""
     response = client.messages.parse(
         model=model,
         max_tokens=MAX_GRADE_TOKENS,
         system=JUDGE_RULES,
-        messages=[{"role": "user", "content": build_judge_prompt(question, rules_answer, retrieved_chunks)}],
+        messages=[{"role": "user", "content": build_judge_prompt(question, rules_answer, retrieved_chunks, code_warnings)}],
         output_format=JudgeGrade,
         thinking={"type": "between_tools"},
     )
