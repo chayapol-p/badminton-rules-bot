@@ -33,6 +33,8 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0009](0009-top-5-plus-rule-links.md) | Keep top_k at 5, and add the clauses the hits link to | Accepted |
 | [0010](0010-quote-clause-text-only.md) | Quote only clause text, never a source's first line | Accepted |
 | [0011](0011-complete-answers-rule-not-adopted.md) | The "complete answers" rule is not adopted | Rejected |
+| [0012](0012-three-pass-rules-fixed.md) | Fix three pass rules that asked for more than the question or the corpus | Accepted |
+| [0013](0013-the-bots-words-about-itself-are-not-rule-claims.md) | The judge doesn't count the bot's words about itself as rule claims | Accepted |
 
 ## Template
 

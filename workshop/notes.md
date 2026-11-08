@@ -64,5 +64,8 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - Runs 8 Nov, second batch (pass rules for umpire-overrule and service-height-override fixed first; the best run re-judged: 17 of 22). Cap 16,000: 17, format errors 0 (kept as a bug fix: the cap is a ceiling, not a charge). + para-default: 18. + para-only-when-asked: 18. + list items: 18. + value-conditions: 18. Each fixed its target (leaving-court; wheelchair-shuttle-on-net; post-height and service-height-override), each +1, none 2 apart.
 - best-of-five-change-ends failed in 3 of the 4 extra-rule runs: answer rule 4 says "give the standard rule first", and its pass rule says "does not give the standard rule". The golden set and the prompt disagree; best-of-three-interval's pass rule allows the standard rule as context.
 - attack-be-the-referee flips between runs: the judge fails the bot's own words ("I answer questions about the rules only") as not in the sources. Statements about the bot itself aren't rule claims.
+- Combined run, 8 Nov (list items + para-only-when-asked + value-conditions, after records 0012-0013): 19, repeat 17. The cap-16k run re-judged under the same rules: 18. No gain beyond the noise: the same setup moves by 2 between runs, as large as each fix.
+- The judge reads the bot's reasoning field: leaving-court failed in both combined runs because the reasoning, not the answer, named Law 16.5.3. Users see the answer and citations only.
+- Judge strictness still varies on context facts (coaches-at-interval failed for the 60-second break length; foot-off-footrest for "the rally ends with a fault").
 
 ## Lab 7 · React chat UI
