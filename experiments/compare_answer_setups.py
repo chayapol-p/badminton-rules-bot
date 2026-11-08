@@ -3,8 +3,12 @@ Answers the dev questions and the probes with one setup, checks and grades every
 
 One run changes one thing (experiment rule 1). Fixed here: vector search on the clauses'
 search_text (decision record 0006), the answer model at temperature 0, and the judge.
-  --top-k   clauses handed to the model per question (default 5)
-  --label   a short name for the run, used in its file names (default: top<k>)
+  --top-k   clauses search hands on per question (default 5)
+  --follow-rule-links  add the clauses each hit links to: cited clauses, alternatives and para
+            exceptions (retrieval/expand_with_rule_links.py, one hop, no neighbours)
+  --rule    an extra answer rule to test, by name (answer/build_answer_prompt.py EXTRA_ANSWER_RULES);
+            repeat it for more than one
+  --label   a short name for the run, used in its file names (default: top<k>, then -links and each rule name)
   --dry-run answer only the first question, for a cheap live check of the API settings before a
             full run. It saves its files under a "-dry-run" name and never logs to runs.jsonl
 
@@ -33,7 +37,10 @@ import numpy
 from anthropic import Anthropic
 from mistralai.client import Mistral
 
+from collections.abc import Callable
+
 from answer.answer_shape import RulesAnswer
+from answer.build_answer_prompt import EXTRA_ANSWER_RULES, build_answer_rules
 from answer.generate_answer import generate_answer
 from answer.check_citations import find_citation_problems
 from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
@@ -46,6 +53,7 @@ from evals.log_eval_run import append_run
 from evals.probes import load_probes
 from evals.token_costs import call_cost
 from retrieval.stored_embeddings import load_embeddings
+from retrieval.expand_with_rule_links import expand_with_links, load_rule_map
 from retrieval.vector_search import VectorSearch
 
 
@@ -91,16 +99,38 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
     return VectorSearch(chunks, chunk_vectors, embedding_function=saved_question_vector)
 
 
+def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str, dict],
+                            follows_rule_links: bool) -> Callable[[str], list[dict]]:
+    """Returns the retrieve step: the top k from search, plus the clauses they link to when asked."""
+    rule_map = None
+    if follows_rule_links:
+        rule_map = load_rule_map()
+
+    def retrieve(question_text: str) -> list[dict]:
+        """Returns the clauses handed to the answer model for one question."""
+        hits = search(question_text, top_k)
+        if rule_map is None:
+            return hits
+
+        # One hop along the rule map, without the clauses before and after each hit
+        hit_ids = [chunk["id"] for chunk in hits]
+        context = expand_with_links(hit_ids, chunk_by_id, rule_map, question_is_para=False, include_nearby=False)
+        return [item["chunk"] for item in context]
+
+    return retrieve
+
+
 # ===== One question =====
 
-def answer_and_grade(question: dict, search, top_k: int, chunks: list[dict], chunk_by_id: dict[str, dict],
-                     mistral_client: Mistral, answer_model: str, reasoning_effort: str,
+def answer_and_grade(question: dict, retrieve: Callable[[str], list[dict]], answer_rules: str, chunks: list[dict],
+                     chunk_by_id: dict[str, dict], mistral_client: Mistral, answer_model: str, reasoning_effort: str,
                      anthropic_client: Anthropic, judge_model: str) -> tuple[dict, dict]:
     """Returns one question's answer line (sources, answer, code checks) and its grade line (the judge's grade, if judged)."""
 
     # Retrieve, then answer from what was retrieved
-    retrieved_chunks = search(question["question"], top_k)
-    reply = generate_answer(mistral_client, answer_model, reasoning_effort, question["question"], retrieved_chunks)
+    retrieved_chunks = retrieve(question["question"])
+    reply = generate_answer(mistral_client, answer_model, reasoning_effort, answer_rules, question["question"],
+                            retrieved_chunks)
     answer_line = {
         "id": question["id"],
         "split": question["split"],
@@ -273,7 +303,8 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
 
 # ===== Running one setup =====
 
-def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
+def run_answer_setup(top_k: int, follows_rule_links: bool, extra_rule_names: list[str], label: str,
+                     is_dry_run: bool) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
@@ -284,6 +315,8 @@ def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
         questions = questions[:1]
     search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
+    retrieve = build_retrieve_function(search, top_k, chunk_by_id, follows_rule_links)
+    answer_rules = build_answer_rules(extra_rule_names)
     mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value())
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
 
@@ -300,9 +333,10 @@ def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
     grade_lines = []
     for question_number, question in enumerate(questions, start=1):
         print(f"{question_number}/{len(questions)} {question['id']}")
-        answer_line, grade_line = answer_and_grade(question, search, top_k, chunks, chunk_by_id, mistral_client,
-                                                   settings.mistral_answer_model, settings.mistral_reasoning_effort,
-                                                   anthropic_client, settings.claude_judge_model)
+        answer_line, grade_line = answer_and_grade(question, retrieve, answer_rules, chunks, chunk_by_id,
+                                                   mistral_client, settings.mistral_answer_model,
+                                                   settings.mistral_reasoning_effort, anthropic_client,
+                                                   settings.claude_judge_model)
         append_line(answers_path, answer_line)
         append_line(grades_path, grade_line)
         answer_lines.append(answer_line)
@@ -321,6 +355,8 @@ def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
         "field": "search_text",
         "split": "dev+probes",
         "top_k": top_k,
+        "rule_links": follows_rule_links,
+        "extra_rules": extra_rule_names,
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,
         "judge_model": settings.claude_judge_model,
@@ -337,17 +373,24 @@ def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
 
 def main() -> None:
     """Runs the one setup named on the command line."""
-    parser = argparse.ArgumentParser(description="Answer, check and grade the dev questions and refusal probes.")
+    parser = argparse.ArgumentParser(description="Answer, check and grade the dev questions and probes.")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
-    parser.add_argument("--label", help="a short name for the run (default: top<k>)")
+    parser.add_argument("--follow-rule-links", action="store_true", help="add the clauses each hit links to")
+    parser.add_argument("--rule", action="append", default=[], choices=list(EXTRA_ANSWER_RULES),
+                        help="an extra answer rule to test; repeat for more than one")
+    parser.add_argument("--label", help="a short name for the run (default: top<k>, then -links and each rule name)")
     parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     arguments = parser.parse_args()
+    # Name the run by what it changed, unless a label is given
     label = arguments.label
     if label is None:
-        label = f"top{arguments.top_k}"
+        label_parts = [f"top{arguments.top_k}"]
+        if arguments.follow_rule_links:
+            label_parts.append("links")
+        label = "-".join(label_parts + arguments.rule)
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_answer_setup(arguments.top_k, label, arguments.dry_run)
+    run_answer_setup(arguments.top_k, arguments.follow_rule_links, arguments.rule, label, arguments.dry_run)
 
 
 if __name__ == "__main__":

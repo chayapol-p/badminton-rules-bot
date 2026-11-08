@@ -16,7 +16,7 @@ and the raw text, and the run records it instead of stopping. Network and API er
 the run; retries come in Stage 4.
 
 Use:
-    reply = generate_answer(client, model, reasoning_effort, question_text, retrieved_chunks)
+    reply = generate_answer(client, model, reasoning_effort, answer_rules, question_text, retrieved_chunks)
 """
 
 from dataclasses import dataclass
@@ -76,14 +76,14 @@ def split_reply_content(content: str | list | None) -> tuple[str, str]:
 
 # ===== One answer =====
 
-def generate_answer(client: Mistral, model: str, reasoning_effort: str, question_text: str,
+def generate_answer(client: Mistral, model: str, reasoning_effort: str, answer_rules: str, question_text: str,
                     retrieved_chunks: list[dict]) -> AnswerReply:
     """Generates the model's answer to one question from the retrieved chunks: the generate step after retrieve."""
 
     # Ask with the RulesAnswer schema, the same strict schema chat.parse would send
     response = client.chat.complete(
         model=model,
-        messages=build_answer_prompt(question_text, retrieved_chunks),
+        messages=build_answer_prompt(answer_rules, question_text, retrieved_chunks),
         response_format=response_format_from_pydantic_model(RulesAnswer),
         reasoning_effort=reasoning_effort,
         temperature=0,
