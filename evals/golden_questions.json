@@ -196,7 +196,7 @@
           "clause": "8.1.5"
         }
       ],
-      "pass_rule": "Does not give the standard rule (11 points in the third game).",
+      "pass_rule": "Says 6 points in the fifth game. May mention the standard rule (11 points in the third game) as labelled context. Giving 11 points as the answer is a fail.",
       "split": "dev"
     },
     {

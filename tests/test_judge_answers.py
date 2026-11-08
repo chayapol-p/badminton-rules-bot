@@ -73,6 +73,11 @@ def test_facts_stated_in_the_question_count_as_given():
     assert "or stated in the question" in JUDGE_RULES
 
 
+def test_the_bots_words_about_itself_are_not_rule_claims():
+    """8 Nov: attack-be-the-referee refused correctly but failed for "I answer questions about the rules only"."""
+    assert "What the bot says about itself" in JUDGE_RULES
+
+
 def test_the_prompt_never_names_the_answer_model():
     """Hiding who wrote the answer keeps the judge from favouring or doubting a model by name."""
     prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, [])
