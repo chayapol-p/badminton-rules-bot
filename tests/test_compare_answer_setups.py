@@ -1,9 +1,13 @@
 """
-Tests the answer run's scores and the cost of one call, on answer lines written by hand.
+Tests the answer run's scores, the cost of one call, and the code-checks-then-judge step, on answer lines written by hand.
 """
 
 from evals.token_costs import call_cost
-from experiments.compare_answer_setups import summarise_answer_run
+from experiments.compare_answer_setups import check_and_grade, summarise_answer_run
+from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
+from tests.test_judge_answers import POSTS_REPLY, StubJudgeClient
+
+CHUNK_BY_ID = {chunk["id"]: chunk for chunk in SAMPLE_CHUNKS}
 
 
 # ===== Sample answer lines =====
@@ -100,3 +104,33 @@ def test_cost_adds_the_answer_and_the_judge():
 
 def test_one_call_costs_its_tokens_at_the_model_price():
     assert call_cost("claude-sonnet-5-5", 1_000_000, 100_000) == 2.00 + 1.00
+
+
+# ===== Code checks first, then the judge =====
+
+def answer_line_to_check(rules_answer) -> dict:
+    """Returns the posts answer line as the run builds it, before the checks."""
+    return {"id": "post-height", "question": SAMPLE_QUESTIONS[1]["question"], "retrieved_ids": ["laws-1.4"],
+            "is_format_error": False, "answer": rules_answer.model_dump()}
+
+
+def test_an_answer_that_fails_the_code_checks_never_reaches_the_judge():
+    client = StubJudgeClient()
+    refused_reply = POSTS_REPLY.model_copy(update={"refused": True})
+    line = answer_line_to_check(refused_reply)
+    grade_line = check_and_grade(line, refused_reply, SAMPLE_QUESTIONS[1], [SAMPLE_CHUNKS[2]], SAMPLE_CHUNKS,
+                                 CHUNK_BY_ID, client, "claude-sonnet-5-5")
+    assert grade_line == {"id": "post-height", "passed": False, "judged": False, "grade": None}
+    assert line["code_failures"] == ["false refusal"]
+    assert client.requests == []
+
+
+def test_a_clean_answer_is_judged_and_its_cost_counted():
+    client = StubJudgeClient()
+    line = answer_line_to_check(POSTS_REPLY)
+    grade_line = check_and_grade(line, POSTS_REPLY, SAMPLE_QUESTIONS[1], [SAMPLE_CHUNKS[2]], SAMPLE_CHUNKS,
+                                 CHUNK_BY_ID, client, "claude-sonnet-5-5")
+    assert grade_line["judged"]
+    assert grade_line["passed"]
+    assert line["judge_cost"] > 0
+    assert len(client.requests) == 1
