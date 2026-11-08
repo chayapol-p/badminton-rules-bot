@@ -14,3 +14,6 @@ __pycache__/
 
 # Dry runs check the API settings only: never a result
 evals/answer_runs/*-dry-run-*
+
+# A re-judge in progress, or one an API error stopped: never a result
+evals/answer_runs/*.partial.jsonl

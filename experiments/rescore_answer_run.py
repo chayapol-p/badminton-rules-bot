@@ -58,9 +58,12 @@ def rejudge_answer_lines(answer_lines: list[dict], question_by_id: dict[str, dic
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
 
-    # Start the rejudged grades file empty, then save each grade the moment it's done
+    # Save each grade the moment it's done, to a partial file that replaces the rejudged grades only at
+    # the end: on 8 Nov a usage limit stopped every re-judge at its first call, and the old start-empty
+    # step had already wiped two saved rejudged files
     grades_path = ANSWER_RUNS_FOLDER / f"{run_name}-rejudged-grades.jsonl"
-    grades_path.write_text("", encoding="utf-8")
+    partial_path = ANSWER_RUNS_FOLDER / f"{run_name}-rejudged-grades.partial.jsonl"
+    partial_path.write_text("", encoding="utf-8")
 
     passed_by_id = {}
     for line in answer_lines:
@@ -75,8 +78,9 @@ def rejudge_answer_lines(answer_lines: list[dict], question_by_id: dict[str, dic
                                          chunk_by_id, anthropic_client, settings.claude_judge_model)
             if grade_line["judged"]:
                 time.sleep(SECONDS_BETWEEN_QUESTIONS)
-        append_line(grades_path, grade_line)
+        append_line(partial_path, grade_line)
         passed_by_id[line["id"]] = grade_line["passed"]
+    partial_path.replace(grades_path)
     return passed_by_id
 
 
