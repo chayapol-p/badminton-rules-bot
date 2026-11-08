@@ -52,6 +52,11 @@ def test_alternative_service_law_overrides_law_9_1_6(corpus):
     assert ("alt-alternative-service:9.1.6", "laws-9.1.6", "overrides") in corpus["link_keys"]
 
 
+def test_the_service_judges_law_links_to_their_itto_instructions(corpus):
+    """8 Nov: service-fault-officials never got ITTO 7.2, the "call 'Fault' loudly" clause."""
+    assert ("laws-17.3", "itto-7.2", "instructions_for") in corpus["link_keys"]
+
+
 def test_override_falls_back_to_parent_when_law_has_no_such_clause(corpus):
     # The Laws have no 8.1.5, so the fifth-game rule overrides Law 8.1 (change of ends)
     assert ("alt-best-of-5-games-11:8.1.5", "laws-8.1", "overrides") in corpus["link_keys"]

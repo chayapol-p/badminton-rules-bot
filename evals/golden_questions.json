@@ -163,7 +163,7 @@
           "clause": "7.4.1"
         }
       ],
-      "pass_rule": "Gives 1.15 m as the default rule. Labels the waist rule as the Alternative Laws (in force 2027-01-04), not the default, and gives both its parts: below the waist, and the racket shaft and head pointing downward.",
+      "pass_rule": "Gives 1.15 m as the default rule. Labels the waist rule as the Alternative Laws (in force 2027-01-04), not the default. The racket shaft and head pointing downward is context: the question asks about height.",
       "split": "dev"
     },
     {

@@ -8,6 +8,8 @@ model at temperature 0, and the judge (record 0014).
   --top-k   clauses search hands on per question, before the rule links are added (default 5)
   --rule    an extra answer rule to test, by name (answer/build_answer_prompt.py EXTRA_ANSWER_RULES);
             repeat it for more than one
+  --show-parents  show the clause above each source ("Under: 4.2 The stringed area:") to the
+            bot and the judge; search still reads search_text (record 0006)
   --label   a short name for the run, used in its file names (default: top<k>, then each rule name)
   --dry-run answer only the first question, for a cheap live check of the API settings before a
             full run. It saves its files under a "-dry-run" name and never logs to runs.jsonl
@@ -40,7 +42,7 @@ from mistralai.client import Mistral
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import EXTRA_ANSWER_RULES, build_answer_rules
+from answer.build_answer_prompt import EXTRA_ANSWER_RULES, build_answer_rules, parent_lines
 from answer.generate_answer import MAX_ANSWER_TOKENS, generate_answer
 from answer.check_citations import find_citation_problems
 from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
@@ -103,8 +105,8 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
     return VectorSearch(chunks, chunk_vectors, embedding_function=saved_question_vector)
 
 
-def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str, dict],
-                            rule_map: dict) -> Callable[[str], list[dict]]:
+def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str, dict], rule_map: dict,
+                            shows_parents: bool) -> Callable[[str], list[dict]]:
     """Returns the retrieve step: the top k from search, the clauses they link to (record 0009), and a found list heading's items (record 0015)."""
 
     def retrieve(question_text: str) -> list[dict]:
@@ -127,7 +129,11 @@ def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str,
                 if item_id not in retrieved_ids:
                     retrieved_chunks.append(chunk_by_id[item_id])
                     retrieved_ids.add(item_id)
-        return retrieved_chunks
+        if not shows_parents:
+            return retrieved_chunks
+
+        # A copy of each clause that carries the clauses above it, for the source block to show
+        return [dict(chunk, parents=parent_lines(chunk)) for chunk in retrieved_chunks]
 
     return retrieve
 
@@ -315,7 +321,8 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
 
 # ===== Running one setup =====
 
-def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry_run: bool) -> dict:
+def run_answer_setup(top_k: int, shows_parents: bool, extra_rule_names: list[str], label: str,
+                     is_dry_run: bool) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
@@ -326,7 +333,7 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
         questions = questions[:1]
     search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
-    retrieve = build_retrieve_function(search, top_k, chunk_by_id, load_rule_map())
+    retrieve = build_retrieve_function(search, top_k, chunk_by_id, load_rule_map(), shows_parents)
     answer_rules = build_answer_rules(extra_rule_names)
     mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value(), retry_config=MISTRAL_RETRY)
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
@@ -368,6 +375,7 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
         "top_k": top_k,
         "rule_links": True,
         "list_items": True,
+        "show_parents": shows_parents,
         "max_answer_tokens": MAX_ANSWER_TOKENS,
         "extra_rules": extra_rule_names,
         "answer_model": settings.mistral_answer_model,
@@ -388,6 +396,7 @@ def main() -> None:
     """Runs the one setup named on the command line."""
     parser = argparse.ArgumentParser(description="Answer, check and grade the dev questions and probes.")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
+    parser.add_argument("--show-parents", action="store_true", help="show the clause above each source")
     parser.add_argument("--rule", action="append", default=[], choices=list(EXTRA_ANSWER_RULES),
                         help="an extra answer rule to test; repeat for more than one")
     parser.add_argument("--label", help="a short name for the run (default: top<k>, then each rule name)")
@@ -396,10 +405,13 @@ def main() -> None:
     # Name the run by what it changed, unless a label is given
     label = arguments.label
     if label is None:
-        label = "-".join([f"top{arguments.top_k}"] + arguments.rule)
+        label_parts = [f"top{arguments.top_k}"]
+        if arguments.show_parents:
+            label_parts.append("parents")
+        label = "-".join(label_parts + arguments.rule)
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run)
+    run_answer_setup(arguments.top_k, arguments.show_parents, arguments.rule, label, arguments.dry_run)
 
 
 if __name__ == "__main__":

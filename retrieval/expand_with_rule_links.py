@@ -10,6 +10,7 @@ answer model must respect:
 - ALTERNATIVE    an Alternative Laws clause, with its format and in-force status
 - PARA EXCEPTION a Para Badminton clause, added only when the question is about para play
 - CITED          a clause that another clause names ("dealt with under Law 16.7")
+- INSTRUCTIONS   the ITTO clause that instructs the official a Law names (Law 17.3 -> ITTO 7.2)
 - DIAGRAM        the caption of a diagram that a clause names
 - LIST INTRO     the opening line of a list the hit belongs to ("A shuttle is not in play when:")
 - SAME LIST      another item of that list (15.1, 15.2 and 15.3 answer one question together)
@@ -236,6 +237,8 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
                 ]
                 for sub_id in sub_clause_ids[:MAX_SUB_CLAUSES_PER_CITED]:
                     add(sub_id, "CITED", cited_id)
+        for instruction_id in linked_ids(rule_map, hit_id, "instructions_for", "outgoing"):
+            add(instruction_id, "INSTRUCTIONS", hit_id)
         for diagram_id in linked_ids(rule_map, hit_id, "shows_diagram", "outgoing"):
             add(diagram_id, "DIAGRAM", hit_id)
 

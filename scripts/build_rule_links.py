@@ -6,11 +6,13 @@ words with it: the alternative rule that replaces a Law, a Law that an ITTO clau
 the regular rule behind a Wheelchair exception. This script reads those links straight
 from the rule books and stores them, so retrieval can follow them after search.
 
-It finds four kinds of link (the "relation" field):
+It finds five kinds of link (the "relation" field):
 - overrides:          an Alternative Laws clause -> the Law it replaces (alt 9.1.6 -> Law 9.1.6)
 - cites:              a clause -> a clause it names ("dealt with under Law 16.7")
 - para_exception_of:  a Para Badminton clause -> the regular rule it changes
 - shows_diagram:      a clause -> the diagram it names ("as shown in Diagram A")
+- instructions_for:   an official's duty in the Laws -> that official's instructions in the ITTO
+                      (Law 17.3, the service judge -> ITTO 7.2). Listed by hand: the books never cite them
 
 It also lists references to BWF documents that are not in the corpus (such as Section
 4.1.5, Vocabulary), so the bot can say where an answer lives instead of guessing it.
@@ -56,6 +58,14 @@ STATUTE_SECTION_REFERENCE = re.compile(r"\bSection\s+(4\.1(?:\.\d+)*)")
 
 # The Statutes sections this corpus holds. Any other Section 4.1.x is outside the corpus
 SECTIONS_IN_CORPUS = {"4.1", "4.1.1", "4.1.4"}
+
+# Each official's duty in the Laws, and the ITTO clause that instructs that official in it. 8 Nov:
+# service-fault-officials never got ITTO 7.2 ("call 'Fault' loudly"); it ranked 13th in vector search
+OFFICIAL_INSTRUCTIONS = [
+    ("laws-17.3", "itto-7.2", "the service judge"),
+    ("laws-17.4", "itto-8.2", "a line judge"),
+    ("laws-17.5.1", "itto-8.2", "the umpire overruling a line judge"),
+]
 
 
 # ===== Looking up chunks by document and clause number =====
@@ -175,6 +185,15 @@ def find_outside_references(chunks):
     return references
 
 
+def find_instruction_links(chunks_by_id):
+    """Links each official's duty in the Laws to the ITTO clause that instructs that official."""
+    links = []
+    for law_id, instruction_id, official in OFFICIAL_INSTRUCTIONS:
+        links.append(make_link(chunks_by_id[law_id], chunks_by_id[instruction_id], "instructions_for",
+                               f"listed by hand: {official}"))
+    return links
+
+
 def make_link(from_chunk, to_chunk, relation, evidence):
     """One link record. The evidence is the text or rule that created it, so a wrong link can be traced."""
     return {"from_id": from_chunk["id"], "to_id": to_chunk["id"], "relation": relation, "evidence": evidence}
@@ -195,6 +214,7 @@ def build_rule_links(chunks):
         + find_citation_links(chunks, chunks_by_id, clause_order)
         + find_para_exception_links(chunks, chunks_by_id)
         + find_diagram_links(chunks, chunks_by_id)
+        + find_instruction_links(chunks_by_id)
     )
 
     # A clause can name the same Law twice; keep the first link of each kind
@@ -209,7 +229,7 @@ def main() -> None:
     chunks = json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))
     rule_map = build_rule_links(chunks)
 
-    for relation in ("overrides", "cites", "para_exception_of", "shows_diagram"):
+    for relation in ("overrides", "cites", "para_exception_of", "shows_diagram", "instructions_for"):
         count = sum(1 for link in rule_map["links"] if link["relation"] == relation)
         print(f"{relation}: {count} links")
     print(f"outside the corpus: {len(rule_map['outside_corpus'])} references")
