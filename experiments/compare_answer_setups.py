@@ -1,5 +1,5 @@
 """
-Answers the dev questions and the refusal probes with one setup, checks and grades every answer, prints the scores and logs the run.
+Answers the dev questions and the probes with one setup, checks and grades every answer, prints the scores and logs the run.
 
 One run changes one thing (experiment rule 1). Fixed here: vector search on the clauses'
 search_text (decision record 0006), the answer model at temperature 0, and the judge.
@@ -43,7 +43,7 @@ from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.code_checks import find_code_failures
 from evals.judge_answers import grade_answer, judge_passed
 from evals.log_eval_run import append_run
-from evals.refusal_probes import load_refusal_probes
+from evals.probes import load_probes
 from evals.token_costs import call_cost
 from retrieval.stored_embeddings import load_embeddings
 from retrieval.vector_search import VectorSearch
@@ -76,9 +76,10 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
     chunk_vector_by_id = load_embeddings("clauses_search_text", model)
     chunk_vectors = numpy.array([chunk_vector_by_id[chunk["id"]] for chunk in chunks])
 
-    # Golden questions and probes are saved as two sets; the search looks each one up by its text
+    # Golden questions and the two probe kinds are saved as three sets; the search looks each one up by its text
     question_vector_by_id = load_embeddings("questions", model)
     question_vector_by_id.update(load_embeddings("refusal_probes", model))
+    question_vector_by_id.update(load_embeddings("false_premise_probes", model))
     question_vector_by_text = {}
     for question in questions:
         question_vector_by_text[question["question"]] = question_vector_by_id[question["id"]]
@@ -183,13 +184,14 @@ def share(count: int, total: int) -> float:
 def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]) -> dict:
     """Returns the run's scores: answers, diagrams, citations, refusals both ways, format errors, words and cost."""
 
-    # Split the questions into the groups each score reads
-    answerable = [line for line in answer_lines if not line["should_refuse"]]
+    # Split the questions into the groups each score reads; probes are scored on their own lines
+    answerable = [line for line in answer_lines if not line["should_refuse"] and line["split"] != "probe"]
     text_answerable = [line for line in answerable if line["id"] not in IMAGE_ONLY_QUESTION_IDS]
     image_only = [line for line in answerable if line["id"] in IMAGE_ONLY_QUESTION_IDS]
     no_answer = [line for line in answer_lines if line["should_refuse"]]
     golden_no_answer = [line for line in no_answer if line["split"] != "probe"]
     probes = [line for line in no_answer if line["split"] == "probe"]
+    false_premises = [line for line in answer_lines if line["category"] == "false_premise"]
     with_answer = [line for line in answer_lines if not line["is_format_error"]]
 
     # Answers the judge passed, overall and per category
@@ -229,6 +231,8 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
         "probe_refusals_correct": len(correct_probe_refusals),
         "probes": len(probes),
         "no_answer_passed": count_passed(golden_no_answer + probes, passed_by_id),
+        "false_premise_passed": count_passed(false_premises, passed_by_id),
+        "false_premise_probes": len(false_premises),
         "code_failed": len(code_failed),
         "code_failures_by_check": code_failures_by_check,
         "judge_calls": len(answer_lines) - len(code_failed),
@@ -253,6 +257,7 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
     print(f"refusals {scores['refusals_correct']} of {scores['refusals_needed']}  · probes {scores['probe_refusals_correct']} "
           f"of {scores['probes']}  · no-answer passed {scores['no_answer_passed']} of "
           f"{scores['refusals_needed'] + scores['probes']}  · false refusals {scores['false_refusals']}")
+    print(f"false premises corrected and answered {scores['false_premise_passed']} of {scores['false_premise_probes']}")
     print(f"words per question {scores['words_returned']}  · cost per question ${scores['cost_per_question']}"
           f"  · total ${scores['total_cost']}")
 
@@ -272,7 +277,7 @@ def run_answer_setup(top_k: int, label: str, is_dry_run: bool) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
-    questions = load_questions("dev") + load_refusal_probes()
+    questions = load_questions("dev") + load_probes()
 
     # A dry run asks one question, to meet any API error that only the live server raises for under a cent
     if is_dry_run:

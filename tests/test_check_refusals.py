@@ -14,7 +14,7 @@ from answer.check_refusals import (
     should_refuse,
 )
 from evals.golden_answer_chunks import QUESTIONS_FILE
-from evals.refusal_probes import load_refusal_probes
+from evals.probes import load_probes
 from tests.sample_data import SAMPLE_QUESTIONS
 
 
@@ -52,6 +52,6 @@ def test_answering_a_question_with_an_answer_goes_to_the_judge():
 def test_exactly_the_questions_without_an_answer_are_in_the_refuse_categories():
     """A new category, or a misspelt one, would silently change what gets refused, so check every question."""
     golden_questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
-    for question in golden_questions + load_refusal_probes():
+    for question in golden_questions + load_probes():
         has_no_answer = question["answer"] is None
         assert (question["category"] in CATEGORIES_TO_REFUSE) == has_no_answer, question["id"]

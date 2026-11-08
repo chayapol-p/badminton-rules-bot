@@ -53,6 +53,11 @@ def test_an_alternative_laws_clause_names_its_format_and_in_force_date():
 
 # ===== The messages =====
 
+def test_a_false_premise_is_corrected_and_answered_not_refused():
+    """FreshQA credits a false-premise reply only when it points the premise out; refusing would be a false refusal."""
+    assert "Correcting an assumption is an answer, not a refusal" in ANSWER_RULES
+
+
 def test_the_rules_go_in_the_system_message_and_the_question_in_its_tags():
     messages = build_answer_prompt("How tall are the posts?", SAMPLE_CHUNKS)
     assert messages[0] == {"role": "system", "content": ANSWER_RULES}

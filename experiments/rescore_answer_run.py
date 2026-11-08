@@ -28,7 +28,7 @@ from app.settings import load_settings
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line, read_lines
 from evals.code_checks import find_code_failures
 from evals.golden_answer_chunks import load_chunks, load_questions
-from evals.refusal_probes import load_refusal_probes
+from evals.probes import load_probes
 from experiments.compare_answer_setups import (SECONDS_BETWEEN_QUESTIONS, check_and_grade, print_scores,
                                                summarise_answer_run)
 
@@ -91,7 +91,7 @@ def main() -> None:
 
     # Load the saved answers, and the questions and clauses behind them
     answer_lines = read_lines(ANSWER_RUNS_FOLDER / f"{arguments.run}-answers.jsonl")
-    question_by_id = {question["id"]: question for question in load_questions("dev") + load_refusal_probes()}
+    question_by_id = {question["id"]: question for question in load_questions("dev") + load_probes()}
     chunks = load_chunks()
 
     # Score with the current judge, or with the verdicts the run saved

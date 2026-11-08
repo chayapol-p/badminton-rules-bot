@@ -14,7 +14,7 @@ Run from the project root:
 
 from app.settings import load_settings
 from evals.golden_answer_chunks import load_chunks
-from evals.refusal_probes import load_refusal_probes
+from evals.probes import load_refusal_probes
 from experiments.compare_answer_setups import build_clause_vector_search
 from retrieval.keyword_search import KeywordSearch
 

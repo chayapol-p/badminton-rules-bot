@@ -27,7 +27,7 @@ import textwrap
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, HUMAN_GRADES_FILE, read_lines
 from evals.code_checks import find_code_failures
 from evals.golden_answer_chunks import load_chunks, load_questions
-from evals.refusal_probes import load_refusal_probes
+from evals.probes import load_probes
 from experiments.compare_answer_setups import IMAGE_ONLY_QUESTION_IDS
 
 
@@ -167,7 +167,7 @@ def main() -> None:
 
     # Load the run's answers, the questions behind them and the clauses they cite
     answer_lines = read_lines(ANSWER_RUNS_FOLDER / f"{arguments.run}-answers.jsonl")
-    question_by_id = {question["id"]: question for question in load_questions("dev") + load_refusal_probes()}
+    question_by_id = {question["id"]: question for question in load_questions("dev") + load_probes()}
     chunks = load_chunks()
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
 

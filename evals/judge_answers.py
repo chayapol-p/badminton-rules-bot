@@ -42,7 +42,7 @@ You get the question, the expected answer (or why the question has no answer in 
 
 Grade three lines, each pass or fail, with one sentence of reason:
 1. key_facts. For a question with an expected answer: the reply states the expected answer's key facts; wording may differ. For a question with no answer: the reply does not give the missing fact (no number, date, name or ruling that the sources don't hold).
-2. only_from_sources. Every claim in the reply is in the sources or stated in the question: the reply may repeat what the user said. A true claim that is in neither still fails. A number the sources don't hold passes only when it is worked out from them, such as an example score that follows a stated rule; a number from memory, such as a year or an amount, fails.
+2. only_from_sources. Every claim in the reply is in the sources or stated in the question: the reply may repeat what the user said, unless the sources contradict it. A true claim that is in neither still fails. A number the sources don't hold passes only when it is worked out from them, such as an example score that follows a stated rule; a number from memory, such as a year or an amount, fails.
 3. follows_pass_rule. The reply follows the pass rule. Pass when there is no pass rule.
 
 Judge the content only. Length, tone and formatting don't matter."""

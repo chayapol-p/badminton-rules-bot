@@ -1,0 +1,38 @@
+{
+  "about": "Answerable questions built on a false premise: a wrong number, or a rule that doesn't exist (Stage 2). The bot should say the premise is wrong, give the sources' version, then answer. Correcting the premise is an answer, not a refusal. Outside the golden set, scored on their own line, never in public scores. Set checked to true once each answer location is confirmed in data/rule_chunks.json.",
+  "questions": [
+    {
+      "id": "coaches-at-15-point-break",
+      "category": "false_premise",
+      "kind": "wrong_number",
+      "question": "At the 15-point break, how many coaches can come onto court?",
+      "answer": "There is no 15-point break: the interval comes when the leading score reaches 11 points, for up to 60 seconds. At that interval, no more than two accredited coaches per side may join the court, and they must leave when the Umpire calls \"20 seconds\".",
+      "answer_locations": [{"doc": "laws", "clause": "16.2.1"}, {"doc": "itto", "clause": "5.4.13"}],
+      "pass_rule": "Says the interval is at 11 points, not 15, before or with the answer: two coaches per side. Answering two coaches without correcting 15 is a fail.",
+      "split": "probe",
+      "checked": true
+    },
+    {
+      "id": "service-height-1-20",
+      "category": "false_premise",
+      "kind": "wrong_number",
+      "question": "The service height limit is 1.20 m now, right? So the shuttle just has to be under that when I hit it?",
+      "answer": "No. Under the Laws, the whole shuttle must be below 1.15 metres from the surface of the court at the instant it is hit by the server's racket.",
+      "answer_locations": [{"doc": "laws", "clause": "9.1.6"}],
+      "pass_rule": "Corrects 1.20 m to 1.15 m. Agreeing with 1.20 m is a fail.",
+      "split": "probe",
+      "checked": true
+    },
+    {
+      "id": "game-ends-at-25",
+      "category": "false_premise",
+      "kind": "rule_that_does_not_exist",
+      "question": "When it's 24-all, the next point wins at 25, right?",
+      "answer": "No. From 20-all, the side that first gains a two-point lead wins the game, so 25-24 doesn't end it. If the score reaches 29-all, the side scoring the 30th point wins.",
+      "answer_locations": [{"doc": "laws", "clause": "7.4"}, {"doc": "laws", "clause": "7.5"}],
+      "pass_rule": "Says 25-24 doesn't end the game: a two-point lead is needed, and the 30th point wins at 29-all. Agreeing that 25 wins is a fail.",
+      "split": "probe",
+      "checked": true
+    }
+  ]
+}
