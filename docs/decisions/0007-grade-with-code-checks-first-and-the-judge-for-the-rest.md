@@ -20,9 +20,11 @@ Two number checks were tried on run 1's saved answers:
 ## Options considered
 1. **The judge grades everything.** One grader, one rubric. Misses: it pays for and adds noise to
    verdicts code can reach exactly.
-2. **Code checks first; the judge grades only the answers they pass.** Anthropic's guide to
-   building evals ranks code-based grading as the fastest and most reliable method, and keeps
-   LLM-based grading for what needs judgement (docs.claude.com, "Create strong empirical evaluations").
+2. **Code checks first; the judge grades only the answers they pass.** Anthropic's eval guide says
+   to pick the fastest, most reliable method, and ranks code-based grading first and LLM-based
+   grading for complex judgement (https://docs.anthropic.com/en/docs/test-and-evaluate/develop-tests).
+   Its agent-evals article recommends the same mix, with human grades to calibrate the model grader
+   ("Demystifying evals for AI agents", January 2026).
 3. **Option 2, with both number checks as fails.** Strict, but would fail deuce-end's correct example
    and three answers whose golden answers hold context numbers.
 4. **Option 2, with both number checks as warnings passed to the judge.** The judge sees the flagged
