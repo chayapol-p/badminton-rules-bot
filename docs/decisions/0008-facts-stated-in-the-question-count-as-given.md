@@ -34,7 +34,13 @@ Option 3:
 ## Evidence
 To run, in order: `scripts.build_embeddings` (embeds the 3 new probes), a new top-5 baseline (the
 prompt changed, so run 1 is no longer the same setup), its repeat, then `compare_judge_with_my_grades`.
-Accept when the judge reaches 9 of 10 hand grades and the false-premise probes score on their own line.
+Accept when the judge matches 9 of 10 hand grades or better and the false-premise probes score on
+their own line.
+
+Run 1 re-judged with the new rubric (8 Nov): the judge still failed coaches-at-interval, now for the
+link "11-point interval = Law 16.2.1". Law 16.2.1 wasn't among the bot's 5 sources, so the link came
+from memory. Job flipped his hand grade to fail: the judge matches 10 of 10. This case can't show the
+rule change helps; the false-premise probes will.
 
 ## Consequences
 - The judge and the number check now treat the question the same way.

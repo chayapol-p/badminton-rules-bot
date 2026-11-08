@@ -55,5 +55,6 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - Hand grades on run 1 (8 Nov): 7 of 10 pass. A fresh grader with no sight of the drafts agreed on 10 of 10. Both are Claude, so they check each other, not the Sonnet judge's family bias.
 - Judge vs hand grades on run 1, old rubric (8 Nov): 8 of 10, below the 9-of-10 bar. Both misses are the judge being stricter: post-height fails on "stays vertical", a context fact the question didn't ask; coaches-at-interval fails on "11-point interval", which comes from the question, not the sources.
 - Rubric and prompt (8 Nov, decision record 0008): facts in the question count as given unless the sources contradict them; the bot corrects a false premise, then answers (not a refusal). Hand grade post-height changed to fail: "stays vertical" is a required fact. Judge now matches 9 of 10 on run 1's old-rubric grades. 3 false-premise probes added; their vectors need scripts.build_embeddings on the Mac (the VM's proxy blocks Mistral).
+- Run 1 re-judged, new rubric (8 Nov): judge matches 10 of 10 hand grades after coaches-at-interval flipped to fail. The bot linked "11-point" to Law 16.2.1 from memory; Law 16.2.1 wasn't in its top 5. Cause: retrieval miss.
 
 ## Lab 7 · React chat UI
