@@ -165,7 +165,8 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
     citations_clean = [line for line in with_answer if not line["citation_problems"]]
     correct_refusals = [line for line in golden_no_answer if line["refusal_outcome"] == CORRECT_REFUSAL]
     correct_probe_refusals = [line for line in probes if line["refusal_outcome"] == CORRECT_REFUSAL]
-    false_refusals = [line for line in answerable if line["refusal_outcome"] == FALSE_REFUSAL]
+    # Image-only questions are left out: refusing them is fair until images arrive in Week 4
+    false_refusals = [line for line in text_answerable if line["refusal_outcome"] == FALSE_REFUSAL]
 
     # Cost of every call, answer and judge together
     costs = [line["answer_cost"] + line["judge_cost"] for line in answer_lines]

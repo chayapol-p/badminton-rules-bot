@@ -78,8 +78,12 @@ def main() -> None:
     parser.add_argument("--run", required=True, help="the run name, such as 20261107T1200-top5")
     arguments = parser.parse_args()
 
-    # Your grades for this run, and the judge's grades by question id
-    my_grades = [grade for grade in read_lines(HUMAN_GRADES_FILE) if grade["run"] == arguments.run]
+    # Your grades for this run, leaving out lines still waiting for a grade, and the judge's grades by question id
+    run_grades = [grade for grade in read_lines(HUMAN_GRADES_FILE) if grade["run"] == arguments.run]
+    my_grades = [grade for grade in run_grades if grade["passed"] is not None]
+    ungraded_count = len(run_grades) - len(my_grades)
+    if ungraded_count:
+        print(f"{ungraded_count} lines still have \"passed\": null and are left out")
     judge_lines = read_lines(ANSWER_RUNS_FOLDER / f"{arguments.run}-grades.jsonl")
     judge_grade_by_id = {line["id"]: line for line in judge_lines}
 

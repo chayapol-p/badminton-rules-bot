@@ -38,6 +38,7 @@ ANSWER_LINES = [
     answer_line("deuce-end", "dev", "direct_lookup", False, "false refusal", []),
     answer_line("red-card", "dev", "cross_reference", False, None, []),
     answer_line("doubles-court-size", "dev", "diagram", False, "answered", [{"chunk_id": "x", "problem": "not retrieved"}]),
+    answer_line("service-judge-height-signal", "dev", "diagram", False, "false refusal", []),
     answer_line("ceiling-height", "dev", "unanswerable", True, "correct refusal", []),
     answer_line("spin-serve-ban-date", "dev", "unanswerable", True, "missed refusal", []),
     answer_line("string-tension", "probe", "refusal_probe", True, "correct refusal", []),
@@ -48,6 +49,7 @@ PASSED_BY_ID = {
     "deuce-end": False,
     "red-card": False,
     "doubles-court-size": False,
+    "service-judge-height-signal": False,
     "ceiling-height": True,
     "spin-serve-ban-date": False,
     "string-tension": True,
@@ -60,7 +62,7 @@ def test_answers_are_scored_without_the_image_only_questions():
     scores = summarise_answer_run(ANSWER_LINES, PASSED_BY_ID)
     assert scores["answers_passed"] == 1
     assert scores["answers_scored"] == 3
-    assert scores["image_only_scored"] == 1
+    assert scores["image_only_scored"] == 2
     assert scores["by_category"]["direct_lookup"] == {"passed": 1, "questions": 2}
 
 
@@ -70,20 +72,20 @@ def test_refusals_are_counted_both_ways_and_probes_apart():
     assert scores["refusals_needed"] == 2
     assert scores["probe_refusals_correct"] == 1
     assert scores["probes"] == 1
-    assert scores["false_refusals"] == 1
+    assert scores["false_refusals"] == 1, "the image-only false refusal is left out"
     assert scores["no_answer_judged_passed"] == 2
 
 
 def test_citations_are_scored_only_on_replies_that_fit_the_shape():
     scores = summarise_answer_run(ANSWER_LINES, PASSED_BY_ID)
     assert scores["format_errors"] == 1
-    assert scores["citation_pass_rate"] == round(5 / 6, 3)
+    assert scores["citation_pass_rate"] == round(6 / 7, 3)
 
 
 def test_cost_adds_the_answer_and_the_judge():
     scores = summarise_answer_run(ANSWER_LINES, PASSED_BY_ID)
     assert scores["cost_per_question"] == 0.012
-    assert scores["total_cost"] == round(7 * 0.012, 3)
+    assert scores["total_cost"] == round(8 * 0.012, 3)
 
 
 def test_one_call_costs_its_tokens_at_the_model_price():
