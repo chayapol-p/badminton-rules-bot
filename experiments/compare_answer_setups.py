@@ -64,7 +64,6 @@ CODE_CHECK_PREFIXES = {
     "format error": ("format error",),
     "wrong refusal": ("missed refusal", "false refusal"),
     "citation problem": ("citation",),
-    "number from nowhere": ("numbers from nowhere",),
     "wrong clause": ("wrong clause",),
 }
 CODE_CHECK_NAMES = list(CODE_CHECK_PREFIXES)

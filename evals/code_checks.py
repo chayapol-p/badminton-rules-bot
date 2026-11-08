@@ -7,8 +7,10 @@ called on answers the code checks passed. Failures:
   - wrong refusal: a missed refusal or a false refusal
   - citation problem: a cited chunk the model never saw, or a quote not in its clause
   - wrong clause: an answerable question, answered, citing none of the clauses that hold the answer
-  - number from nowhere: a number in the answer that the sources and the question don't hold
 Warnings, for the judge to weigh:
+  - number from nowhere: a number in the answer that the sources and the question don't hold.
+    It can come from memory (a fail) or be worked out from the sources (an example score like
+    22-20), and only the judge can tell which
   - missing golden number: a number in the golden answer the answer doesn't carry, which can be
     context rather than a key fact
 
@@ -47,14 +49,14 @@ def find_code_failures(answer_line: dict, question: dict, chunks: list[dict],
     warnings = []
     answer = answer_line["answer"]
 
-    # The checks every answer gets: the refusal, the citations, the numbers
+    # The checks every answer gets: the refusal and the citations fail, the numbers only warn
     if answer_line["refusal_outcome"] in WRONG_REFUSALS:
         failures.append(answer_line["refusal_outcome"])
     for problem in answer_line["citation_problems"]:
         failures.append(f"citation [{problem['chunk_id']}] {problem['problem']}")
     ungrounded_numbers = find_ungrounded_numbers(answer["answer"], build_source_text(answer_line, chunk_by_id))
     if ungrounded_numbers:
-        failures.append(f"numbers from nowhere: {', '.join(ungrounded_numbers)}")
+        warnings.append(f"numbers not in the sources: {', '.join(ungrounded_numbers)}")
 
     # The checks only an answered question with a golden answer gets
     if answer_line["refusal_outcome"] == ANSWERED:

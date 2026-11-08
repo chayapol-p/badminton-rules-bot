@@ -28,6 +28,7 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0004](0004-use-rank-bm25-for-keyword-search.md) | Use rank_bm25 for keyword search, and keep the class simple | Accepted |
 | [0005](0005-search-vectors-exactly-first.md) | Search the vectors exactly first | Accepted |
 | [0006](0006-vector-search-on-clauses-goes-to-stage-2.md) | Vector search on clauses goes forward to Stage 2 | Accepted |
+| [0007](0007-grade-with-code-checks-first-and-the-judge-for-the-rest.md) | Grade with code checks first, and the judge only for what code can't decide | Accepted |
 
 ## Template
 

@@ -34,6 +34,6 @@ def test_a_clean_answer_keeps_the_saved_judge_verdict():
 
 
 def test_a_code_failure_fails_the_answer_whatever_the_judge_said():
-    answer_lines = [saved_answer_line("1.55 metres since 1992.")]
+    answer_lines = [dict(saved_answer_line("1.55 metres."), refusal_outcome="missed refusal")]
     assert rescore_answer_lines(answer_lines, {"post-height": True}, QUESTION_BY_ID, SAMPLE_CHUNKS) == {"post-height": False}
-    assert answer_lines[0]["code_failures"] == ["numbers from nowhere: 1992"]
+    assert answer_lines[0]["code_failures"] == ["missed refusal"]

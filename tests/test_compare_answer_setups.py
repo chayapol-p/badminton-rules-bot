@@ -39,7 +39,7 @@ ANSWER_LINES = [
     answer_line("deuce-end", "dev", "direct_lookup", False, "false refusal", [], ["false refusal"]),
     answer_line("red-card", "dev", "cross_reference", False, None, [], ["format error"]),
     answer_line("doubles-court-size", "dev", "diagram", False, "answered", [{"chunk_id": "x", "problem": "not retrieved"}],
-                ["citation [x] not retrieved", "numbers from nowhere: 13.4"]),
+                ["citation [x] not retrieved"]),
     answer_line("service-judge-height-signal", "dev", "diagram", False, "false refusal", [], ["false refusal"]),
     answer_line("ceiling-height", "dev", "unanswerable", True, "correct refusal", [], []),
     answer_line("spin-serve-ban-date", "dev", "unanswerable", True, "missed refusal", [], ["missed refusal"]),
@@ -82,7 +82,7 @@ def test_code_failures_are_counted_by_check_and_only_clean_answers_reach_the_jud
     scores = summarise_answer_run(ANSWER_LINES, PASSED_BY_ID)
     assert scores["code_failed"] == 5
     assert scores["code_failures_by_check"] == {"format error": 1, "wrong refusal": 3, "citation problem": 1,
-                                                "number from nowhere": 1, "wrong clause": 0}
+                                                "wrong clause": 0}
     assert scores["judge_calls"] == 3
 
 

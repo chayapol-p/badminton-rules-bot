@@ -2,8 +2,8 @@
 The grading kit: lets the code checks fail what they can, then prints the rest for grading by hand, without the judge's grades.
 
 Step 1, code checks (evals/code_checks.py, the same checks the run uses). An answer with a format
-error, a wrong refusal, a citation problem, a number from nowhere or no citation of a clause that
-holds the answer has already failed. These are listed first and are not graded by hand.
+error, a wrong refusal, a citation problem or no citation of a clause that holds the answer has
+already failed. These are listed first and are not graded by hand.
 
 Step 2, grading by hand. The kit takes the 10 Step 4 answers and swaps any answer the code
 checks failed for the next clean answer in the same category, so your grades test the judge on

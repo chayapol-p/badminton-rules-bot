@@ -41,7 +41,7 @@ You get the question, the expected answer (or why the question has no answer in 
 
 Grade three lines, each pass or fail, with one sentence of reason:
 1. key_facts. For a question with an expected answer: the reply states the expected answer's key facts; wording may differ. For a question with no answer: the reply does not give the missing fact (no number, date, name or ruling that the sources don't hold).
-2. only_from_sources. Every claim in the reply is in the sources. Code has already checked that every number is in the sources, so look at the claims themselves. A true claim that isn't in the sources still fails.
+2. only_from_sources. Every claim in the reply is in the sources. A true claim that isn't in the sources still fails. A number the sources don't hold passes only when it is worked out from them, such as an example score that follows a stated rule; a number from memory, such as a year or an amount, fails.
 3. follows_pass_rule. The reply follows the pass rule. Pass when there is no pass rule.
 
 Judge the content only. Length, tone and formatting don't matter."""
@@ -111,7 +111,7 @@ def build_judge_prompt(question: dict, rules_answer: RulesAnswer, retrieved_chun
     # A warning is a hint, not a verdict: a missing golden number can be context, not a key fact
     code_notes = "None"
     if code_warnings:
-        code_notes = "\n".join(code_warnings) + "\n(These may be context numbers rather than key facts: decide by the expected answer.)"
+        code_notes = "\n".join(code_warnings) + "\n(Hints, not verdicts: a missing golden number may be context only, and a number not in the sources may be worked out from them. Decide by the rubric.)"
     return (
         f"<question>\n{question['question']}\n</question>\n\n"
         f"<expected_answer>\n{describe_expected_answer(question)}\n</expected_answer>\n\n"

@@ -43,15 +43,22 @@ def test_a_format_error_stops_every_other_check():
     assert find_code_failures(line, POSTS_QUESTION, SAMPLE_CHUNKS, CHUNK_BY_ID) == (["format error"], [])
 
 
-def test_refusal_citation_number_and_clause_failures_are_all_listed():
+def test_citation_and_clause_failures_are_all_listed():
     quote_problem = [{"chunk_id": "laws-7.4", "problem": "quote not in clause", "quote": "x", "clause_text": "y"}]
-    line = answer_line("1.55 metres since 1992.", "laws-7.4", "answered", quote_problem)
+    line = answer_line("1.55 metres.", "laws-7.4", "answered", quote_problem)
     failures, _ = find_code_failures(line, POSTS_QUESTION, SAMPLE_CHUNKS, CHUNK_BY_ID)
     assert failures == [
         "citation [laws-7.4] quote not in clause",
-        "numbers from nowhere: 1992",
         "wrong clause: cites none of the clauses that hold the answer",
     ]
+
+
+def test_a_number_not_in_the_sources_only_warns_for_the_judge_to_weigh():
+    """A number can be from memory or worked out from the sources (22-20 from a two-point rule): only the judge can tell."""
+    line = answer_line("1.55 metres since 1992.", "laws-1.4", "answered", [])
+    failures, warnings = find_code_failures(line, POSTS_QUESTION, SAMPLE_CHUNKS, CHUNK_BY_ID)
+    assert failures == []
+    assert warnings == ["numbers not in the sources: 1992"]
 
 
 def test_a_missing_golden_number_only_warns():
@@ -66,8 +73,7 @@ def test_a_number_in_the_question_counts_as_shown():
     line = dict(answer_line("At 20-20, a two-point lead wins; at 29-all, the 30th point.", "laws-7.4", "answered", []),
                 question=deuce_question["question"])
     line["retrieved_ids"] = ["laws-7.4", "laws-7.5"]
-    failures, _ = find_code_failures(line, deuce_question, SAMPLE_CHUNKS, CHUNK_BY_ID)
-    assert failures == []
+    assert find_code_failures(line, deuce_question, SAMPLE_CHUNKS, CHUNK_BY_ID) == ([], [])
 
 
 def test_a_wrong_refusal_fails_and_skips_the_golden_checks():

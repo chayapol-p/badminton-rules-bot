@@ -60,7 +60,7 @@ def test_a_question_without_an_answer_shows_why_and_its_pass_rule():
 def test_the_code_warnings_reach_the_judge_as_hints():
     prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, ["golden answer numbers not in the reply: 11"])
     assert "<code_notes>\ngolden answer numbers not in the reply: 11\n" in prompt
-    assert "context numbers" in prompt
+    assert "Hints, not verdicts" in prompt
 
 
 def test_without_warnings_the_code_notes_say_none():
