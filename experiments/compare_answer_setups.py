@@ -5,6 +5,8 @@ One run changes one thing (experiment rule 1). Fixed here: vector search on the 
 search_text (decision record 0006), the top 5 plus the clauses they link to (record 0009), the answer
 rules with the quote rule (record 0010), the answer model at temperature 0, and the judge.
   --top-k   clauses search hands on per question, before the rule links are added (default 5)
+  --add-list-items  when search finds a list heading ("in Wheelchair Badminton if the shuttle is:"),
+            add the items under it
   --rule    an extra answer rule to test, by name (answer/build_answer_prompt.py EXTRA_ANSWER_RULES);
             repeat it for more than one
   --label   a short name for the run, used in its file names (default: top<k>, then each rule name)
@@ -29,6 +31,7 @@ Run from the project root:
 
 import argparse
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
 from statistics import mean
 
@@ -37,11 +40,9 @@ from anthropic import Anthropic
 from mistralai.client import Mistral
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
-from collections.abc import Callable
-
 from answer.answer_shape import RulesAnswer
 from answer.build_answer_prompt import EXTRA_ANSWER_RULES, build_answer_rules
-from answer.generate_answer import generate_answer
+from answer.generate_answer import MAX_ANSWER_TOKENS, generate_answer
 from answer.check_citations import find_citation_problems
 from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
 from app.settings import load_settings
@@ -53,7 +54,7 @@ from evals.log_eval_run import append_run
 from evals.probes import load_probes
 from evals.token_costs import call_cost
 from retrieval.stored_embeddings import load_embeddings
-from retrieval.expand_with_rule_links import expand_with_links, load_rule_map
+from retrieval.expand_with_rule_links import direct_sub_clauses, expand_with_links, is_list_heading, load_rule_map
 from retrieval.vector_search import VectorSearch
 
 
@@ -103,9 +104,9 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
     return VectorSearch(chunks, chunk_vectors, embedding_function=saved_question_vector)
 
 
-def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str, dict],
-                            rule_map: dict) -> Callable[[str], list[dict]]:
-    """Returns the retrieve step: the top k from search, plus the clauses they link to (record 0009)."""
+def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str, dict], rule_map: dict,
+                            adds_list_items: bool) -> Callable[[str], list[dict]]:
+    """Returns the retrieve step: the top k from search, plus the clauses they link to (record 0009), plus a found list heading's items when asked."""
 
     def retrieve(question_text: str) -> list[dict]:
         """Returns the clauses handed to the answer model for one question."""
@@ -115,7 +116,21 @@ def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str,
         # clauses before and after each hit
         hit_ids = [chunk["id"] for chunk in hits]
         context = expand_with_links(hit_ids, chunk_by_id, rule_map, question_is_para=False, include_nearby=False)
-        return [item["chunk"] for item in context]
+        retrieved_chunks = [item["chunk"] for item in context]
+        if not adds_list_items:
+            return retrieved_chunks
+
+        # A list heading holds no rule itself: the rule is in its items. 8 Nov: wheelchair-shuttle-on-net got
+        # "in Wheelchair Badminton if the shuttle is:" without the item that answers it (13.3.10.1)
+        retrieved_ids = {chunk["id"] for chunk in retrieved_chunks}
+        for hit in hits:
+            if not is_list_heading(hit):
+                continue
+            for item_id in direct_sub_clauses(chunk_by_id, hit):
+                if item_id not in retrieved_ids:
+                    retrieved_chunks.append(chunk_by_id[item_id])
+                    retrieved_ids.add(item_id)
+        return retrieved_chunks
 
     return retrieve
 
@@ -303,7 +318,8 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
 
 # ===== Running one setup =====
 
-def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry_run: bool) -> dict:
+def run_answer_setup(top_k: int, adds_list_items: bool, extra_rule_names: list[str], label: str,
+                     is_dry_run: bool) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
@@ -314,7 +330,7 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
         questions = questions[:1]
     search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
-    retrieve = build_retrieve_function(search, top_k, chunk_by_id, load_rule_map())
+    retrieve = build_retrieve_function(search, top_k, chunk_by_id, load_rule_map(), adds_list_items)
     answer_rules = build_answer_rules(extra_rule_names)
     mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value(), retry_config=MISTRAL_RETRY)
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
@@ -355,6 +371,8 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
         "split": "dev+probes",
         "top_k": top_k,
         "rule_links": True,
+        "list_items": adds_list_items,
+        "max_answer_tokens": MAX_ANSWER_TOKENS,
         "extra_rules": extra_rule_names,
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,
@@ -374,6 +392,7 @@ def main() -> None:
     """Runs the one setup named on the command line."""
     parser = argparse.ArgumentParser(description="Answer, check and grade the dev questions and probes.")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
+    parser.add_argument("--add-list-items", action="store_true", help="add the items under a found list heading")
     parser.add_argument("--rule", action="append", default=[], choices=list(EXTRA_ANSWER_RULES),
                         help="an extra answer rule to test; repeat for more than one")
     parser.add_argument("--label", help="a short name for the run (default: top<k>, then each rule name)")
@@ -382,10 +401,13 @@ def main() -> None:
     # Name the run by what it changed, unless a label is given
     label = arguments.label
     if label is None:
-        label = "-".join([f"top{arguments.top_k}"] + arguments.rule)
+        label_parts = [f"top{arguments.top_k}"]
+        if arguments.add_list_items:
+            label_parts.append("list-items")
+        label = "-".join(label_parts + arguments.rule)
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run)
+    run_answer_setup(arguments.top_k, arguments.add_list_items, arguments.rule, label, arguments.dry_run)
 
 
 if __name__ == "__main__":

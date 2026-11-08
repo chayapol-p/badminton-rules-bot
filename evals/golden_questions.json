@@ -163,7 +163,7 @@
           "clause": "7.4.1"
         }
       ],
-      "pass_rule": "Gives 1.15 m as the default rule. Mentions the waist rule only as an alternative that needs prior arrangement.",
+      "pass_rule": "Gives 1.15 m as the default rule. Labels the waist rule as the Alternative Laws (in force 2027-01-04), not the default, and gives both its parts: below the waist, and the racket shaft and head pointing downward.",
       "split": "dev"
     },
     {
@@ -381,6 +381,7 @@
       "wording": "paraphrased",
       "question": "If a line judge clearly gets an in/out call wrong, what can the umpire do?",
       "answer": "The Umpire overrules the call if it is beyond reasonable doubt that the Line Judge was clearly wrong. Where an Instant Review System is used, a player's challenge result also replaces the original call.",
+      "pass_rule": "Gives the umpire's overrule when the line judge is clearly wrong (Law 17.5.1). The Instant Review System part is context: the question asks what the umpire can do, and a challenge is the player's action.",
       "answer_locations": [
         {
           "doc": "laws",

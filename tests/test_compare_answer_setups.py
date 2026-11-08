@@ -153,7 +153,8 @@ def test_a_clean_answer_is_judged_and_its_cost_counted():
 
 def test_with_no_links_retrieve_hands_on_the_search_hits():
     empty_rule_map = {"outgoing": {}, "incoming": {}, "outside": {}}
-    retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, empty_rule_map)
+    retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, empty_rule_map,
+                                       False)
     assert retrieve("any question") == SAMPLE_CHUNKS[:2]
 
 
@@ -162,9 +163,21 @@ def test_rule_links_bring_the_clause_a_hit_cites():
     try:
         chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
         retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["itto-5.4.13"]], 1, chunk_by_id,
-                                           load_rule_map())
+                                           load_rule_map(), False)
     except FileNotFoundError:
         pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
     retrieved_ids = [chunk["id"] for chunk in retrieve("How many coaches at the 11-point break?")]
     assert retrieved_ids[0] == "itto-5.4.13"
     assert "laws-16.2.1" in retrieved_ids
+
+
+def test_a_found_list_heading_brings_its_items():
+    """8 Nov: wheelchair-shuttle-on-net got the heading "in Wheelchair Badminton if the shuttle is:" but not its items."""
+    try:
+        chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
+        retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["laws-13.3.10"]], 1, chunk_by_id,
+                                           load_rule_map(), True)
+    except FileNotFoundError:
+        pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
+    retrieved_ids = [chunk["id"] for chunk in retrieve("Shuttle stuck on the net in Wheelchair Badminton?")]
+    assert "laws-13.3.10.1" in retrieved_ids

@@ -31,8 +31,10 @@ from answer.build_answer_prompt import build_answer_prompt
 
 
 # Constants
-## An upper bound on the reply's length, thinking included, so one runaway reply can't run up the bill
-MAX_ANSWER_TOKENS = 4096
+## An upper bound on the reply's length, thinking included, so one runaway reply can't run up the bill.
+## Only used tokens are paid for. 4,096 cut off one long question in most runs on 8 Nov (red-card's
+## thinking ran to about 3,500 tokens), so the cap is 16,000
+MAX_ANSWER_TOKENS = 16_000
 
 
 # ===== The reply =====
