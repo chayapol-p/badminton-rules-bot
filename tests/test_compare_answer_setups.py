@@ -5,6 +5,7 @@ Tests the answer run's scores, the cost of one call, the retrieve step, and the 
 import pytest
 
 from evals.golden_answer_chunks import load_chunks
+from evals.judge_answers import JUDGE_VOTES
 from evals.token_costs import call_cost
 from experiments.compare_answer_setups import build_retrieve_function, check_and_grade, summarise_answer_run
 from retrieval.expand_with_rule_links import load_rule_map
@@ -146,7 +147,7 @@ def test_a_clean_answer_is_judged_and_its_cost_counted():
     assert grade_line["judged"]
     assert grade_line["passed"]
     assert line["judge_cost"] > 0
-    assert len(client.requests) == 1
+    assert len(client.requests) == JUDGE_VOTES
 
 
 # ===== The retrieve step =====

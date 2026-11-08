@@ -9,6 +9,13 @@ The judge only sees answers that passed the code checks (evals/code_checks.py), 
 warnings as hints. It passes or fails three rubric lines, each with a one-sentence reason. Code,
 not the judge, decides the overall grade: every line must pass.
 
+The judge sees what a user sees: refused or not, the answer and its citations. The bot's reasoning
+field is its working notes, kept in the run log only: on 8 Nov leaving-court failed because its
+reasoning named the para clause it rightly left out of the answer.
+
+Each answer is graded JUDGE_VOTES times, and each rubric line goes with the majority, so one odd
+grade can't flip an answer (self-consistency, Wang et al.; Anthropic's "Adding Error Bars to Evals").
+
 Two settings to know:
 - Sonnet 5.5 takes no temperature (any value returns a 400 error), so a regrade can differ.
   Running the same setup twice shows how much answers and grades move together (Step 5).
@@ -18,7 +25,7 @@ Two settings to know:
   with a 400 and names between_tools as the way to turn thinking off before responding.
 
 Use:
-    reply = grade_answer(client, model, question, rules_answer, retrieved_chunks, code_warnings)
+    reply = grade_answer(client, model, question, rules_answer, retrieved_chunks, code_warnings)  # JUDGE_VOTES calls
     passed = judge_passed(reply.grade)
 """
 
@@ -34,6 +41,9 @@ from answer.build_answer_prompt import format_source
 # Constants
 ## Room for three short reasons
 MAX_GRADE_TOKENS = 1024
+
+## How many times each answer is graded; an odd number, so every rubric line has a majority
+JUDGE_VOTES = 3
 
 ## The grading rules, sent as the system message on every call
 JUDGE_RULES = """You grade answers from a badminton rules bot. The bot may use only the sources it was given.
@@ -67,7 +77,7 @@ class JudgeGrade(BaseModel):
 
 @dataclass
 class GradeReply:
-    """One grade, plus the tokens the call used."""
+    """One grade (the majority of the votes), plus the tokens all the votes used."""
 
     grade: JudgeGrade
     input_tokens: int
@@ -95,13 +105,12 @@ def describe_expected_answer(question: dict) -> str:
 
 
 def describe_reply(rules_answer: RulesAnswer) -> str:
-    """Returns the bot's reply as the judge reads it: its reasoning, refused or not, the answer, then each citation."""
+    """Returns the bot's reply as a user sees it: refused or not, the answer, then each citation. The reasoning stays out."""
     citation_lines = [f'- [{citation.chunk_id}] "{citation.quote}"' for citation in rules_answer.citations]
     citations_text = "\n".join(citation_lines)
     if not citation_lines:
         citations_text = "(none)"
-    return (f"Reasoning: {rules_answer.reasoning}\nRefused: {rules_answer.refused}\n"
-            f"Answer: {rules_answer.answer}\nCitations:\n{citations_text}")
+    return f"Refused: {rules_answer.refused}\nAnswer: {rules_answer.answer}\nCitations:\n{citations_text}"
 
 
 def build_judge_prompt(question: dict, rules_answer: RulesAnswer, retrieved_chunks: list[dict], code_warnings: list[str]) -> str:
@@ -123,21 +132,45 @@ def build_judge_prompt(question: dict, rules_answer: RulesAnswer, retrieved_chun
     )
 
 
+# ===== Combining the votes =====
+
+def majority_line(votes: list[RubricLine]) -> RubricLine:
+    """Returns the majority verdict on one rubric line, with the reason of the first vote that agrees with it."""
+    pass_count = sum(1 for vote in votes if vote.passed)
+    majority_passed = pass_count * 2 > len(votes)
+    for vote in votes:
+        if vote.passed == majority_passed:
+            return vote
+
+
+def combine_votes(grades: list[JudgeGrade]) -> JudgeGrade:
+    """Returns one grade where each rubric line goes with the majority of the votes."""
+    return JudgeGrade(
+        key_facts=majority_line([grade.key_facts for grade in grades]),
+        only_from_sources=majority_line([grade.only_from_sources for grade in grades]),
+        follows_pass_rule=majority_line([grade.follows_pass_rule for grade in grades]),
+    )
+
+
 # ===== One grade =====
 
 def grade_answer(client: Anthropic, model: str, question: dict, rules_answer: RulesAnswer,
                  retrieved_chunks: list[dict], code_warnings: list[str]) -> GradeReply:
-    """Returns the judge's grade for one reply."""
-    response = client.messages.parse(
-        model=model,
-        max_tokens=MAX_GRADE_TOKENS,
-        system=JUDGE_RULES,
-        messages=[{"role": "user", "content": build_judge_prompt(question, rules_answer, retrieved_chunks, code_warnings)}],
-        output_format=JudgeGrade,
-        thinking={"type": "between_tools"},
-    )
-    return GradeReply(
-        grade=response.parsed_output,
-        input_tokens=response.usage.input_tokens,
-        output_tokens=response.usage.output_tokens,
-    )
+    """Returns the judge's grade for one reply: JUDGE_VOTES calls, combined line by line by majority."""
+    prompt = build_judge_prompt(question, rules_answer, retrieved_chunks, code_warnings)
+    grades = []
+    input_tokens = 0
+    output_tokens = 0
+    for _ in range(JUDGE_VOTES):
+        response = client.messages.parse(
+            model=model,
+            max_tokens=MAX_GRADE_TOKENS,
+            system=JUDGE_RULES,
+            messages=[{"role": "user", "content": prompt}],
+            output_format=JudgeGrade,
+            thinking={"type": "between_tools"},
+        )
+        grades.append(response.parsed_output)
+        input_tokens += response.usage.input_tokens
+        output_tokens += response.usage.output_tokens
+    return GradeReply(grade=combine_votes(grades), input_tokens=input_tokens, output_tokens=output_tokens)

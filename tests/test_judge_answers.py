@@ -5,7 +5,8 @@ Tests the judge's prompt and its overall grade, without calling the API.
 from types import SimpleNamespace
 
 from answer.answer_shape import Citation, RulesAnswer
-from evals.judge_answers import JUDGE_RULES, JudgeGrade, RubricLine, build_judge_prompt, grade_answer, judge_passed
+from evals.judge_answers import (JUDGE_RULES, JUDGE_VOTES, JudgeGrade, RubricLine, build_judge_prompt, combine_votes,
+                                 grade_answer, judge_passed)
 from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
 
 
@@ -47,7 +48,7 @@ def test_the_prompt_holds_the_expected_answer_the_sources_and_the_reply():
     assert "[laws-1.4]" in prompt
     assert '- [laws-1.4] "The posts shall be 1.55 metres in height"' in prompt
     assert "<pass_rule>\nNone\n</pass_rule>" in prompt
-    assert "Reasoning: Law 1.4 gives the posts' height" in prompt
+    assert "Law 1.4 gives the posts' height" not in prompt, "the reasoning is the bot's notes, not shown to the user"
 
 
 def test_a_question_without_an_answer_shows_why_and_its_pass_rule():
@@ -107,3 +108,19 @@ def test_the_judge_request_turns_thinking_off_the_way_sonnet_5_5_accepts():
     assert request["thinking"] == {"type": "between_tools"}
     assert "temperature" not in request
     assert judge_passed(reply.grade)
+
+
+# ===== Majority of the votes =====
+
+def test_each_rubric_line_goes_with_the_majority_of_the_votes():
+    grades = [grade_with(True, False, True), grade_with(True, True, True), grade_with(False, True, True)]
+    combined = combine_votes(grades)
+    assert combined.key_facts.passed
+    assert combined.only_from_sources.passed
+    assert judge_passed(combined)
+
+
+def test_the_judge_is_asked_once_per_vote():
+    client = StubJudgeClient()
+    grade_answer(client, "claude-sonnet-5-5", SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, [])
+    assert len(client.requests) == JUDGE_VOTES
