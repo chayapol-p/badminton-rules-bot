@@ -35,6 +35,8 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0011](0011-complete-answers-rule-not-adopted.md) | The "complete answers" rule is not adopted | Rejected |
 | [0012](0012-three-pass-rules-fixed.md) | Fix three pass rules that asked for more than the question or the corpus | Accepted |
 | [0013](0013-the-bots-words-about-itself-are-not-rule-claims.md) | The judge doesn't count the bot's words about itself as rule claims | Accepted |
+| [0014](0014-the-judge-grades-what-the-user-sees-by-majority-of-3.md) | The judge grades what the user sees, by a majority of 3 votes | Accepted |
+| [0015](0015-three-fixes-become-the-default.md) | List items, the para rule and the value-conditions rule become the default | Accepted |
 
 ## Template
 
