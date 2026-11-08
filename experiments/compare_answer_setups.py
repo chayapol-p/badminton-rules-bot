@@ -25,20 +25,20 @@ Run from the project root:
 """
 
 import argparse
-import json
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 from statistics import mean
 
 import numpy
 from anthropic import Anthropic
 from mistralai.client import Mistral
 
+from answer.answer_shape import RulesAnswer
 from answer.generate_answer import generate_answer
 from answer.check_citations import find_citation_problems
 from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
 from app.settings import load_settings
+from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line
 from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.code_checks import find_code_failures
 from evals.judge_answers import grade_answer, judge_passed
@@ -67,9 +67,6 @@ CODE_CHECK_PREFIXES = {
     "wrong clause": ("wrong clause",),
 }
 CODE_CHECK_NAMES = list(CODE_CHECK_PREFIXES)
-
-## Where each run's answers and grades go
-ANSWER_RUNS_FOLDER = Path(__file__).resolve().parent.parent / "evals" / "answer_runs"
 
 
 # ===== The search, fixed by decision record 0006 =====
@@ -128,22 +125,32 @@ def answer_and_grade(question: dict, search, top_k: int, chunks: list[dict], chu
         answer_line["raw_reply"] = reply.raw_reply
         return answer_line, {"id": question["id"], "passed": False, "judged": False, "grade": None}
 
-    # Code checks first: an answer they fail has failed, and isn't sent to the judge
     answer_line["answer"] = reply.answer.model_dump()
-    answer_line["citation_problems"] = find_citation_problems(reply.answer, retrieved_chunks)
-    answer_line["refusal_outcome"] = refusal_outcome(question, reply.answer.refused)
+    grade_line = check_and_grade(answer_line, reply.answer, question, retrieved_chunks, chunks, chunk_by_id,
+                                 anthropic_client, judge_model)
+    return answer_line, grade_line
+
+
+def check_and_grade(answer_line: dict, rules_answer: RulesAnswer, question: dict, retrieved_chunks: list[dict],
+                    chunks: list[dict], chunk_by_id: dict[str, dict], anthropic_client: Anthropic,
+                    judge_model: str) -> dict:
+    """Runs the code checks on one answer, then the judge when they pass; fills in the answer line's checks and judge cost, and returns the grade line."""
+
+    # Code checks first: an answer they fail has failed, and isn't sent to the judge
+    answer_line["citation_problems"] = find_citation_problems(rules_answer, retrieved_chunks)
+    answer_line["refusal_outcome"] = refusal_outcome(question, rules_answer.refused)
     failures, warnings = find_code_failures(answer_line, question, chunks, chunk_by_id)
     answer_line["code_failures"] = failures
     answer_line["code_warnings"] = warnings
+    answer_line["judge_cost"] = 0.0
     if failures:
-        return answer_line, {"id": question["id"], "passed": False, "judged": False, "grade": None}
+        return {"id": question["id"], "passed": False, "judged": False, "grade": None}
 
     # Then the judge, for what only it can grade, with the code warnings to weigh
-    grade_reply = grade_answer(anthropic_client, judge_model, question, reply.answer, retrieved_chunks, warnings)
+    grade_reply = grade_answer(anthropic_client, judge_model, question, rules_answer, retrieved_chunks, warnings)
     answer_line["judge_cost"] = call_cost(judge_model, grade_reply.input_tokens, grade_reply.output_tokens)
-    grade_line = {"id": question["id"], "passed": judge_passed(grade_reply.grade), "judged": True,
-                  "grade": grade_reply.grade.model_dump()}
-    return answer_line, grade_line
+    return {"id": question["id"], "passed": judge_passed(grade_reply.grade), "judged": True,
+            "grade": grade_reply.grade.model_dump()}
 
 
 # ===== Scoring a run =====
@@ -257,12 +264,6 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
         if line["code_failures"]:
             reason = "; ".join(line["code_failures"])
         print(f"  fail: {line['id']}  {reason}")
-
-
-def append_line(path: Path, line: dict) -> None:
-    """Adds one JSON object as the last line of the file, which is saved when the file closes."""
-    with path.open("a", encoding="utf-8") as output_file:
-        output_file.write(json.dumps(line, ensure_ascii=False) + "\n")
 
 
 # ===== Running one setup =====

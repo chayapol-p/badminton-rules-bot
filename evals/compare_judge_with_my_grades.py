@@ -5,7 +5,8 @@ Grade before you open the run's -grades.jsonl file, so the judge's verdict can't
 
   Input:  evals/human_grades.jsonl, one line per answer you graded:
             {"run": "20261107T1200-top5", "id": "deuce-end", "passed": true, "reason": "Gives both the 2-point lead and the 30-point cap."}
-          evals/answer_runs/<run>-grades.jsonl, written by experiments.compare_answer_setups
+          evals/answer_runs/<run>-grades.jsonl, written by experiments.compare_answer_setups, or with
+          --rejudged, <run>-rejudged-grades.jsonl, written by experiments.rescore_answer_run --rejudge
   Output: printed: how many grades match, then each disagreement with both reasons
 
 Trust the judge when it matches at least 9 of your 10 grades (a starting bar). Below that, fix
@@ -14,29 +15,12 @@ sent to the judge, so it is listed apart and left out of the count.
 
 Run from the project root:
     uv run python -m evals.compare_judge_with_my_grades --run 20261107T1200-top5
+    uv run python -m evals.compare_judge_with_my_grades --run 20261107T1200-top5 --rejudged
 """
 
 import argparse
-import json
-from pathlib import Path
 
-
-# Constants
-## Path to each resource
-EVALS_FOLDER = Path(__file__).resolve().parent
-HUMAN_GRADES_FILE = EVALS_FOLDER / "human_grades.jsonl"
-ANSWER_RUNS_FOLDER = EVALS_FOLDER / "answer_runs"
-
-
-# ===== Reading grade files =====
-
-def read_lines(path: Path) -> list[dict]:
-    """Returns one dictionary per non-empty line of a JSON Lines file."""
-    lines = []
-    for text_line in path.read_text(encoding="utf-8").splitlines():
-        if text_line.strip():
-            lines.append(json.loads(text_line))
-    return lines
+from evals.answer_run_files import ANSWER_RUNS_FOLDER, HUMAN_GRADES_FILE, read_lines
 
 
 # ===== Comparing =====
@@ -82,6 +66,7 @@ def main() -> None:
     """Prints the agreement between your grades and the judge's for one run."""
     parser = argparse.ArgumentParser(description="Compare your grades with the judge's for one answer run.")
     parser.add_argument("--run", required=True, help="the run name, such as 20261107T1200-top5")
+    parser.add_argument("--rejudged", action="store_true", help="compare with the run's rejudged grades")
     arguments = parser.parse_args()
 
     # Your grades for this run, leaving out lines still waiting for a grade, and the judge's grades by question id
@@ -90,7 +75,10 @@ def main() -> None:
     ungraded_count = len(run_grades) - len(my_grades)
     if ungraded_count:
         print(f"{ungraded_count} lines still have \"passed\": null and are left out")
-    judge_lines = read_lines(ANSWER_RUNS_FOLDER / f"{arguments.run}-grades.jsonl")
+    grades_suffix = "grades"
+    if arguments.rejudged:
+        grades_suffix = "rejudged-grades"
+    judge_lines = read_lines(ANSWER_RUNS_FOLDER / f"{arguments.run}-{grades_suffix}.jsonl")
     judge_grade_by_id = {line["id"]: line for line in judge_lines}
 
     comparison = compare_grades(my_grades, judge_grade_by_id)

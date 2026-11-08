@@ -1,5 +1,5 @@
 """
-Tests the numbers-from-nowhere check: number words, clause numbers, normal forms and parent clauses.
+Tests the numbers-not-in-the-sources check: number words, clause numbers, normal forms and parent clauses.
 """
 
 from answer.check_numbers import find_ungrounded_numbers, normalise_number, numbers_in
@@ -12,7 +12,7 @@ def test_clause_numbers_stay_whole_and_number_words_become_digits():
 
 
 def test_one_is_not_read_as_a_number():
-    """Run 1 flagged "one condition" as a number from nowhere: "zero" and "one" are left out."""
+    """Run 1 flagged "one condition" as a number not in the sources: "zero" and "one" are left out."""
     assert numbers_in("No one may serve until one condition holds") == set()
 
 
@@ -30,7 +30,7 @@ def test_a_number_in_the_sources_is_grounded():
     assert find_ungrounded_numbers("The posts are 1.55 metres tall.", source_text) == []
 
 
-def test_a_number_not_in_the_sources_is_from_nowhere():
+def test_a_number_not_in_the_sources_is_listed():
     source_text = "The posts shall be 1.55 metres in height."
     assert find_ungrounded_numbers("Posts are 1.55 m, since 1992.", source_text) == ["1992"]
 

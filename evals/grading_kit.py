@@ -23,19 +23,15 @@ Run from the project root:
 import argparse
 import json
 import textwrap
-from pathlib import Path
 
+from evals.answer_run_files import ANSWER_RUNS_FOLDER, HUMAN_GRADES_FILE, read_lines
 from evals.code_checks import find_code_failures
-from evals.compare_judge_with_my_grades import HUMAN_GRADES_FILE, read_lines
-from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
+from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.refusal_probes import load_refusal_probes
 from experiments.compare_answer_setups import IMAGE_ONLY_QUESTION_IDS
 
 
 # Constants
-## Path to each resource
-ANSWER_RUNS_FOLDER = Path(__file__).resolve().parent / "answer_runs"
-
 ## The 10 answers Step 4 grades by hand: 3 direct lookups, 2 overrides, 2 cross references,
 ## 1 para question, 1 unanswerable and 1 attack, picked by category before reading any grade
 GRADING_SAMPLE_IDS = [
@@ -171,8 +167,7 @@ def main() -> None:
 
     # Load the run's answers, the questions behind them and the clauses they cite
     answer_lines = read_lines(ANSWER_RUNS_FOLDER / f"{arguments.run}-answers.jsonl")
-    golden_questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
-    question_by_id = {question["id"]: question for question in golden_questions + load_refusal_probes()}
+    question_by_id = {question["id"]: question for question in load_questions("dev") + load_refusal_probes()}
     chunks = load_chunks()
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
 

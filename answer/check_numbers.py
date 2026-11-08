@@ -1,8 +1,9 @@
 """
-Checks that every number in an answer comes from what the model was shown: no numbers from nowhere.
+Finds the numbers in an answer that aren't in what the model was shown: the sources and the question.
 
-A number the sources and the question don't hold came from the model's memory: a year, a
-string tension, a fine. That check needs no golden answer, so it can run on every request.
+Such a number may come from the model's memory (a year, a string tension, a fine) or be worked out
+from the sources (an example score like 22-20). Code can't tell which, so the eval passes the
+numbers to the judge as a warning. The check needs no golden answer, so it can run on every request.
 
 Numbers are compared in one normal form, so the same number written two ways still matches:
   - number words from two up become digits: "two" is 2

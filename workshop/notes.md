@@ -51,5 +51,8 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - Mistral Large 4 rejects temperature 0 unless top_p is exactly 1 (400, code 3054: "top_p must be 1 when using greedy sampling"). The SDK sends no top_p, so the server's default applied. Fixed in generate_answer (7 Nov).
 - Mistral Large 4 always thinks and always sends message.content as a list of chunks (thinking, then text), whatever reasoning_effort says (Mistral's reasoning docs). Run 1 crashed writing a ThinkChunk to JSON. Now the answer text is parsed, the thinking is kept as text, and reasoning_effort is pinned to low (Large 4 takes low, medium or high; Mistral recommends high) (7 Nov).
 - Claude Sonnet 5.5 rejects thinking {"type": "disabled"} (400); the API says to send {"type": "between_tools"} to turn thinking off before responding. Fixed in the judge (7 Nov).
+- Grading order (8 Nov, decision record 0007): code checks first, the judge only for what they pass. On run 1, 6 of 33 answers fail the code checks (4 wrong refusals, 2 quotes not in their clause), so 27 of 33 judge calls remain. Numbers not in the sources only warn: deuce-end's "22-20" is worked out from Law 7.4, and golden answers hold context numbers (11, 60, 13.4).
+- Hand grades on run 1 (8 Nov): 7 of 10 pass. A fresh grader with no sight of the drafts agreed on 10 of 10. Both are Claude, so they check each other, not the Sonnet judge's family bias.
+- Judge vs hand grades on run 1, old rubric (8 Nov): 8 of 10, below the 9-of-10 bar. Both misses are the judge being stricter: post-height fails on "stays vertical", a context fact the question didn't ask; coaches-at-interval fails on "11-point interval", which comes from the question, not the sources.
 
 ## Lab 7 · React chat UI

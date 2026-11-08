@@ -8,7 +8,7 @@ called on answers the code checks passed. Failures:
   - citation problem: a cited chunk the model never saw, or a quote not in its clause
   - wrong clause: an answerable question, answered, citing none of the clauses that hold the answer
 Warnings, for the judge to weigh:
-  - number from nowhere: a number in the answer that the sources and the question don't hold.
+  - numbers not in the sources: a number in the answer that the sources and the question don't hold.
     It can come from memory (a fail) or be worked out from the sources (an example score like
     22-20), and only the judge can tell which
   - missing golden number: a number in the golden answer the answer doesn't carry, which can be

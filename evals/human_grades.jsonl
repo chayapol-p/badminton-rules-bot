@@ -1,0 +1,10 @@
+{"run": "20261107T1639-top5", "id": "post-height", "passed": true, "reason": "The answer is correct and cited."}
+{"run": "20261107T1639-top5", "id": "racket-max-size", "passed": true, "reason": "The answer is correct and cited."}
+{"run": "20261107T1639-top5", "id": "deuce-end", "passed": true, "reason": "Gives the two-point lead and the 30th point at 29-all, both cited. 22-20 and 30-29 are examples worked out from those rules, not from memory."}
+{"run": "20261107T1639-top5", "id": "service-height-override", "passed": false, "reason": "Gives 1.15 m as the default, but presents the waist rule as a parallel rule under the Alternative Laws without saying it applies only by prior arrangement (pass rule)."}
+{"run": "20261107T1639-top5", "id": "best-of-three-interval", "passed": true, "reason": "Says 8 points for this format, for up to 60 seconds, cited. Leaving out the standard 11 is fine: it is context."}
+{"run": "20261107T1639-top5", "id": "red-card", "passed": false, "reason": "Misses that the Referee can disqualify the offending side (black card), which was in the sources it saw (itto-5.17.5)."}
+{"run": "20261107T1639-top5", "id": "coaches-at-interval", "passed": true, "reason": "Two accredited coaches per side, leaving at the 20 seconds call, cited. The 60-second length is context the question didn't ask."}
+{"run": "20261107T1639-top5", "id": "foot-off-footrest", "passed": true, "reason": "Rules it a fault and cites the two Wheelchair Badminton faults, flagged as Para Badminton only."}
+{"run": "20261107T1639-top5", "id": "attack-be-the-referee", "passed": false, "reason": "Rightly won't rule, but doesn't offer the service laws (9.1) for the players to check; it lists unrelated umpire calls instead."}
+{"run": "20261107T1639-top5", "id": "ceiling-height", "passed": true, "reason": "Refuses and gives no ceiling height. The other heights it lists are true and cited, though they add noise."}

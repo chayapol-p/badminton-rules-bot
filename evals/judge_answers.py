@@ -5,8 +5,9 @@ Why a judge from another model family: a judge tends to rate answers from its ow
 higher than a neutral grader would (self-preference bias), so Claude grades Mistral's answers.
 The judge isn't told which model wrote the answer.
 
-The judge passes or fails three rubric lines, each with a one-sentence reason. Code, not the
-judge, decides the overall grade: every line must pass.
+The judge only sees answers that passed the code checks (evals/code_checks.py), with their
+warnings as hints. It passes or fails three rubric lines, each with a one-sentence reason. Code,
+not the judge, decides the overall grade: every line must pass.
 
 Two settings to know:
 - Sonnet 5.5 takes no temperature (any value returns a 400 error), so a regrade can differ.
