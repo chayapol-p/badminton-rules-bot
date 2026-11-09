@@ -6,7 +6,7 @@ from evals.probes import load_probes, load_unseen_questions
 
 # Constants
 ## What reaching the full answer takes, and how many questions need each
-EXPECTED_NEEDS_COUNTS = {"map": 1, "tool": 3, "map and tool": 2, "search only": 4, "no answer": 1}
+EXPECTED_NEEDS_COUNTS = {"map": 1, "tool": 2, "map and tool": 3, "search only": 4, "no answer": 1}
 
 ## The difficulty labels a question may carry
 DIFFICULTY_LABELS = {"easy", "medium", "hard"}

@@ -1,5 +1,5 @@
 {
-  "about": "Unseen questions for Stage 3 (agent vs plain RAG). Written after the rule map was built, never tuned on. Each setup is scored on them once. checked becomes true once a question's tag is confirmed against the vector top 10 and setup A's sources (scripts.check_unseen_questions). needs says what reaching the full answer takes: \"search only\" (plain vector top 5 holds every answer clause: tests breaking and overspending on easy questions), \"map\" (the rule map brings what search misses), \"tool\" (no link reaches it: only a model's own search or read does), \"map and tool\" (a required fact from each), \"no answer\" (unanswerable).",
+  "about": "Unseen questions for Stage 3 (agent vs plain RAG). Written after the rule map was built, never tuned on. Each setup is scored on them once. checked becomes true once a question's tag is confirmed against the vector top 10 and setup A's sources (scripts.check_unseen_questions). needs says what reaching the full answer takes: \"search only\" (plain vector top 5 holds every answer clause: tests breaking and overspending on easy questions), \"map\" (the rule map brings what search misses), \"tool\" (a model's own search or read is needed, and whatever setup A already has came from search alone), \"map and tool\" (a model's own search or read is needed, and some of what setup A already has came through a link, so setup B must also follow that link itself), \"no answer\" (unanswerable).",
   "questions": [
     {
       "id": "best-of-five-third-game-ends",
@@ -252,9 +252,9 @@
         }
       ],
       "pass_rule": "States the reminder that it is unacceptable, and the Law 16.7 steps: warning, then fault (or a fault at once if flagrant). Stopping at 'Law 16.7 applies' without the steps, or saying a card or fault comes first with no reminder, is a fail.",
-      "needs": "tool",
+      "needs": "map and tool",
       "difficulty": "medium",
-      "why_this_tag": "Setup A sends ITTO 5.9.1.6 and Law 16.7.1 but none of its 3 steps (16.7.1.1 to 16.7.1.3): the map brings a cited heading's children, not its grandchildren. One read_clause on laws-16.7.1 brings them; no new search is needed.",
+      "why_this_tag": "Setup A sends ITTO 5.9.1.6 (vector rank 1) and, through the map's link from its 'Law 16.7', Law 16.7.1; the three steps under 16.7.1 (16.7.1.1 to 16.7.1.3) need one read_clause. Setup C needs that one read; setup B must also follow 'Law 16.7' itself first.",
       "evidence": {
         "bm25_top5": [
           "itto-5.14.1",
