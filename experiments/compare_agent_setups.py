@@ -152,14 +152,13 @@ def requested_top_k(tool_call: dict) -> object:
 def summarise_tool_use(answer_lines: list[dict]) -> dict:
     """Returns how the agent used its tools: rounds, calls, errors, questions that reached the limit and the top_k it asked for."""
 
-    # Every tool call in the run, and the top_k of each search that actually ran
+    # Every tool call in the run, and the top_k of each search
     tool_calls = []
     for line in answer_lines:
         tool_calls.extend(line["tool_calls"])
     requested_top_ks = []
     for tool_call in tool_calls:
-        is_search_that_ran = tool_call["tool"] == "search_rules" and not tool_call["limit_message"]
-        if is_search_that_ran:
+        if tool_call["tool"] == "search_rules":
             requested_top_ks.append(requested_top_k(tool_call))
     rounds = [line["tool_rounds"] for line in answer_lines]
     return {
