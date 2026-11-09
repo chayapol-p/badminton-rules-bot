@@ -150,7 +150,7 @@ def requested_top_k(tool_call: dict) -> object:
 
 
 def summarise_tool_use(answer_lines: list[dict]) -> dict:
-    """Returns how the agent used its tools: rounds, calls, errors, limit messages, backstops and the top_k it asked for."""
+    """Returns how the agent used its tools: rounds, calls, errors, questions that reached the limit and the top_k it asked for."""
 
     # Every tool call in the run, and the top_k of each search that actually ran
     tool_calls = []
@@ -168,8 +168,7 @@ def summarise_tool_use(answer_lines: list[dict]) -> dict:
         "questions_with_no_tool_call": sum(1 for round_count in rounds if round_count == 0),
         "tool_calls": len(tool_calls),
         "tool_errors": sum(1 for call in tool_calls if call["error"]),
-        "limit_messages": sum(1 for call in tool_calls if call["limit_message"]),
-        "backstops": sum(1 for line in answer_lines if line["tools_turned_off"]),
+        "questions_at_limit": sum(1 for line in answer_lines if line["tools_turned_off"]),
         "mean_model_calls": round(mean(line["model_calls"] for line in answer_lines), 2),
         "requested_top_ks": requested_top_ks,
     }
@@ -180,7 +179,7 @@ def print_tool_use(tool_use: dict) -> None:
     print(f"tool rounds  mean {tool_use['mean_tool_rounds']}  · most {tool_use['most_tool_rounds']}  "
           f"· no tool call on {tool_use['questions_with_no_tool_call']} questions  · model calls mean {tool_use['mean_model_calls']}")
     print(f"tool calls {tool_use['tool_calls']}  · errors {tool_use['tool_errors']}  "
-          f"· limit messages {tool_use['limit_messages']}  · backstops {tool_use['backstops']}")
+          f"· questions that reached the round limit {tool_use['questions_at_limit']}")
     print(f"top_k asked for: {tool_use['requested_top_ks']}")
 
 
