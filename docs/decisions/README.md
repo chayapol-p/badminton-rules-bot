@@ -41,6 +41,7 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0017](0017-official-links-and-parent-headings.md) | Link each official to their instructions, and show the heading above each clause | Accepted |
 | [0018](0018-two-label-fixes-in-the-unseen-set.md) | Fix two labels in the unseen set after setup A's run | Accepted |
 | [0019](0019-tag-tool-questions-by-where-setup-a-got-its-head-start.md) | Tag "tool" and "map and tool" by where setup A's head start came from | Accepted |
+| [0020](0020-the-last-tool-round-carries-a-note-then-the-tools-turn-off.md) | The last tool round carries a note, then the tools turn off | Accepted |
 
 ## Template
 

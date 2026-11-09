@@ -42,6 +42,7 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 
 - Stage 3 prediction (Job, 9 Nov, before any run): A (full RAG) is the baseline; B (full agentic) covers what A missed by itself; C (RAG first, then tools) covers as much as B for fewer rounds, so it costs less. Checked on the 11 unseen questions by: C passes at least as many as B, C's average tool rounds are below B's, C's cost per question is below B's.
 - Setup A on the 11 unseen questions (9 Nov, `20261109T0716-top5-unseen`, re-scored after record 0018): 5 of 10 answers, no-answer 1 of 1, $0.029 a question. By needs (record 0019): search only 3/4, map 1/1, tool 1/2, map and tool 0/3. The map never brings grandchildren (Law 14.2.3's net cases, Law 16.7.1's three steps): 2 fails. leaking-roof-score passed without Law 16.3.3, inferring 'the score stands' from ITTO 5.11.5. Two accidental repeat runs (`20261109T0717-top5-unseen`, both writing to one file pair, 22 lines) scored 6 and 6: every question gave the same verdict except opponent-calls-fault-mid-stroke, which passed both repeats. That is setup A's noise floor on unseen: 5 to 6 of 10.
+- Tools turned off with no note (9 Nov, live, yellow-card-before-play, setup B, after 1 search round): valid JSON, empty answer, 0 citations; thinking ended 'I'll read laws-16.7.1.2 quickly'. With the note: full answer, 4 citations. Record 0020.
 
 ## Lab 4 · Context enrichment
 
