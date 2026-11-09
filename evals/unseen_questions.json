@@ -1,0 +1,535 @@
+{
+  "about": "Unseen questions for Stage 3 (agent vs plain RAG). Written after the rule map was built, never tuned on. Each setup is scored on them once. checked becomes true once a question's tag is confirmed against the vector top 10 and setup A's sources (scripts.check_unseen_questions). needs says what reaching the full answer takes: \"search only\" (plain vector top 5 holds every answer clause: tests breaking and overspending on easy questions), \"map\" (the rule map brings what search misses), \"tool\" (no link reaches it: only a model's own search or read does), \"map and tool\" (a required fact from each), \"no answer\" (unanswerable).",
+  "questions": [
+    {
+      "id": "best-of-five-third-game-ends",
+      "category": "override",
+      "wording": "paraphrased",
+      "question": "We're playing best of five games to 11. In the third game, when do we switch ends?",
+      "answer": "Under the best-of-five games of 11 points format, players change ends at the end of the third game, if there is to be a fourth game. There is no change at 11 points during the third game: the only mid-game change is in the fifth game, when a side first scores 6 points. This format is an Alternative Law, played only by prior arrangement, in force from 4 January 2027.",
+      "answer_locations": [
+        {
+          "doc": "alt",
+          "clause": "8.1.3",
+          "alternative_format": "best-of-5-games-11"
+        },
+        {
+          "doc": "alt",
+          "clause": "8.1.5",
+          "alternative_format": "best-of-5-games-11"
+        }
+      ],
+      "pass_rule": "States that ends change at the end of the third game (if a fourth game follows), not during it. Saying they change when a side reaches 11 points in the third game (the standard Law 8.1.3) is a fail.",
+      "needs": "search only",
+      "difficulty": "medium",
+      "why_this_tag": "Vector top 5 holds both answer clauses (best-of-five 8.1.3 at rank 2, 8.1.5 at rank 4), so every setup sees them; the map adds only the DEFAULT/ALTERNATIVE labels. Standard Law 8.1.3 ranks 1st, so it still tests the default-versus-alternative trap.",
+      "evidence": {
+        "bm25_top5": [
+          "alt-best-of-3-games-21:8.1.3",
+          "alt-best-of-5-games-11:8.1.3",
+          "alt-best-of-5-games-11:7.1",
+          "alt-best-of-5-games-11:8.1.5",
+          "alt-best-of-5-games-11:8.1.2"
+        ],
+        "answer_in_bm25_top5": true,
+        "answer_in_expanded": true,
+        "answer_ids_in_bm25_top5": [
+          "alt-best-of-5-games-11:8.1.3",
+          "alt-best-of-5-games-11:8.1.5"
+        ],
+        "answer_ids_in_expanded": [
+          "alt-best-of-5-games-11:8.1.3",
+          "alt-best-of-5-games-11:8.1.5"
+        ]
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "opponent-calls-fault-mid-stroke",
+      "category": "cross_reference",
+      "wording": "exact_term",
+      "question": "My opponent shouted 'fault!' while I was playing my shot. What's the ruling?",
+      "answer": "Calling 'fault' to the opponent while they make a stroke counts as a deliberate distraction (ITTO 5.9.1.4, Law 13.4.5). Deliberately distracting an opponent, for example by shouting, is a fault against the player who shouted.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.9.1.4"
+        },
+        {
+          "doc": "laws",
+          "clause": "13.4.5"
+        }
+      ],
+      "pass_rule": "States it is a fault against the player who shouted, as a deliberate distraction. Calling it a let, or a fault against the striker, is a fail.",
+      "needs": "search only",
+      "difficulty": "easy",
+      "why_this_tag": "Vector top 5 holds both answer clauses (ITTO 5.9.1.4 at rank 1, Law 13.4.5 at rank 2), so no setup has an edge; it tests whether a setup breaks or overspends on an easy question.",
+      "evidence": {
+        "bm25_top5": [
+          "itto-5.3.1",
+          "laws-13.4.4",
+          "itto-3.7.4.1",
+          "itto-5.9.1.4",
+          "laws-7.3"
+        ],
+        "answer_in_bm25_top5": true,
+        "answer_in_expanded": true,
+        "answer_ids_in_bm25_top5": [
+          "itto-5.9.1.4"
+        ],
+        "answer_ids_in_expanded": [
+          "itto-5.9.1.4",
+          "laws-13.4.5"
+        ]
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "every-let-situation",
+      "category": "direct_lookup",
+      "wording": "exact_term",
+      "question": "When do we replay a rally? List every situation that counts as a let.",
+      "answer": "Law 14.2 lists seven lets: (1) the server serves before the receiver is ready; (2) during service, the receiver and the server are both faulted; (3) after the service is returned, the shuttle is caught on the net and stays on top, or is caught in the net after passing over it (except in Wheelchair Badminton, where it is a fault); (4) during play, the shuttle disintegrates and the base completely separates from the rest; (5) in the umpire's opinion, play is disrupted or a player of the opposing side is distracted by a coach; (6) a line judge is unsighted and the umpire or Instant Review System cannot decide; (7) any unforeseen or accidental situation. After a let, play since the last service does not count and the player who served last serves again.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "14.2.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.4"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.5"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.6"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.7"
+        }
+      ],
+      "pass_rule": "Names all seven situations of Law 14.2 (the two net cases of 14.2.3 may be one item). Missing any, or adding one that is not in Law 14.2 (such as a shuttle from the next court as an automatic let), is a fail.",
+      "needs": "map",
+      "difficulty": "hard",
+      "why_this_tag": "Vector top 5 holds only Law 14.2.7 and the 14.2 heading, and the list-items step brings all 7 items: setup A sends 7 of 7. A plain search reaches 4 of 7 in its top 10, so B must read the heading to get the full list.",
+      "evidence": {
+        "bm25_top5": [
+          "itto-5.10.1",
+          "itto-3.4.4.3",
+          "itto-4.2.2.7",
+          "itto-3.6.1.4",
+          "itto-3.5.4.8"
+        ],
+        "answer_in_bm25_top5": false,
+        "answer_in_expanded": false,
+        "answer_ids_in_bm25_top5": [],
+        "answer_ids_in_expanded": []
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "cut-hand-mid-game",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "My partner cut his hand mid-game and it's bleeding. How long can we stop, and who can come on court to help?",
+      "answer": "Play is delayed until the bleeding stops, the wound is suitably dressed, or the Referee advises the Umpire otherwise (ITTO 5.14.2). The Referee may allow at most two persons on court to assist and advise the injured player and help with translation, and must allow the opposing side the same (ITTO 3.6.1.3). The Tournament Doctor may give quick relief such as a bandage, but no time-consuming treatment except in the regular intervals (ITTO 3.6.1.2).",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.14.2"
+        },
+        {
+          "doc": "itto",
+          "clause": "3.6.1.3"
+        },
+        {
+          "doc": "itto",
+          "clause": "3.6.1.2"
+        }
+      ],
+      "pass_rule": "States the delay lasts until the bleeding stops or the wound is dressed (or the Referee says otherwise), and that at most two persons may come on court. Giving a fixed number of minutes is a fail.",
+      "needs": "search only",
+      "difficulty": "medium",
+      "why_this_tag": "Vector top 5 holds both clauses the pass rule needs (ITTO 5.14.2 at rank 1, 3.6.1.3 at rank 3); setup A misses only ITTO 3.6.1.2 (the doctor), which is context.",
+      "evidence": {
+        "bm25_top5": [
+          "itto-5.3.1",
+          "itto-3.6.1.2",
+          "itto-3.5.13.2",
+          "itto-3.6.1.6.1",
+          "itto-3.5.17.3"
+        ],
+        "answer_in_bm25_top5": true,
+        "answer_in_expanded": false,
+        "answer_ids_in_bm25_top5": [
+          "itto-3.6.1.2"
+        ],
+        "answer_ids_in_expanded": [
+          "itto-3.6.1.3",
+          "itto-3.6.1.2"
+        ]
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "leaking-roof-score",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "Water started dripping from the roof onto our court mid-game. What happens to the match and the score?",
+      "answer": "The Umpire calls the Referee (or the Referee goes onto the court) and play is suspended until the court and its surroundings are suitable for play again (ITTO 5.11.3). While play is suspended the existing score stands, and play resumes from that point (Law 16.3.3).",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.11.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.3.3"
+        }
+      ],
+      "pass_rule": "States that play is suspended until the court is playable and that the existing score stands. Saying the rally, game or match is replayed or restarted is a fail.",
+      "needs": "tool",
+      "difficulty": "easy",
+      "why_this_tag": "Setup A finds ITTO 5.11.3 (rank 1) but not Law 16.3.3 (the score stands, vector rank 10), and no link joins them, so only a reworded search such as 'play suspended score' reaches it. Weak spot: ITTO 5.11.5 in A's sources says the umpire calls the score on resuming.",
+      "evidence": {
+        "bm25_top5": [
+          "laws-11.4.1",
+          "itto-5.5.3",
+          "itto-5.16.1",
+          "itto-5.17.11",
+          "itto-4.3.3.2"
+        ],
+        "answer_in_bm25_top5": false,
+        "answer_in_expanded": false,
+        "answer_ids_in_bm25_top5": [],
+        "answer_ids_in_expanded": []
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "sweat-on-court",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "My opponent keeps flicking sweat onto the court. What can the umpire do about it?",
+      "answer": "The umpire reminds the player that such conduct is unacceptable, and applies Law 16.7 if necessary (ITTO 5.9.1.6). Under Law 16.7.1 that means a warning, then a fault if the player was already warned, or a fault straight away for a flagrant offence. A faulted side is reported to the Referee, who may disqualify it (Law 16.7.2).",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.9.1.6"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7.1.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7.1.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7.1.3"
+        }
+      ],
+      "pass_rule": "States the reminder that it is unacceptable, and the Law 16.7 steps: warning, then fault (or a fault at once if flagrant). Stopping at 'Law 16.7 applies' without the steps, or saying a card or fault comes first with no reminder, is a fail.",
+      "needs": "tool",
+      "difficulty": "medium",
+      "why_this_tag": "Setup A sends ITTO 5.9.1.6 and Law 16.7.1 but none of its 3 steps (16.7.1.1 to 16.7.1.3): the map brings a cited heading's children, not its grandchildren. One read_clause on laws-16.7.1 brings them; no new search is needed.",
+      "evidence": {
+        "bm25_top5": [
+          "itto-5.14.1",
+          "itto-5.11.3",
+          "itto-5.14.3.1",
+          "itto-5.3.1",
+          "itto-5.9.1.1"
+        ],
+        "answer_in_bm25_top5": false,
+        "answer_in_expanded": false,
+        "answer_ids_in_bm25_top5": [],
+        "answer_ids_in_expanded": [
+          "itto-5.9.1.6"
+        ]
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "line-judge-unsighted",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "The line judge couldn't see whether the shuttle landed in. What happens to the rally?",
+      "answer": "The line judge signals unsighted by putting both hands up to cover the eyes (ITTO 8.5). The umpire then makes the call (ITTO 2.5). If the umpire also cannot decide, and no Instant Review System is in use, a let is called (Law 14.2.6, ITTO 2.5), so the rally is replayed.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "8.5"
+        },
+        {
+          "doc": "itto",
+          "clause": "2.5"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.6"
+        }
+      ],
+      "pass_rule": "States that the umpire decides, and that it is a let only if the umpire (or IRS) cannot. Saying it is always a let, or that the point stands as called, is a fail.",
+      "needs": "tool",
+      "difficulty": "hard",
+      "why_this_tag": "Setup A sends 0 of 3 answer clauses and the map brings none; Law 14.2.6 is at vector rank 8 and ITTO 2.5 and 8.5 are outside the top 10. Only a search with the rule-book word 'unsighted' reaches them.",
+      "evidence": {
+        "bm25_top5": [
+          "laws-17.4",
+          "itto-8.4",
+          "itto-5.8.2.1",
+          "itto-5.6.4",
+          "itto-8.1"
+        ],
+        "answer_in_bm25_top5": false,
+        "answer_in_expanded": false,
+        "answer_ids_in_bm25_top5": [],
+        "answer_ids_in_expanded": [
+          "itto-8.5"
+        ]
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "run-off-behind-court",
+      "category": "unanswerable",
+      "wording": "paraphrased",
+      "question": "How much clear space do we need behind the back line and beside the court?",
+      "answer": null,
+      "answer_locations": [],
+      "pass_rule": "Gives no run-off figure, and may point to BWF Statutes Section 5.3.4, Regulation 2.1.2.1. Giving 2.5 to 3.5 metres (the line judges' position) or any other number as the run-off is a fail.",
+      "why_unanswerable": "ITTO 3.3.6.3 only tells the Referee to check 'the required run-offs at the back of the court and for the sidelines' and points to BWF Statutes Section 5.3.4, Regulation 2.1.2.1, which is not in the corpus. ITTO 3.3.6.2 says 'adequate space' with no number. The 2.5 to 3.5 metres in ITTO 8.9 is where line judges sit, not a run-off.",
+      "needs": "no answer",
+      "difficulty": "medium",
+      "why_this_tag": "Unanswerable: ITTO 3.3.6.3 points to the BWF Statutes, which are not in the corpus. The trap, ITTO 8.9's 2.5 to 3.5 metres for line judges, is at vector rank 2, so it tests every setup.",
+      "evidence": {
+        "bm25_top5": [
+          "itto-8.3",
+          "itto-3.3.6.2",
+          "itto-3.3.6.3",
+          "itto-5.8.1",
+          "itto-3.5.4.4"
+        ],
+        "answer_in_bm25_top5": false,
+        "answer_in_expanded": false,
+        "near_miss_ids_in_expanded": [
+          "itto-3.3.6.2",
+          "itto-3.3.6.3"
+        ]
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "coach-standing-courtside",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "Can my coach get up from his chair and stand at the side of the court during the match?",
+      "answer": "No, except during the permitted intervals. Coaches must stay in their designated seats and must not stand court-side during the match except during the intervals of Law 16.2 (ITTO 5.12.2). Those intervals are up to 60 seconds in each game when the leading score reaches 11 points (Law 16.2.1), and up to 120 seconds between games (Law 16.2.2).",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.12.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.2.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.2.2"
+        }
+      ],
+      "pass_rule": "States that the coach stays seated except in the intervals, and names both: when the leading score reaches 11 points in a game, and between games. Saying 'only during intervals' without saying when they are is a fail.",
+      "needs": "map",
+      "difficulty": "easy",
+      "why_this_tag": "ITTO 5.12.2 is vector rank 1 and the map follows its '(Law 16.2)' to Laws 16.2.1 and 16.2.2: setup A sends 3 of 3. Neither interval clause is in the vector top 10, so B gets them only if it notices '(Law 16.2)' and reads it.",
+      "evidence": {
+        "bm25_top5": [
+          "itto-5.2.2.1",
+          "itto-5.6.4",
+          "itto-7.9",
+          "itto-5.12.2",
+          "laws-1.10"
+        ],
+        "answer_in_bm25_top5": true,
+        "answer_in_expanded": true,
+        "answer_ids_bm25_rank_top10": {
+          "itto-5.12.2": 4,
+          "laws-16.2.1": null,
+          "laws-16.2.2": null
+        },
+        "setup_a_predicted_sources": [
+          "itto-5.2.2.1 (RULE)",
+          "itto-5.6.4 (RULE)",
+          "itto-7.9 (CITED from itto-5.6.4)",
+          "itto-5.12.2 (RULE)",
+          "laws-16.2 (CITED from itto-5.12.2)",
+          "alt-best-of-3-games-21:16.2 (ALTERNATIVE from laws-16.2)",
+          "alt-best-of-5-games-11:16.2 (ALTERNATIVE from laws-16.2)",
+          "laws-16.2.1 (CITED from laws-16.2)",
+          "laws-16.2.2 (CITED from laws-16.2)",
+          "laws-1.10 (RULE)"
+        ],
+        "answer_ids_in_setup_a": [
+          "itto-5.12.2",
+          "laws-16.2.1",
+          "laws-16.2.2"
+        ],
+        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links(include_nearby=False), plus the direct sub-clauses of any hit that is a list heading"
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "plastic-shuttle-weight-hot-hall",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "What weight range is allowed for a plastic shuttle, and since our hall gets really hot and stuffy in summer, can we use a special type made for hot weather?",
+      "answer": "A non-feathered shuttle must meet the feathered shuttle's measurements and weight, 4.74 to 5.50 grams (Laws 2.3.3 and 2.2.6), but a variation of up to 10 per cent is accepted because synthetic materials differ from feathers (Law 2.3.3). Shuttles outside the specifications may be used only with the approval of the Member Association, in places where altitude or climate make the standard shuttle unsuitable, and only if the general design, speed and flight do not change (Law 2.4).",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "2.3.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "2.2.6"
+        },
+        {
+          "doc": "laws",
+          "clause": "2.4"
+        }
+      ],
+      "pass_rule": "Gives 4.74 to 5.50 grams with the up-to-10-per-cent leeway, and says a modified shuttle needs the Member Association's approval because of climate (with design, speed and flight unchanged). Missing either part, or saying a club may simply choose its own shuttle, is a fail.",
+      "needs": "search only",
+      "difficulty": "medium",
+      "why_this_tag": "Vector top 3 holds all three answer clauses (Law 2.2.6, 2.4, 2.3.3): 'hot weather' matched 'climate', so no setup has an edge. Written as hybrid; the vector check moved it.",
+      "evidence": {
+        "bm25_top5": [
+          "itto-2.5",
+          "itto-7.2",
+          "laws-2.3.3",
+          "laws-2.1",
+          "itto-5.4.2"
+        ],
+        "answer_in_bm25_top5": true,
+        "answer_in_expanded": false,
+        "answer_ids_bm25_rank_top10": {
+          "laws-2.3.3": 3,
+          "laws-2.2.6": null,
+          "laws-2.4": null
+        },
+        "setup_a_predicted_sources": [
+          "itto-2.5 (RULE)",
+          "laws-17.6.6 (CITED from itto-2.5)",
+          "itto-7.2 (RULE)",
+          "laws-9.1.2 (CITED from itto-7.2)",
+          "laws-9.1.3 (CITED from itto-7.2)",
+          "laws-9.1.4 (CITED from itto-7.2)",
+          "laws-9.1.5 (CITED from itto-7.2)",
+          "laws-2.3.3 (RULE)",
+          "laws-2.2.2 (CITED from laws-2.3.3)",
+          "laws-2.2.3 (CITED from laws-2.3.3)",
+          "laws-2.2.6 (CITED from laws-2.3.3)",
+          "laws-2.1 (RULE)",
+          "itto-5.4.2 (RULE)"
+        ],
+        "answer_ids_in_setup_a": [
+          "laws-2.3.3",
+          "laws-2.2.6"
+        ],
+        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links(include_nearby=False), plus the direct sub-clauses of any hit that is a list heading"
+      },
+      "split": "unseen",
+      "checked": true
+    },
+    {
+      "id": "yellow-card-before-play",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "My opponent got a yellow card for swearing during the warm-up, before the umpire called 'Play'. Does it cost him a point now, and does the card go on his record after the tournament?",
+      "answer": "A card given before 'Play' is called has no effect on the score, but it counts if he offends again during the match (ITTO 5.17.10): having been warned, his next offence is faulted (Law 16.7.1.2). After the tournament, the Referee sends BWF (or the CC) a report on yellow and red cards, which may trigger further sanctions (ITTO 3.7.3).",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.17.10"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7.1.2"
+        },
+        {
+          "doc": "itto",
+          "clause": "3.7.3"
+        }
+      ],
+      "pass_rule": "States all three: no point is lost now; a further offence in the match is faulted because he was already warned; and the Referee reports yellow cards to BWF after the tournament, which may lead to further sanctions. Missing any part, or saying the card costs a point, is a fail.",
+      "needs": "map and tool",
+      "difficulty": "hard",
+      "why_this_tag": "ITTO 5.17.10 is vector rank 1 and the map brings Law 16.7.1.2 (not in the vector top 10), so setup A sends 2 of 3. ITTO 3.7.3, the Referee's card report, has no link and is vector rank 10, so only a reworded search reaches it.",
+      "evidence": {
+        "bm25_top5": [
+          "itto-5.17.10",
+          "itto-3.6.2",
+          "itto-3.7.3.1",
+          "itto-5.3.1",
+          "laws-13.3.9"
+        ],
+        "answer_in_bm25_top5": true,
+        "answer_in_expanded": false,
+        "answer_ids_bm25_rank_top10": {
+          "itto-5.17.10": 1,
+          "laws-16.7.1.2": null,
+          "itto-3.7.3": null
+        },
+        "setup_a_predicted_sources": [
+          "itto-5.17.10 (RULE)",
+          "laws-16.7.1.2 (CITED from itto-5.17.10)",
+          "itto-5.17.3 (CITED from itto-5.17.10)",
+          "itto-5.17.4 (CITED from itto-5.17.10)",
+          "itto-5.17.5 (CITED from itto-5.17.10)",
+          "itto-3.6.2 (RULE)",
+          "laws-16.7 (CITED from itto-3.6.2)",
+          "laws-16.7.1 (CITED from laws-16.7)",
+          "laws-16.7.2 (CITED from laws-16.7)",
+          "itto-3.7.3.1 (RULE)",
+          "itto-5.3.1 (RULE)",
+          "laws-13.3.9 (RULE)"
+        ],
+        "answer_ids_in_setup_a": [
+          "itto-5.17.10",
+          "laws-16.7.1.2"
+        ],
+        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links(include_nearby=False), plus the direct sub-clauses of any hit that is a list heading"
+      },
+      "split": "unseen",
+      "checked": true
+    }
+  ]
+}

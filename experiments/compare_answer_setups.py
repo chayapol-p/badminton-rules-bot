@@ -11,6 +11,8 @@ and the judge (record 0014).
             repeat it for more than one
   --held-out  answer the held-out questions instead of dev and the probes: once, for the published
             number (experiment rule 4). Never tune on its result
+  --unseen  answer the unseen questions instead (Stage 3): once per setup, read question by question
+            against each one's "needs" tag. Never tune on its result
   --label   a short name for the run, used in its file names (default: top<k>, then each rule name)
   --dry-run answer only the first question, for a cheap live check of the API settings before a
             full run. It saves its files under a "-dry-run" name and never logs to runs.jsonl
@@ -53,9 +55,9 @@ from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.code_checks import find_code_failures
 from evals.judge_answers import grade_answer, judge_passed
 from evals.log_eval_run import append_run
-from evals.probes import load_probes
+from evals.probes import load_probes, load_unseen_questions
 from evals.token_costs import call_cost
-from retrieval.stored_embeddings import load_embeddings
+from retrieval.stored_embeddings import embeddings_file, load_embeddings
 from retrieval.expand_with_rule_links import direct_sub_clauses, expand_with_links, is_list_heading, load_rule_map
 from retrieval.vector_search import VectorSearch
 
@@ -91,10 +93,14 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
     chunk_vector_by_id = load_embeddings("clauses_search_text", model)
     chunk_vectors = numpy.array([chunk_vector_by_id[chunk["id"]] for chunk in chunks])
 
-    # Golden questions and the two probe kinds are saved as three sets; the search looks each one up by its text
+    # Golden questions, the two probe kinds and the unseen questions are saved as separate sets; the search looks each one up by its text
     question_vector_by_id = load_embeddings("questions", model)
     question_vector_by_id.update(load_embeddings("refusal_probes", model))
     question_vector_by_id.update(load_embeddings("false_premise_probes", model))
+
+    # The unseen questions (Stage 3) join once their vectors are saved, so older runs still work without them
+    if embeddings_file("unseen_questions").exists():
+        question_vector_by_id.update(load_embeddings("unseen_questions", model))
     question_vector_by_text = {}
     for question in questions:
         question_vector_by_text[question["question"]] = question_vector_by_id[question["id"]]
@@ -150,6 +156,7 @@ def answer_and_grade(question: dict, retrieve: Callable[[str], list[dict]], answ
         "id": question["id"],
         "split": question["split"],
         "category": question["category"],
+        "needs": question.get("needs"),
         "question": question["question"],
         "should_refuse": should_refuse(question),
         "retrieved_ids": [chunk["id"] for chunk in retrieved_chunks],
@@ -246,6 +253,12 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
         same_category = [line for line in text_answerable if line["category"] == category]
         by_category[category] = {"passed": count_passed(same_category, passed_by_id), "questions": len(same_category)}
 
+    # Unseen questions: answers passed per needs tag, the reading Stage 3 compares setups on
+    by_needs = {}
+    for needs in sorted({line["needs"] for line in answer_lines if line.get("needs")}):
+        same_needs = [line for line in answer_lines if line.get("needs") == needs]
+        by_needs[needs] = {"passed": count_passed(same_needs, passed_by_id), "questions": len(same_needs)}
+
     # Code checks: what failed them, by check, and how many answers went on to the judge
     code_failed = [line for line in answer_lines if line["code_failures"]]
     code_failures_by_check = {}
@@ -268,6 +281,7 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
         "answers_scored": len(text_answerable),
         "answer_pass_rate": share(answers_passed, len(text_answerable)),
         "by_category": by_category,
+        "by_needs": by_needs,
         "image_only_passed": count_passed(image_only, passed_by_id),
         "image_only_scored": len(image_only),
         "citation_pass_rate": share(len(citations_clean), len(with_answer)),
@@ -297,6 +311,8 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
           f"  · image-only {scores['image_only_passed']} of {scores['image_only_scored']}")
     for category, numbers in scores["by_category"].items():
         print(f"  {category:16} {numbers['passed']} of {numbers['questions']}")
+    for needs, numbers in scores["by_needs"].items():
+        print(f"  needs {needs:12} {numbers['passed']} of {numbers['questions']}")
     print(f"citations clean {scores['citation_pass_rate']}  · format errors {scores['format_errors']}")
     print(f"code checks failed {scores['code_failed']}  {scores['code_failures_by_check']}  · judge calls {scores['judge_calls']}")
     print(f"refusals {scores['refusals_correct']} of {scores['refusals_needed']}  · probes {scores['probe_refusals_correct']} "
@@ -319,15 +335,20 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
 # ===== Running one setup =====
 
 def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry_run: bool,
-                     uses_held_out: bool) -> dict:
+                     uses_held_out: bool, uses_unseen: bool = False) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
     questions = load_questions("dev") + load_probes()
     split_name = "dev+probes"
+    stage = "2"
     if uses_held_out:
         questions = load_questions("held_out")
         split_name = "held_out"
+    if uses_unseen:
+        questions = load_unseen_questions()
+        split_name = "unseen"
+        stage = "3"
 
     # A dry run asks one question, to meet any API error that only the live server raises for under a cent
     if is_dry_run:
@@ -389,7 +410,7 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
     if is_dry_run:
         print("dry run: not logged to evals/runs.jsonl")
         return scores
-    append_run("2", run_settings, scores, seconds)
+    append_run(stage, run_settings, scores, seconds)
     return scores
 
 
@@ -397,7 +418,9 @@ def main() -> None:
     """Runs the one setup named on the command line."""
     parser = argparse.ArgumentParser(description="Answer, check and grade the dev questions and probes.")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
-    parser.add_argument("--held-out", action="store_true", help="answer the held-out questions, once, for the published number")
+    question_sets = parser.add_mutually_exclusive_group()
+    question_sets.add_argument("--held-out", action="store_true", help="answer the held-out questions, once, for the published number")
+    question_sets.add_argument("--unseen", action="store_true", help="answer the unseen questions (Stage 3), once per setup")
     parser.add_argument("--rule", action="append", default=[], choices=list(EXTRA_ANSWER_RULES),
                         help="an extra answer rule to test; repeat for more than one")
     parser.add_argument("--label", help="a short name for the run (default: top<k>, then each rule name)")
@@ -409,9 +432,11 @@ def main() -> None:
         label = "-".join([f"top{arguments.top_k}"] + arguments.rule)
         if arguments.held_out:
             label = f"{label}-held-out"
+        if arguments.unseen:
+            label = f"{label}-unseen"
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run, arguments.held_out)
+    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run, arguments.held_out, arguments.unseen)
 
 
 if __name__ == "__main__":

@@ -4,6 +4,8 @@ Loads the probes: questions outside the golden set that test one behaviour each 
   refusal probes        no answer in the corpus: the bot should refuse
   false-premise probes  answerable, but the question assumes something the sources contradict:
                         the bot should correct the premise, then answer
+  unseen questions      written after the rule map, never tuned on (Stage 3): each setup is
+                        scored on them once, question by question against its "needs" tag
 
 Both have the golden questions' shape, so the answer run handles them the same way. Their split is
 "probe", and the run scores them on their own lines, never in the answer pass rate.
@@ -18,6 +20,7 @@ from pathlib import Path
 EVALS_FOLDER = Path(__file__).resolve().parent
 REFUSAL_PROBES_FILE = EVALS_FOLDER / "refusal_probes.json"
 FALSE_PREMISE_PROBES_FILE = EVALS_FOLDER / "false_premise_probes.json"
+UNSEEN_QUESTIONS_FILE = EVALS_FOLDER / "unseen_questions.json"
 
 
 # ===== Loading =====
@@ -35,3 +38,8 @@ def load_false_premise_probes() -> list[dict]:
 def load_probes() -> list[dict]:
     """Returns every probe: the refusal probes, then the false-premise probes."""
     return load_refusal_probes() + load_false_premise_probes()
+
+
+def load_unseen_questions() -> list[dict]:
+    """Returns every unseen question (Stage 3)."""
+    return json.loads(UNSEEN_QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]

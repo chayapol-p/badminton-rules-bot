@@ -40,6 +40,8 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - check_rule_links with the para flag set: para_question 3/4 from one hit. wheelchair-shuttle-on-net needs 14.2.3.1.1 (Lets) and 13.3.10.1 (Faults), two Laws with no link between them, so search must find both.
 - Label bug found (Lab 4): for standing classes, Law 9.1.6.2 makes the alternative service law the rule, but the map still labels it "only by prior arrangement · not in force until 2027-01-04". The para exception changes what the alternative means for that class. Also unverified: which version of the alternative service law Standing Classes use before 2027.
 
+- Stage 3 prediction (Job, 9 Nov, before any run): A (full RAG) is the baseline; B (full agentic) covers what A missed by itself; C (RAG first, then tools) covers as much as B for fewer rounds, so it costs less. Checked on the 11 unseen questions by: C passes at least as many as B, C's average tool rounds are below B's, C's cost per question is below B's.
+
 ## Lab 4 · Context enrichment
 
 - Context header (7 Nov): every chunk gets search_text = document · format · para flag · heading · clause number, then the clause. The same clause number (16.2.1) holds different rules per Alternative Laws format, and the clause text never names its format. Search reads search_text; answers cite text. Stage 1 compares text against search_text.

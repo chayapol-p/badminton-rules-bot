@@ -1,7 +1,7 @@
 """
 Embeds the chunks, the windows, the golden questions and the probes with mistral-embed, once, and saves them.
 
-Seven sets, each saved to data/embeddings/<name>.npz:
+Nine sets, each saved to data/embeddings/<name>.npz:
   clauses_search_text  each clause chunk's search_text (context header, then the clause)
   clauses_text         each clause chunk's text alone, for the context header comparison
   clauses_search_text_with_parents   the header, the parent clauses, then the clause
@@ -10,11 +10,13 @@ Seven sets, each saved to data/embeddings/<name>.npz:
   questions            each golden question, keyed by its id
   refusal_probes       each refusal probe (Stage 2), keyed by its id
   false_premise_probes each false-premise probe (Stage 2), keyed by its id
+  unseen_questions     each unseen question (Stage 3), keyed by its id
 
-A set that is already saved with the same model is skipped, so a rerun costs nothing.
+A set that is already saved with the same model and the same ids is skipped, so a rerun costs
+nothing; a set that gained or lost an id is embedded again.
 Pass --force to embed everything again.
 
-  Input:  data/rule_chunks.json, evals/golden_questions.json, evals/refusal_probes.json, evals/false_premise_probes.json, MISTRAL_API_KEY in .env
+  Input:  data/rule_chunks.json, evals/golden_questions.json, evals/refusal_probes.json, evals/false_premise_probes.json, evals/unseen_questions.json, MISTRAL_API_KEY in .env
   Output: data/embeddings/*.npz
 
 Run from the project root:
@@ -32,7 +34,7 @@ from tqdm import tqdm
 
 from app.settings import load_settings
 from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
-from evals.probes import load_false_premise_probes, load_refusal_probes
+from evals.probes import load_false_premise_probes, load_refusal_probes, load_unseen_questions
 from retrieval.stored_embeddings import embeddings_file, load_embeddings, save_embeddings
 from retrieval.section_groups import build_section_groups
 from retrieval.window_chunks import build_windows
@@ -84,6 +86,7 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
     questions = json.loads(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
     probes = load_refusal_probes()
     false_premise_probes = load_false_premise_probes()
+    unseen_questions = load_unseen_questions()
 
     # Collect the ids, shared by the three clause sets
     chunk_ids = [chunk["id"] for chunk in chunks]
@@ -92,6 +95,7 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
     question_ids = [question["id"] for question in questions]
     probe_ids = [probe["id"] for probe in probes]
     false_premise_ids = [probe["id"] for probe in false_premise_probes]
+    unseen_ids = [question["id"] for question in unseen_questions]
 
     # Pair each set's ids with the text it embeds
     return {
@@ -103,18 +107,23 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
         "questions": (question_ids, [question["question"] for question in questions]),
         "refusal_probes": (probe_ids, [probe["question"] for probe in probes]),
         "false_premise_probes": (false_premise_ids, [probe["question"] for probe in false_premise_probes]),
+        "unseen_questions": (unseen_ids, [question["question"] for question in unseen_questions]),
     }
 
 
-def is_already_saved(name: str, model: str) -> bool:
-    """True when the set is saved and was made by this model."""
+def is_already_saved(name: str, model: str, ids: list[str]) -> bool:
+    """True when the set is saved, was made by this model, and holds exactly these ids."""
     if not embeddings_file(name).exists():
         return False
     try:
-        load_embeddings(name, model)
+        saved_vector_by_id = load_embeddings(name, model)
     except ValueError:
         return False
-    return True
+
+    # A question added to a set or removed from it means the saved file is out of date. 9 Nov: the 3 new
+    # unseen questions were skipped because the file existed. A question reworded under the same id is
+    # not caught: pass --force after rewording one
+    return set(saved_vector_by_id) == set(ids)
 
 
 # ===== Running every set =====
@@ -130,7 +139,7 @@ def main() -> None:
     client = Mistral(api_key=settings.mistral_api_key.get_secret_value())
 
     for name, (ids, embedding_inputs) in build_embedding_inputs_by_set().items():
-        if is_already_saved(name, model) and not arguments.force:
+        if is_already_saved(name, model, ids) and not arguments.force:
             print(f"{name}: already saved with {model}, skipped")
             continue
 
