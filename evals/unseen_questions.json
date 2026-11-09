@@ -123,9 +123,9 @@
         }
       ],
       "pass_rule": "Names all seven situations of Law 14.2 (the two net cases of 14.2.3 may be one item). Missing any, or adding one that is not in Law 14.2 (such as a shuttle from the next court as an automatic let), is a fail.",
-      "needs": "map",
+      "needs": "map and tool",
       "difficulty": "hard",
-      "why_this_tag": "Vector top 5 holds only Law 14.2.7 and the 14.2 heading, and the list-items step brings all 7 items: setup A sends 7 of 7. A plain search reaches 4 of 7 in its top 10, so B must read the heading to get the full list.",
+      "why_this_tag": "The list-items step brings Laws 14.2.1 to 14.2.7, but 14.2.3 holds only its stem ('after the service is returned, the shuttle is:'); the net cases are its own items, 14.2.3.1 and 14.2.3.2, one level further down, which the map never brings. So setup A gets six of the seven lets in full from the map, and the seventh needs a read_clause on laws-14.2.3.",
       "evidence": {
         "bm25_top5": [
           "itto-5.10.1",
@@ -278,11 +278,15 @@
       "category": "cross_reference",
       "wording": "paraphrased",
       "question": "The line judge couldn't see whether the shuttle landed in. What happens to the rally?",
-      "answer": "The line judge signals unsighted by putting both hands up to cover the eyes (ITTO 8.5). The umpire then makes the call (ITTO 2.5). If the umpire also cannot decide, and no Instant Review System is in use, a let is called (Law 14.2.6, ITTO 2.5), so the rally is replayed.",
+      "answer": "The line judge signals unsighted by putting both hands up to cover the eyes (ITTO 8.5). The umpire then makes the call (ITTO 2.5, 5.8.3). If the umpire also cannot decide, and no Instant Review System is in use, a let is called (Law 14.2.6, ITTO 2.5), so the rally is replayed.",
       "answer_locations": [
         {
           "doc": "itto",
           "clause": "8.5"
+        },
+        {
+          "doc": "itto",
+          "clause": "5.8.3"
         },
         {
           "doc": "itto",

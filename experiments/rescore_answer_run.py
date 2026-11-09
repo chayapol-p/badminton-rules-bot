@@ -28,7 +28,7 @@ from app.settings import load_settings
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line, read_lines
 from evals.code_checks import find_code_failures
 from evals.golden_answer_chunks import load_chunks, load_questions
-from evals.probes import load_probes
+from evals.probes import load_probes, load_unseen_questions
 from experiments.compare_answer_setups import (SECONDS_BETWEEN_QUESTIONS, check_and_grade, print_scores,
                                                summarise_answer_run)
 
@@ -95,8 +95,13 @@ def main() -> None:
 
     # Load the saved answers, and the questions and clauses behind them
     answer_lines = read_lines(ANSWER_RUNS_FOLDER / f"{arguments.run}-answers.jsonl")
-    question_by_id = {question["id"]: question for question in load_questions("dev") + load_probes()}
+    question_by_id = {question["id"]: question for question in load_questions("dev") + load_probes() + load_unseen_questions()}
     chunks = load_chunks()
+
+    # Read each unseen question's needs tag from the file, not the run, so a corrected tag (record 0018) counts
+    for answer_line in answer_lines:
+        if answer_line.get("needs"):
+            answer_line["needs"] = question_by_id[answer_line["id"]]["needs"]
 
     # Score with the current judge, or with the verdicts the run saved
     if arguments.rejudge:
