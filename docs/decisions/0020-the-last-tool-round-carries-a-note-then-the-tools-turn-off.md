@@ -34,5 +34,8 @@ Live check, 9 Nov, yellow-card-before-play, setup B, one real search round, then
 One question, one run each, so it shows the failure exists, not how often.
 
 ## Consequences
-- Job's blank is `is_last_tool_round` (`>= 10`), not `is_over_tool_limit` (`> 10`).
+- Job's blank is `has_reached_tool_limit` (`>= 10`): reached or passed, so a round past 10 can never
+  leave the tools on.
+- A call made with the tools off is always the last call: a reply that still holds tool calls ends
+  the loop as a format error, so no model can loop past the limit.
 - The run reports questions that reached the round limit.
