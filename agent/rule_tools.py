@@ -4,8 +4,9 @@ The two tools the agent can call: search_rules and read_clause.
 search_rules(query, top_k)  vector search on the clauses, the same search as setup A, but with the
                             model's own words and its own top_k (1 to 100). No rule links: following
                             links is the model's job.
-read_clause(chunk_id)       one clause, its direct sub-clauses, and the ids of the clauses it links to.
-                            Ids only, so the model decides which links are worth a read.
+read_clause(chunk_id)       one clause, its direct sub-clauses, the ids of the clauses it links to, and
+                            the ids of its alternatives and para exceptions. Ids only, so the model
+                            decides which links are worth a read.
 
 Both return source blocks in the same format as the answer prompt (answer/build_answer_prompt.py), so
 the model cites tool results exactly as it cites the starting sources, and the citation check works
@@ -35,6 +36,15 @@ LARGEST_TOP_K = 100
 
 ## How many near ids an unknown chunk id error suggests
 SUGGESTED_ID_COUNT = 5
+
+## Links that point back to a clause and that read_clause also lists, as it names them. The rule books
+## write these one way only: an Alternative Laws clause names the Law it replaces, but the Law never
+## names its alternatives, so without them read_clause("laws-8.1.3") would show no way to the
+## best-of-five rule. The map follows the same two (retrieval/expand_with_rule_links.py)
+POINTING_BACK_NAMES = {
+    "overrides": "alternative",
+    "para_exception_of": "para exception",
+}
 
 ## Each link relation in data/rule_links.json, as the read_clause result names it
 RELATION_NAMES = {
@@ -153,12 +163,19 @@ class RuleTools:
         return ToolResult(text=text, shown_chunks=shown_chunks)
 
     def describe_links(self, chunk_id: str) -> list[str]:
-        """Returns one line per clause this chunk links to: the relation, then the id."""
+        """Returns one line per linked clause: those this chunk links to, then its alternatives and para exceptions."""
+
+        # Links written in this clause
         link_lines = []
         for link in self.rule_map["outgoing"].get(chunk_id, []):
             is_in_corpus = link["to_id"] in self.chunk_by_id
             if is_in_corpus:
                 link_lines.append(f"- {RELATION_NAMES[link['relation']]}: {link['to_id']}")
+
+        # Links written the other way: clauses that replace or adapt this one
+        for link in self.rule_map["incoming"].get(chunk_id, []):
+            if link["relation"] in POINTING_BACK_NAMES:
+                link_lines.append(f"- {POINTING_BACK_NAMES[link['relation']]}: {link['from_id']}")
         return link_lines
 
     def run_tool_call(self, tool_name: str, arguments: str | dict) -> ToolResult:

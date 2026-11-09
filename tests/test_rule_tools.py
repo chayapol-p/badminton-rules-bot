@@ -51,6 +51,13 @@ def test_reading_a_clause_lists_the_ids_it_links_to_without_their_text():
     assert [chunk["id"] for chunk in result.shown_chunks] == ["itto-5.12.2"]
 
 
+def test_reading_a_standard_law_lists_its_alternatives():
+    """The best-of-five 8.1.3 names the Law it replaces; Law 8.1.3 never names it, so the link points back."""
+    result = RULE_TOOLS.read_clause("laws-8.1.3")
+    assert "alternative: alt-best-of-5-games-11:8.1.3" in result.text
+    assert "alternative: alt-best-of-3-games-21:8.1.3" in result.text
+
+
 def test_an_unknown_id_is_an_error_that_suggests_close_ids():
     result = RULE_TOOLS.read_clause("laws-16.71")
     assert result.error is not None
