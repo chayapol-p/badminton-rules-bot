@@ -9,6 +9,8 @@ and the judge (record 0014).
   --top-k   clauses search hands on per question, before the rule links are added (default 5)
   --rule    an extra answer rule to test, by name (answer/build_answer_prompt.py EXTRA_ANSWER_RULES);
             repeat it for more than one
+  --held-out  answer the held-out questions instead of dev and the probes: once, for the published
+            number (experiment rule 4). Never tune on its result
   --label   a short name for the run, used in its file names (default: top<k>, then each rule name)
   --dry-run answer only the first question, for a cheap live check of the API settings before a
             full run. It saves its files under a "-dry-run" name and never logs to runs.jsonl
@@ -316,11 +318,16 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
 
 # ===== Running one setup =====
 
-def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry_run: bool) -> dict:
+def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry_run: bool,
+                     uses_held_out: bool) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
     questions = load_questions("dev") + load_probes()
+    split_name = "dev+probes"
+    if uses_held_out:
+        questions = load_questions("held_out")
+        split_name = "held_out"
 
     # A dry run asks one question, to meet any API error that only the live server raises for under a cent
     if is_dry_run:
@@ -365,7 +372,7 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
         "search": "vector",
         "chunks": "clauses",
         "field": "search_text",
-        "split": "dev+probes",
+        "split": split_name,
         "top_k": top_k,
         "rule_links": True,
         "list_items": True,
@@ -390,6 +397,7 @@ def main() -> None:
     """Runs the one setup named on the command line."""
     parser = argparse.ArgumentParser(description="Answer, check and grade the dev questions and probes.")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
+    parser.add_argument("--held-out", action="store_true", help="answer the held-out questions, once, for the published number")
     parser.add_argument("--rule", action="append", default=[], choices=list(EXTRA_ANSWER_RULES),
                         help="an extra answer rule to test; repeat for more than one")
     parser.add_argument("--label", help="a short name for the run (default: top<k>, then each rule name)")
@@ -399,9 +407,11 @@ def main() -> None:
     label = arguments.label
     if label is None:
         label = "-".join([f"top{arguments.top_k}"] + arguments.rule)
+        if arguments.held_out:
+            label = f"{label}-held-out"
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run)
+    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run, arguments.held_out)
 
 
 if __name__ == "__main__":
