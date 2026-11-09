@@ -101,8 +101,11 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
     # The unseen questions (Stage 3) join once their vectors are saved, so older runs still work without them
     if embeddings_file("unseen_questions").exists():
         question_vector_by_id.update(load_embeddings("unseen_questions", model))
+    # Every question needs its vector, so a missing one stops the run before the first paid call
     question_vector_by_text = {}
     for question in questions:
+        if question["id"] not in question_vector_by_id:
+            raise KeyError(f"no saved vector for the question {question['id']!r}: run scripts.build_embeddings first")
         question_vector_by_text[question["question"]] = question_vector_by_id[question["id"]]
 
     def saved_question_vector(question_text: str) -> numpy.ndarray:

@@ -8,7 +8,8 @@ from answer.build_answer_prompt import format_source
 from evals.golden_answer_chunks import load_chunks
 from evals.judge_answers import JUDGE_VOTES
 from evals.token_costs import call_cost
-from experiments.compare_answer_setups import build_retrieve_function, check_and_grade, summarise_answer_run
+from experiments.compare_answer_setups import (build_clause_vector_search, build_retrieve_function, check_and_grade,
+                                               summarise_answer_run)
 from retrieval.expand_with_rule_links import load_rule_map
 from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
 from tests.test_judge_answers import POSTS_REPLY, StubJudgeClient
@@ -191,3 +192,10 @@ def test_a_source_block_shows_the_heading_above_a_fragment_clause():
     except FileNotFoundError:
         pytest.skip("data/rule_chunks.json is missing: run scripts.build_rule_chunks first")
     assert "Under: 4.2 The stringed area:" in format_source(chunk_by_id["laws-4.2.2"])
+
+
+def test_a_question_with_no_saved_vector_stops_the_run_with_how_to_fix_it():
+    """Every question needs its vector, so the run fails fast, before any paid call (coding style rule 14)."""
+    question_without_vector = {"id": "not-embedded-yet", "question": "A question nobody embedded?"}
+    with pytest.raises(KeyError, match="run scripts.build_embeddings first"):
+        build_clause_vector_search(load_chunks(), [question_without_vector], "mistral-embed-2312")
