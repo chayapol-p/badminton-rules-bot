@@ -7,7 +7,7 @@ Most tests need the Stage 3, Step 3 blanks filled in agent/answer_with_tools.py.
 import json
 from types import SimpleNamespace
 
-from agent.answer_with_tools import (LAST_ROUND_NOTE, MAX_TOOL_ROUNDS, answer_with_tools, build_agent_prompt,
+from agent.answer_with_tools import (EXTRA_AGENT_RULES, LAST_ROUND_NOTE, MAX_TOOL_ROUNDS, answer_with_tools, build_agent_prompt,
                                      has_reached_tool_limit)
 from agent.rule_tools import RuleTools
 from answer.build_answer_prompt import ANSWER_RULES
@@ -76,6 +76,13 @@ def run_agent(client: StubToolClient, starting_chunks: list[dict] | None = None)
 
 
 # ===== The prompt (given code) =====
+
+def test_an_extra_agent_rule_is_added_to_the_agent_rules_only_when_named():
+    plain_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [])
+    ruled_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [], ["check-each-part"])
+    assert EXTRA_AGENT_RULES["check-each-part"] not in plain_messages[0]["content"]
+    assert ruled_messages[0]["content"].endswith("- " + EXTRA_AGENT_RULES["check-each-part"])
+
 
 def test_setup_b_starts_with_the_question_only_and_setup_c_with_sources():
     agentic_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [])

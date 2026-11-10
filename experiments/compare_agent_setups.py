@@ -14,6 +14,7 @@ The tools' searches embed the model's own queries live with mistral-embed (a tin
 the questions themselves use their saved vectors.
 
   --setup     agentic | hybrid
+  --agent-rule  an extra agent rule to test, by name (agent/answer_with_tools.py EXTRA_AGENT_RULES)
   --unseen    answer the unseen questions instead of dev and the probes (once per setup)
   --label     a short name for the run (default: the setup name)
   --dry-run   answer only the first question, and don't log the run
@@ -37,7 +38,7 @@ import numpy
 from anthropic import Anthropic
 from mistralai.client import Mistral
 
-from agent.answer_with_tools import AgentReply, answer_with_tools
+from agent.answer_with_tools import EXTRA_AGENT_RULES, AgentReply, answer_with_tools
 from agent.rule_tools import RuleTools
 from answer.build_answer_prompt import build_answer_rules
 from answer.check_refusals import should_refuse
@@ -112,8 +113,8 @@ def build_answer_line(question: dict, reply: AgentReply, answer_model: str) -> d
 def answer_and_grade_with_tools(question: dict, starting_retrieve: Callable[[str], list[dict]] | None,
                                 rule_tools: RuleTools, answer_rules: str, chunks: list[dict],
                                 chunk_by_id: dict[str, dict], mistral_client: Mistral, answer_model: str,
-                                reasoning_effort: str, anthropic_client: Anthropic,
-                                judge_model: str) -> tuple[dict, dict]:
+                                reasoning_effort: str, anthropic_client: Anthropic, judge_model: str,
+                                extra_agent_rule_names: list[str]) -> tuple[dict, dict]:
     """Returns one question's answer line and grade line, answered with the tools and graded as in Stage 2."""
 
     # Setup C starts from setup A's sources; setup B starts from none
@@ -121,7 +122,7 @@ def answer_and_grade_with_tools(question: dict, starting_retrieve: Callable[[str
     if starting_retrieve is not None:
         starting_chunks = starting_retrieve(question["question"])
     reply = answer_with_tools(mistral_client, answer_model, reasoning_effort, answer_rules, question["question"],
-                              starting_chunks, rule_tools)
+                              starting_chunks, rule_tools, extra_agent_rule_names)
     answer_line = build_answer_line(question, reply, answer_model)
 
     # A reply that didn't fit the shape can't be checked or graded: it counts as a fail
@@ -184,7 +185,8 @@ def print_tool_use(tool_use: dict) -> None:
 
 # ===== Running one setup =====
 
-def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: bool) -> dict:
+def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: bool,
+                    extra_agent_rule_names: list[str]) -> dict:
     """Answers, checks and grades every question with one agent setup, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
@@ -229,7 +231,7 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
                                                               chunks, chunk_by_id, mistral_client,
                                                               settings.mistral_answer_model,
                                                               settings.mistral_reasoning_effort, anthropic_client,
-                                                              settings.claude_judge_model)
+                                                              settings.claude_judge_model, extra_agent_rule_names)
         append_line(answers_path, answer_line)
         append_line(grades_path, grade_line)
         answer_lines.append(answer_line)
@@ -251,6 +253,7 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
         "field": "search_text",
         "split": split_name,
         "starting_sources": setup_name == "hybrid",
+        "extra_agent_rules": extra_agent_rule_names,
         "max_answer_tokens": MAX_ANSWER_TOKENS,
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,
@@ -269,6 +272,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Answer, check and grade the questions with an agent setup (Stage 3).")
     parser.add_argument("--setup", required=True, choices=SETUP_NAMES)
     parser.add_argument("--unseen", action="store_true", help="answer the unseen questions, once per setup")
+    parser.add_argument("--agent-rule", action="append", default=[], choices=list(EXTRA_AGENT_RULES),
+                        help="an extra agent rule to test; repeat for more than one")
     parser.add_argument("--label", help="a short name for the run (default: the setup name)")
     parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     arguments = parser.parse_args()
@@ -276,12 +281,12 @@ def main() -> None:
     # Name the run by its setup and question set, unless a label is given
     label = arguments.label
     if label is None:
-        label = arguments.setup
+        label = "-".join([arguments.setup] + arguments.agent_rule)
         if arguments.unseen:
             label = f"{label}-unseen"
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_agent_setup(arguments.setup, label, arguments.dry_run, arguments.unseen)
+    run_agent_setup(arguments.setup, label, arguments.dry_run, arguments.unseen, arguments.agent_rule)
 
 
 if __name__ == "__main__":

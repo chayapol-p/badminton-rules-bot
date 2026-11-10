@@ -50,6 +50,15 @@ Tools:
 - When the sources already answer the question, answer without calling a tool.
 - Your final reply, with no tool calls, is the answer in the required JSON shape."""
 
+## Extra agent rules under test, by name, one per run (experiment rule 1). Each comes from a measured failure
+EXTRA_AGENT_RULES = {
+    # 9 Nov, unseen set: setup C refused yellow-card-before-play twice with no tool call (it never searched for
+    # ITTO 3.7.3), and setup B read 27.5 clauses a question against C's 16.9, misquoting on cut-hand-mid-game.
+    # One generic line aimed at both: search when a part is uncovered, stop when every part is, cite only what is used
+    "check-each-part": ("Before you answer or refuse, check each part of the question against your sources. Search only "
+                        "for a part no source covers. Cite only the clauses your answer uses."),
+}
+
 
 # ===== One agent answer =====
 
@@ -73,7 +82,16 @@ class AgentReply:
 
 # ===== The prompt =====
 
-def build_agent_prompt(answer_rules: str, question_text: str, starting_chunks: list[dict]) -> list[dict]:
+def build_agent_rules(extra_agent_rule_names: list[str]) -> str:
+    """Returns the agent rules, with the named extra rules added as more bullets."""
+    agent_rules = AGENT_RULES
+    for rule_name in extra_agent_rule_names:
+        agent_rules += f"\n- {EXTRA_AGENT_RULES[rule_name]}"
+    return agent_rules
+
+
+def build_agent_prompt(answer_rules: str, question_text: str, starting_chunks: list[dict],
+                       extra_agent_rule_names: list[str] | None = None) -> list[dict]:
     """Returns the first messages: the rules with the agent rules, then the starting sources (if any) and the question."""
     question_block = f"<question>\n{question_text}\n</question>"
 
@@ -83,7 +101,7 @@ def build_agent_prompt(answer_rules: str, question_text: str, starting_chunks: l
         sources_text = "\n\n".join(format_source(chunk) for chunk in starting_chunks)
         user_message = f"<sources>\n{sources_text}\n</sources>\n\n{question_block}"
     return [
-        {"role": "system", "content": answer_rules + "\n" + AGENT_RULES},
+        {"role": "system", "content": answer_rules + "\n" + build_agent_rules(extra_agent_rule_names or [])},
         {"role": "user", "content": user_message},
     ]
 
@@ -156,9 +174,10 @@ def parse_final_reply(choice) -> tuple[RulesAnswer | None, str | None, str, str]
 # ===== The loop =====
 
 def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer_rules: str, question_text: str,
-                      starting_chunks: list[dict], rule_tools: RuleTools) -> AgentReply:
+                      starting_chunks: list[dict], rule_tools: RuleTools,
+                      extra_agent_rule_names: list[str] | None = None) -> AgentReply:
     """Answers one question, calling tools until the model replies with no tool calls."""
-    messages = build_agent_prompt(answer_rules, question_text, starting_chunks)
+    messages = build_agent_prompt(answer_rules, question_text, starting_chunks, extra_agent_rule_names)
     shown_chunk_by_id = {chunk["id"]: chunk for chunk in starting_chunks}
     tool_call_log = []
     tool_rounds_used = 0
