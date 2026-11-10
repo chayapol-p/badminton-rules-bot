@@ -12,14 +12,19 @@ Both return source blocks in the same format as the answer prompt (answer/build_
 the model cites tool results exactly as it cites the starting sources, and the citation check works
 on them unchanged.
 
+Prompt version 2 (Stage 3, 10 Nov) changes one line: search_rules's query description said "in your own
+words", against the tool description's "use the rule books' own words" (build_tool_definitions).
+
 A bad call (a top_k outside 1 to 100, an unknown chunk id, a wrong argument) returns an error message
 as the tool result instead of raising. The model reads it and can try again; the run counts it.
 
 Use:
     rule_tools = RuleTools(chunks, search, rule_map)
+    tool_definitions = build_tool_definitions(prompt_version=2)
     tool_result = rule_tools.run_tool_call("search_rules", '{"query": "let", "top_k": 5}')
 """
 
+import copy
 import difflib
 import json
 from collections.abc import Callable
@@ -101,6 +106,25 @@ TOOL_DEFINITIONS = [
         },
     },
 ]
+
+## Prompt version 2's search_rules query description, which agrees with the tool description
+SEARCH_QUERY_DESCRIPTION_VERSION_2 = "What to search for, in the documents' own terms where you know them."
+
+
+# ===== The tool definitions of each prompt version =====
+
+def build_tool_definitions(prompt_version: int) -> list[dict]:
+    """Returns the tool definitions a prompt version sends: version 1 as above, version 2 with its query description."""
+    if prompt_version == 1:
+        return TOOL_DEFINITIONS
+
+    # A copy, so version 1's definitions stay exactly as every earlier run sent them
+    tool_definitions = copy.deepcopy(TOOL_DEFINITIONS)
+    for tool_definition in tool_definitions:
+        function_definition = tool_definition["function"]
+        if function_definition["name"] == "search_rules":
+            function_definition["parameters"]["properties"]["query"]["description"] = SEARCH_QUERY_DESCRIPTION_VERSION_2
+    return tool_definitions
 
 
 # ===== One tool result =====

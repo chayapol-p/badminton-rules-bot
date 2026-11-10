@@ -4,13 +4,14 @@ Tests the agent loop with a stub client that replays scripted replies, so no tes
 Most tests need the Stage 3, Step 3 blanks filled in agent/answer_with_tools.py.
 """
 
+import hashlib
 import json
 from types import SimpleNamespace
 
-from agent.answer_with_tools import (EXTRA_AGENT_RULES, LAST_ROUND_NOTE, MAX_TOOL_ROUNDS, answer_with_tools, build_agent_prompt,
-                                     has_reached_tool_limit)
-from agent.rule_tools import RuleTools
-from answer.build_answer_prompt import ANSWER_RULES
+from agent.answer_with_tools import (AGENT_RULES_VERSION_2, EXTRA_AGENT_RULES, LAST_ROUND_NOTE, LAST_ROUND_NOTE_VERSION_2,
+                                     MAX_TOOL_ROUNDS, answer_with_tools, build_agent_prompt, has_reached_tool_limit)
+from agent.rule_tools import SEARCH_QUERY_DESCRIPTION_VERSION_2, RuleTools
+from answer.build_answer_prompt import ANSWER_RULES, build_answer_rules
 from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
 
@@ -90,6 +91,59 @@ def test_setup_b_starts_with_the_question_only_and_setup_c_with_sources():
     assert "No sources yet" in agentic_messages[1]["content"]
     assert "[laws-1.4]" in hybrid_messages[1]["content"]
     assert "Tools:" in agentic_messages[0]["content"]
+
+
+# ===== Prompt versions (Stage 3) =====
+
+## sha256 of version 1's system messages and last-round note, taken at commit 123e484 before version 2 was
+## added (10 Nov 2026): no extra rules, and both extra rules of the current best C
+VERSION_1_SYSTEM_SHA256 = "ac3fc298d3ab1995ddcff71e7d06bdf7beb4b94a5cb11cedd250ab3f133a39f0"
+VERSION_1_BEST_C_SYSTEM_SHA256 = "b07fb28bdbe4a306e1c3294efd3cca2b5dc9e7bfe4b7514fb7b8fc8d583d3345"
+VERSION_1_LAST_ROUND_NOTE_SHA256 = "94f5bf378d131bb740bd14706985018f6e72adf448f8a0bfbfb1b57f07d6a4da"
+
+
+def sha256_of(text: str) -> str:
+    """Returns the sha256 of a text, as hex."""
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def system_message(prompt_version: int, extra_agent_rule_names: list[str] | None = None) -> str:
+    """Returns the agent's system message for a prompt version, with no starting sources."""
+    answer_rules = build_answer_rules([], prompt_version)
+    messages = build_agent_prompt(answer_rules, "How tall are the posts?", [], extra_agent_rule_names, prompt_version)
+    return messages[0]["content"]
+
+
+def test_version_1_builds_exactly_the_agent_prompt_of_every_earlier_run():
+    assert sha256_of(system_message(1)) == VERSION_1_SYSTEM_SHA256
+    assert sha256_of(system_message(1, ["check-each-part", "search-before-gaps"])) == VERSION_1_BEST_C_SYSTEM_SHA256
+    assert sha256_of(LAST_ROUND_NOTE) == VERSION_1_LAST_ROUND_NOTE_SHA256
+
+
+def test_version_2_replaces_the_agent_rules_and_folds_in_both_extra_rules():
+    version_2_message = system_message(2)
+    assert version_2_message.endswith(AGENT_RULES_VERSION_2)
+    assert "When the sources already answer the question" not in version_2_message, "version 1's bullets are gone"
+    for extra_rule_text in EXTRA_AGENT_RULES.values():
+        assert extra_rule_text not in version_2_message
+    assert "Mark a part \"none\" only after its searches found nothing." in version_2_message
+    assert "never mention tools, searches, or which documents you checked" in version_2_message
+
+
+def test_version_2_ignores_extra_agent_rules_handed_to_the_prompt():
+    """The run script refuses the pair; the prompt itself never adds them to version 2."""
+    assert system_message(2, ["check-each-part"]) == system_message(2)
+
+
+def test_version_2_sends_its_last_round_note_and_its_tool_text():
+    client = StubToolClient(tool_reply_count=100)
+    answer_with_tools(client, "test-model", "low", build_answer_rules([], 2), "How tall are the posts?", [], RULE_TOOLS,
+                      prompt_version=2)
+    last_tool_message = client.requests[-1]["messages"][-1]
+    assert last_tool_message["content"].endswith(LAST_ROUND_NOTE_VERSION_2)
+    assert LAST_ROUND_NOTE not in last_tool_message["content"]
+    query_definition = client.requests[0]["tools"][0]["function"]["parameters"]["properties"]["query"]
+    assert query_definition["description"] == SEARCH_QUERY_DESCRIPTION_VERSION_2
 
 
 # ===== The round limit (Step 3) =====

@@ -13,6 +13,8 @@ and the judge (record 0014).
             number (experiment rule 4). Never tune on its result
   --unseen  answer the unseen questions instead (Stage 3): once per setup, read question by question
             against each one's "needs" tag. Never tune on its result
+  --prompt-version  1 (default, the answer rules of every earlier run) or 2 (the reviewed rule set, Stage 3,
+            which has the extra rules folded in, so it can't be combined with --rule)
   --label   a short name for the run, used in its file names (default: top<k>, then each rule name)
   --dry-run answer only the first question, for a cheap live check of the API settings before a
             full run. It saves its files under a "-dry-run" name and never logs to runs.jsonl
@@ -31,6 +33,7 @@ code checks (evals/code_checks.py): code decides what it can, the judge grades t
 Run from the project root:
     uv run python -m experiments.compare_answer_setups --top-k 5 --dry-run
     uv run python -m experiments.compare_answer_setups --top-k 5
+    uv run python -m experiments.compare_answer_setups --prompt-version 2
 """
 
 import argparse
@@ -45,7 +48,7 @@ from mistralai.client import Mistral
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import EXTRA_ANSWER_RULES, build_answer_rules
+from answer.build_answer_prompt import EXTRA_ANSWER_RULES, PROMPT_VERSIONS, build_answer_rules
 from answer.generate_answer import MAX_ANSWER_TOKENS, generate_answer
 from answer.check_citations import find_citation_problems
 from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
@@ -338,7 +341,7 @@ def print_scores(scores: dict, answer_lines: list[dict], passed_by_id: dict[str,
 # ===== Running one setup =====
 
 def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry_run: bool,
-                     uses_held_out: bool, uses_unseen: bool = False) -> dict:
+                     uses_held_out: bool, uses_unseen: bool = False, prompt_version: int = 1) -> dict:
     """Answers, checks and grades every dev question and probe, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
@@ -359,7 +362,7 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
     search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
     retrieve = build_retrieve_function(search, top_k, chunk_by_id, load_rule_map())
-    answer_rules = build_answer_rules(extra_rule_names)
+    answer_rules = build_answer_rules(extra_rule_names, prompt_version)
     mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value(), retry_config=MISTRAL_RETRY)
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
 
@@ -403,6 +406,7 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
         "show_parents": True,
         "max_answer_tokens": MAX_ANSWER_TOKENS,
         "extra_rules": extra_rule_names,
+        "prompt_version": prompt_version,
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,
         "judge_model": settings.claude_judge_model,
@@ -426,20 +430,31 @@ def main() -> None:
     question_sets.add_argument("--unseen", action="store_true", help="answer the unseen questions (Stage 3), once per setup")
     parser.add_argument("--rule", action="append", default=[], choices=list(EXTRA_ANSWER_RULES),
                         help="an extra answer rule to test; repeat for more than one")
+    parser.add_argument("--prompt-version", type=int, default=1, choices=PROMPT_VERSIONS,
+                        help="1: the answer rules of every earlier run; 2: the reviewed rule set, extra rules folded in")
     parser.add_argument("--label", help="a short name for the run (default: top<k>, then each rule name)")
     parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     arguments = parser.parse_args()
+
+    # Version 2 already holds the extra rules, so adding one would test a prompt nobody asked for
+    if arguments.prompt_version == 2 and arguments.rule:
+        parser.error("--prompt-version 2 has the extra answer rules folded in: drop --rule")
+
     # Name the run by what it changed, unless a label is given
     label = arguments.label
     if label is None:
-        label = "-".join([f"top{arguments.top_k}"] + arguments.rule)
+        label_parts = [f"top{arguments.top_k}"] + arguments.rule
+        if arguments.prompt_version == 2:
+            label_parts.append("prompt2")
+        label = "-".join(label_parts)
         if arguments.held_out:
             label = f"{label}-held-out"
         if arguments.unseen:
             label = f"{label}-unseen"
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run, arguments.held_out, arguments.unseen)
+    run_answer_setup(arguments.top_k, arguments.rule, label, arguments.dry_run, arguments.held_out, arguments.unseen,
+                     arguments.prompt_version)
 
 
 if __name__ == "__main__":

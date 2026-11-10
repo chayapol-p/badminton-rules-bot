@@ -15,8 +15,13 @@ The loop (Stage 3):
 
 Every chunk any tool showed counts as seen, so the citation check accepts a citation to it.
 
+Prompt version 2 (Stage 3, 10 Nov) swaps in AGENT_RULES_VERSION_2 (with the extra agent rules folded in,
+so it takes none), LAST_ROUND_NOTE_VERSION_2 and version 2's tool definitions. Version 1 is unchanged.
+
 Use:
     reply = answer_with_tools(client, model, reasoning_effort, answer_rules, question_text, starting_chunks, rule_tools)
+    reply = answer_with_tools(client, model, reasoning_effort, answer_rules, question_text, starting_chunks, rule_tools,
+                              prompt_version=2)
 """
 
 from dataclasses import dataclass, field
@@ -25,7 +30,7 @@ from mistralai.client import Mistral
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import ValidationError
 
-from agent.rule_tools import TOOL_DEFINITIONS, RuleTools
+from agent.rule_tools import RuleTools, build_tool_definitions
 from answer.answer_shape import RulesAnswer
 from answer.build_answer_prompt import format_source
 from answer.generate_answer import MAX_ANSWER_TOKENS, split_reply_content
@@ -38,6 +43,10 @@ MAX_TOOL_ROUNDS = 10
 ## Added to the last tool result of the last round, so the model knows to answer now
 LAST_ROUND_NOTE = "\n\nThis was your last tool round: the tools are now off. Answer from the sources you have."
 
+## Prompt version 2's note: it points the model at answer rule 3 for any part still uncovered
+LAST_ROUND_NOTE_VERSION_2 = ("\n\nThis was your last tool round: the tools are now off. Answer from the sources you "
+                             "have; mark any part still uncovered as rule 3 says.")
+
 ## The finish reason of a reply that asks for tools
 FINISH_REASON_TOOL_CALLS = "tool_calls"
 
@@ -48,6 +57,16 @@ Tools:
 - When the sources don't fully answer the question, use the tools before you answer. search_rules finds clauses by meaning; read_clause reads one clause by its chunk id, with the clauses under it and the ids it links to.
 - A source that names another rule ("Law 16.2") or ends with a colon ("the shuttle is:") often needs a read_clause.
 - When the sources already answer the question, answer without calling a tool.
+- Your final reply, with no tool calls, is the answer in the required JSON shape."""
+
+## Prompt version 2's agent rules (B and C). They replace AGENT_RULES and both extra agent rules below
+AGENT_RULES_VERSION_2 = """
+Tools:
+- Sources given with the question are a starting point. Every tool result is a source too.
+- Before you answer, act on each part of the question: if a source points elsewhere (names another clause, or ends with a colon), read_clause that id; if a part has no source, search_rules for it, in the documents' own terms. If the search misses, try once more with different words.
+- Mark a part "none" only after its searches found nothing. Never say the sources lack a part you have not searched for.
+- Stop as soon as every part has a source. Do not search or read to confirm a part already covered, and do not cite a clause only because you read it.
+- Write about the rules, not your work: never mention tools, searches, or which documents you checked.
 - Your final reply, with no tool calls, is the answer in the required JSON shape."""
 
 ## Extra agent rules under test, by name, one per run (experiment rule 1). Each comes from a measured failure
@@ -87,8 +106,14 @@ class AgentReply:
 
 # ===== The prompt =====
 
-def build_agent_rules(extra_agent_rule_names: list[str]) -> str:
-    """Returns the agent rules, with the named extra rules added as more bullets."""
+def build_agent_rules(extra_agent_rule_names: list[str], prompt_version: int = 1) -> str:
+    """Returns the agent rules of a prompt version; version 1 adds the named extra rules as more bullets."""
+
+    # Version 2 has the extra rules folded in: the run script refuses extra rules with it
+    if prompt_version == 2:
+        return AGENT_RULES_VERSION_2
+
+    # Version 1: the standing bullets, then each extra rule
     agent_rules = AGENT_RULES
     for rule_name in extra_agent_rule_names:
         agent_rules += f"\n- {EXTRA_AGENT_RULES[rule_name]}"
@@ -96,7 +121,7 @@ def build_agent_rules(extra_agent_rule_names: list[str]) -> str:
 
 
 def build_agent_prompt(answer_rules: str, question_text: str, starting_chunks: list[dict],
-                       extra_agent_rule_names: list[str] | None = None) -> list[dict]:
+                       extra_agent_rule_names: list[str] | None = None, prompt_version: int = 1) -> list[dict]:
     """Returns the first messages: the rules with the agent rules, then the starting sources (if any) and the question."""
     question_block = f"<question>\n{question_text}\n</question>"
 
@@ -106,14 +131,15 @@ def build_agent_prompt(answer_rules: str, question_text: str, starting_chunks: l
         sources_text = "\n\n".join(format_source(chunk) for chunk in starting_chunks)
         user_message = f"<sources>\n{sources_text}\n</sources>\n\n{question_block}"
     return [
-        {"role": "system", "content": answer_rules + "\n" + build_agent_rules(extra_agent_rule_names or [])},
+        {"role": "system", "content": answer_rules + "\n" + build_agent_rules(extra_agent_rule_names or [], prompt_version)},
         {"role": "user", "content": user_message},
     ]
 
 
 # ===== One model call =====
 
-def call_model(client: Mistral, model: str, reasoning_effort: str, messages: list, tools_allowed: bool):
+def call_model(client: Mistral, model: str, reasoning_effort: str, messages: list, tools_allowed: bool,
+               prompt_version: int = 1):
     """Sends the conversation so far with the tools, at the fixed settings of every eval run, and returns the response."""
 
     # After the last round, the tools stay listed but the model may not call them
@@ -123,7 +149,7 @@ def call_model(client: Mistral, model: str, reasoning_effort: str, messages: lis
     return client.chat.complete(
         model=model,
         messages=messages,
-        tools=TOOL_DEFINITIONS,
+        tools=build_tool_definitions(prompt_version),
         tool_choice=tool_choice,
         response_format=response_format_from_pydantic_model(RulesAnswer),
         reasoning_effort=reasoning_effort,
@@ -142,8 +168,15 @@ def has_reached_tool_limit(tool_rounds_used: int) -> bool:
 
 # ===== One tool round =====
 
+def last_round_note(prompt_version: int) -> str:
+    """Returns the note a prompt version adds to the last tool result of the last round."""
+    if prompt_version == 2:
+        return LAST_ROUND_NOTE_VERSION_2
+    return LAST_ROUND_NOTE
+
+
 def run_tool_round(tool_calls: list, rule_tools: RuleTools, round_number: int,
-                   is_last_round: bool) -> tuple[list[dict], list[dict], list[dict]]:
+                   is_last_round: bool, prompt_version: int = 1) -> tuple[list[dict], list[dict], list[dict]]:
     """Runs every tool call in one reply; returns the tool messages, the log lines and the chunks shown."""
     tool_messages = []
     log_lines = []
@@ -161,7 +194,7 @@ def run_tool_round(tool_calls: list, rule_tools: RuleTools, round_number: int,
 
     # In the last round, the last result tells the model the tools are now off
     if is_last_round:
-        tool_messages[-1]["content"] += LAST_ROUND_NOTE
+        tool_messages[-1]["content"] += last_round_note(prompt_version)
     return tool_messages, log_lines, shown_chunks
 
 
@@ -180,9 +213,9 @@ def parse_final_reply(choice) -> tuple[RulesAnswer | None, str | None, str, str]
 
 def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer_rules: str, question_text: str,
                       starting_chunks: list[dict], rule_tools: RuleTools,
-                      extra_agent_rule_names: list[str] | None = None) -> AgentReply:
+                      extra_agent_rule_names: list[str] | None = None, prompt_version: int = 1) -> AgentReply:
     """Answers one question, calling tools until the model replies with no tool calls."""
-    messages = build_agent_prompt(answer_rules, question_text, starting_chunks, extra_agent_rule_names)
+    messages = build_agent_prompt(answer_rules, question_text, starting_chunks, extra_agent_rule_names, prompt_version)
     shown_chunk_by_id = {chunk["id"]: chunk for chunk in starting_chunks}
     tool_call_log = []
     tool_rounds_used = 0
@@ -194,7 +227,7 @@ def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer
     # Ask, run the tools the reply asks for, and ask again. A while loop, because the number of
     # calls is the model's choice; the round limit makes sure it ends
     while True:
-        response = call_model(client, model, reasoning_effort, messages, tools_allowed)
+        response = call_model(client, model, reasoning_effort, messages, tools_allowed, prompt_version)
         choice = response.choices[0]
         model_calls += 1
         input_tokens += response.usage.prompt_tokens
@@ -223,7 +256,7 @@ def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer
         # Tool round: run the tools it asked for, and get the tool messages, the log lines and the chunks they showed
         tool_calls = choice.message.tool_calls
         tool_messages, log_lines, shown_chunks = run_tool_round(tool_calls, rule_tools, tool_rounds_used,
-                                                                has_reached_tool_limit(tool_rounds_used))
+                                                                has_reached_tool_limit(tool_rounds_used), prompt_version)
 
         # Add the tool messages to the conversation, and the log lines to the run file, and the chunks to the seen set
         messages.extend(tool_messages)
