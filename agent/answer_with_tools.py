@@ -57,6 +57,11 @@ EXTRA_AGENT_RULES = {
     # One generic line aimed at both: search when a part is uncovered, stop when every part is, cite only what is used
     "check-each-part": ("Before you answer or refuse, check each part of the question against your sources. Search only "
                         "for a part no source covers. Cite only the clauses your answer uses."),
+    # 10 Nov, unseen set with check-each-part: setup C still answered yellow-card-before-play twice with 0 tool rounds,
+    # writing that the sources don't cover the card report. Answer rule 3 (written for plain RAG: say what the sources
+    # don't cover) seems to win over searching when sources come with the question. This line says which rule wins
+    "search-before-gaps": ("You can search, so answer rule 3 changes for you: when a part of the question has no source, "
+                           "search for it first. Say the sources don't cover a part only after a search for it finds nothing."),
 }
 
 
