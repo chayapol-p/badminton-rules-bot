@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from retrieval.expand_with_rule_links import expand_with_links, format_for_prompt, index_links
+from retrieval.expand_with_rule_links import add_list_items, expand_with_links, format_for_prompt, index_links
 from scripts.build_rule_links import build_rule_links
 
 
@@ -39,6 +39,29 @@ def corpus():
         "link_keys": link_keys,
         "indexed_map": index_links(rule_map["links"], rule_map["outside_corpus"]),
     }
+
+
+# ===== Every level of a list =====
+
+def test_an_item_that_is_a_heading_brings_its_own_items(corpus):
+    """11 Nov: 14.2 ("It shall be a let, if:") brought 14.2.3 ("the shuttle is:") but not its two cases."""
+    expanded_ids = add_list_items(["laws-14.2"], {"laws-14.2"}, corpus["chunks_by_id"])
+    assert "laws-14.2.3" in expanded_ids
+    assert {"laws-14.2.3.1", "laws-14.2.3.2"}.issubset(expanded_ids)
+
+
+def test_a_heading_reached_by_a_link_brings_its_items(corpus):
+    """11 Nov: sweat-on-court got Law 16.7.1 ("... by:") through a link, without its three steps."""
+    expanded_ids = add_list_items(["itto-5.9.1.6", "laws-16.7.1"], {"itto-5.9.1.6"}, corpus["chunks_by_id"])
+    assert {"laws-16.7.1.1", "laws-16.7.1.2", "laws-16.7.1.3"}.issubset(expanded_ids)
+
+
+def test_a_reached_heading_skips_para_items_but_a_found_one_keeps_them(corpus):
+    """Law 13.3's item 13.3.10 is Wheelchair Badminton only: it comes only when search found 13.3 itself."""
+    reached_ids = add_list_items(["laws-13.3"], set(), corpus["chunks_by_id"])
+    found_ids = add_list_items(["laws-13.3"], {"laws-13.3"}, corpus["chunks_by_id"])
+    assert "laws-13.3.10" not in reached_ids
+    assert "laws-13.3.10" in found_ids
 
 
 def labels_by_id(context):

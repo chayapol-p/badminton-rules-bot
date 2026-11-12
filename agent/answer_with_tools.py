@@ -69,6 +69,9 @@ Tools:
 - Write about the rules, not your work: never mention tools, searches, or which documents you checked.
 - Your final reply, with no tool calls, is the answer in the required JSON shape."""
 
+## The extra agent rules prompt version 1 runs with by default (record 0022)
+DEFAULT_AGENT_RULE_NAMES = ("check-each-part", "search-before-gaps")
+
 ## Extra agent rules under test, by name, one per run (experiment rule 1). Each comes from a measured failure
 EXTRA_AGENT_RULES = {
     # 9 Nov, unseen set: setup C refused yellow-card-before-play twice with no tool call (it never searched for

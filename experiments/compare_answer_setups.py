@@ -61,7 +61,7 @@ from evals.log_eval_run import append_run
 from evals.probes import load_probes, load_unseen_questions
 from evals.token_costs import call_cost
 from retrieval.stored_embeddings import embeddings_file, load_embeddings
-from retrieval.expand_with_rule_links import direct_sub_clauses, expand_with_links, is_list_heading, load_rule_map
+from retrieval.expand_with_rule_links import add_list_items, expand_with_links, load_rule_map
 from retrieval.vector_search import VectorSearch
 
 
@@ -130,19 +130,12 @@ def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str,
         # clauses before and after each hit
         hit_ids = [chunk["id"] for chunk in hits]
         context = expand_with_links(hit_ids, chunk_by_id, rule_map, question_is_para=False, include_nearby=False)
-        retrieved_chunks = [item["chunk"] for item in context]
+        retrieved_ids = [item["chunk"]["id"] for item in context]
 
-        # A list heading holds no rule itself: the rule is in its items. 8 Nov: wheelchair-shuttle-on-net got
-        # "in Wheelchair Badminton if the shuttle is:" without the item that answers it (13.3.10.1)
-        retrieved_ids = {chunk["id"] for chunk in retrieved_chunks}
-        for hit in hits:
-            if not is_list_heading(hit):
-                continue
-            for item_id in direct_sub_clauses(chunk_by_id, hit):
-                if item_id not in retrieved_ids:
-                    retrieved_chunks.append(chunk_by_id[item_id])
-                    retrieved_ids.add(item_id)
-        return retrieved_chunks
+        # A list heading holds no rule itself: the rule is in its items, at every level. 8 Nov:
+        # wheelchair-shuttle-on-net got "in Wheelchair Badminton if the shuttle is:" without 13.3.10.1
+        retrieved_ids = add_list_items(retrieved_ids, set(hit_ids), chunk_by_id)
+        return [chunk_by_id[chunk_id] for chunk_id in retrieved_ids]
 
     return retrieve
 

@@ -164,6 +164,18 @@ def test_prompt_version_2_with_an_extra_rule_stops_before_any_call(monkeypatch, 
 
 # ===== The retrieve step =====
 
+def test_retrieve_brings_the_items_of_an_item_that_is_a_heading():
+    """11 Nov: every-let-situation got 14.2.3 ("the shuttle is:") without its two cases."""
+    try:
+        chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
+        retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["laws-14.2"]], 1, chunk_by_id,
+                                           load_rule_map())
+    except FileNotFoundError:
+        pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
+    retrieved_ids = [chunk["id"] for chunk in retrieve("When is it a let?")]
+    assert {"laws-14.2.3.1", "laws-14.2.3.2"}.issubset(retrieved_ids)
+
+
 def test_with_no_links_retrieve_hands_on_the_search_hits():
     empty_rule_map = {"outgoing": {}, "incoming": {}, "outside": {}}
     retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, empty_rule_map)

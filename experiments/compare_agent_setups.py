@@ -14,7 +14,9 @@ The tools' searches embed the model's own queries live with mistral-embed (a tin
 the questions themselves use their saved vectors.
 
   --setup     agentic | hybrid
-  --agent-rule  an extra agent rule to test, by name (agent/answer_with_tools.py EXTRA_AGENT_RULES)
+  --agent-rule  an extra agent rule to test, by name (agent/answer_with_tools.py EXTRA_AGENT_RULES). With none
+              named, prompt version 1 runs with DEFAULT_AGENT_RULE_NAMES (record 0022)
+  --no-agent-rules  run prompt version 1 with no extra agent rules, as the runs before record 0022 did
   --prompt-version  1 (default, the prompt of every earlier run) or 2 (the reviewed rule set, which has the
               extra rules folded in, so it can't be combined with --agent-rule)
   --unseen    answer the unseen questions instead of dev and the probes (once per setup)
@@ -41,7 +43,7 @@ import numpy
 from anthropic import Anthropic
 from mistralai.client import Mistral
 
-from agent.answer_with_tools import EXTRA_AGENT_RULES, AgentReply, answer_with_tools
+from agent.answer_with_tools import DEFAULT_AGENT_RULE_NAMES, EXTRA_AGENT_RULES, AgentReply, answer_with_tools
 from agent.rule_tools import RuleTools
 from answer.build_answer_prompt import PROMPT_VERSIONS, build_answer_rules
 from answer.check_refusals import should_refuse
@@ -279,6 +281,8 @@ def main() -> None:
     parser.add_argument("--unseen", action="store_true", help="answer the unseen questions, once per setup")
     parser.add_argument("--agent-rule", action="append", default=[], choices=list(EXTRA_AGENT_RULES),
                         help="an extra agent rule to test; repeat for more than one")
+    parser.add_argument("--no-agent-rules", action="store_true",
+                        help="prompt version 1 with no extra agent rules, as before record 0022")
     parser.add_argument("--prompt-version", type=int, default=1, choices=PROMPT_VERSIONS,
                         help="1: the prompt of every earlier run; 2: the reviewed rule set, extra rules folded in")
     parser.add_argument("--label", help="a short name for the run (default: the setup name)")
@@ -289,10 +293,16 @@ def main() -> None:
     if arguments.prompt_version == 2 and arguments.agent_rule:
         parser.error("--prompt-version 2 has the extra agent rules folded in: drop --agent-rule")
 
+    # Record 0022: prompt version 1 runs with both agent rules unless rules are named or turned off
+    agent_rule_names = arguments.agent_rule
+    uses_default_rules = arguments.prompt_version == 1 and not agent_rule_names and not arguments.no_agent_rules
+    if uses_default_rules:
+        agent_rule_names = list(DEFAULT_AGENT_RULE_NAMES)
+
     # Name the run by its setup, rules, prompt version and question set, unless a label is given
     label = arguments.label
     if label is None:
-        label_parts = [arguments.setup] + arguments.agent_rule
+        label_parts = [arguments.setup] + agent_rule_names
         if arguments.prompt_version == 2:
             label_parts.append("prompt2")
         label = "-".join(label_parts)
@@ -300,7 +310,7 @@ def main() -> None:
             label = f"{label}-unseen"
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_agent_setup(arguments.setup, label, arguments.dry_run, arguments.unseen, arguments.agent_rule,
+    run_agent_setup(arguments.setup, label, arguments.dry_run, arguments.unseen, agent_rule_names,
                     arguments.prompt_version)
 
 

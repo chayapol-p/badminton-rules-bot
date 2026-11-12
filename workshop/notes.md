@@ -52,6 +52,7 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 ## Lab 4 · Context enrichment
 
 - Context header (7 Nov): every chunk gets search_text = document · format · para flag · heading · clause number, then the clause. The same clause number (16.2.1) holds different rules per Alternative Laws format, and the clause text never names its format. Search reads search_text; answers cite text. Stage 1 compares text against search_text.
+- Every level of a list (12 Nov, record 0023 change 6, offline check on saved vectors): a list heading reached through a link or as an item now brings its own items, skipping para-only items unless search found the heading. Setup A's retrieve on unseen: needed clauses missing 9 -> 6 (sweat-on-court gets Law 16.7.1.1-3; every-let-situation gets 14.2.3.1-2), 291 -> 298 words a question. Dev and probes: missing 3 -> 3, nothing lost, 228 -> 238 words; noise added on 2 para questions (wheelchair-shuttle-on-net +9 regular items of Law 13.3, foot-off-footrest +5 of 13.4) and standard Law 8.1.1-2 on the best-of-five questions. Not yet run through the answer model.
 
 ## Lab 5 · Pick the approach
 

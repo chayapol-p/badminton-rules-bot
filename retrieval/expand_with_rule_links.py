@@ -107,6 +107,42 @@ def clauses_below(chunks_by_id, document, clause_number):
     ]
 
 
+# ===== Bringing every level of a list =====
+
+def brings_its_items(chunk: dict, is_hit: bool) -> bool:
+    """True for a list heading whose items should come: any heading search found, or a regular heading reached another way."""
+    if not is_list_heading(chunk):
+        return False
+
+    # A para heading reached through a link stays bare for a regular question; one search found comes whole
+    return is_hit or not chunk["para_only"]
+
+
+def add_list_items(retrieved_ids: list[str], hit_ids: set[str], chunks_by_id: dict[str, dict]) -> list[str]:
+    """Returns the retrieved ids with each list heading's items added, down every level (16.7.1 -> 16.7.1.1)."""
+    # 11 Nov: only a heading search found brought its items, so sweat-on-court got Law 16.7.1 ("... by:")
+    # without its three steps, and every-let-situation got 14.2.3 ("the shuttle is:") without its two cases
+    expanded_ids = list(retrieved_ids)
+    seen_ids = set(retrieved_ids)
+
+    # A for loop over a list that grows: an item that is itself a heading is reached later in the same loop,
+    # so every level is covered without a separate recursive call
+    for chunk_id in expanded_ids:
+        chunk = chunks_by_id[chunk_id]
+        is_hit = chunk_id in hit_ids
+        if not brings_its_items(chunk, is_hit):
+            continue
+
+        # A heading search found brings every item, as before; one reached another way skips para-only items
+        for item_id in direct_sub_clauses(chunks_by_id, chunk):
+            is_para_item_of_a_reached_heading = chunks_by_id[item_id]["para_only"] and not is_hit
+            if item_id in seen_ids or is_para_item_of_a_reached_heading:
+                continue
+            expanded_ids.append(item_id)
+            seen_ids.add(item_id)
+    return expanded_ids
+
+
 # ===== Finding the clauses around a hit =====
 
 def is_list_item(chunk, parent):
