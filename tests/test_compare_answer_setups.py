@@ -7,7 +7,6 @@ import pytest
 from evals.golden_answer_chunks import load_chunks
 from evals.judge_answers import JUDGE_VOTES
 from evals.token_costs import call_cost
-from experiments.compare_answer_setups import main as run_answer_setup_from_command_line
 from experiments.compare_answer_setups import (build_clause_vector_search, build_retrieve_function, check_and_grade,
                                                summarise_answer_run)
 from retrieval.build_bundle import full_chunks
@@ -151,15 +150,6 @@ def test_a_clean_answer_is_judged_and_its_cost_counted():
     assert grade_line["passed"]
     assert line["judge_cost"] > 0
     assert len(client.requests) == JUDGE_VOTES
-
-
-# ===== The command line =====
-
-def test_prompt_version_2_with_an_extra_rule_stops_before_any_call(monkeypatch, capsys):
-    monkeypatch.setattr("sys.argv", ["compare_answer_setups", "--prompt-version", "2", "--rule", "complete-answers"])
-    with pytest.raises(SystemExit):
-        run_answer_setup_from_command_line()
-    assert "drop --rule" in capsys.readouterr().err
 
 
 # ===== The retrieve step =====

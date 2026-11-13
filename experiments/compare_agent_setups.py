@@ -15,10 +15,8 @@ the questions themselves use their saved vectors.
 
   --setup     agentic | hybrid
   --agent-rule  an extra agent rule to test, by name (agent/answer_with_tools.py EXTRA_AGENT_RULES). With none
-              named, prompt version 1 runs with DEFAULT_AGENT_RULE_NAMES (record 0022)
-  --no-agent-rules  run prompt version 1 with no extra agent rules, as the runs before record 0022 did
-  --prompt-version  1 (default, the prompt of every earlier run) or 2 (the reviewed rule set, which has the
-              extra rules folded in, so it can't be combined with --agent-rule)
+              named, the run uses DEFAULT_AGENT_RULE_NAMES (record 0022)
+  --no-agent-rules  run with no extra agent rules, as the runs before record 0022 did
   --unseen    answer the unseen questions instead of dev and the probes (once per setup)
   --label     a short name for the run (default: the setup name)
   --dry-run   answer only the first question, and don't log the run
@@ -45,7 +43,7 @@ from mistralai.client import Mistral
 
 from agent.answer_with_tools import DEFAULT_AGENT_RULE_NAMES, EXTRA_AGENT_RULES, AgentReply, answer_with_tools
 from agent.rule_tools import RuleTools
-from answer.build_answer_prompt import PROMPT_VERSIONS, build_answer_rules
+from answer.build_answer_prompt import build_answer_rules
 from answer.check_refusals import should_refuse
 from answer.generate_answer import MAX_ANSWER_TOKENS
 from app.settings import load_settings
@@ -119,7 +117,7 @@ def answer_and_grade_with_tools(question: dict, starting_retrieve: Callable[[str
                                 rule_tools: RuleTools, answer_rules: str, chunks: list[dict],
                                 chunk_by_id: dict[str, dict], mistral_client: Mistral, answer_model: str,
                                 reasoning_effort: str, anthropic_client: Anthropic, judge_model: str,
-                                extra_agent_rule_names: list[str], prompt_version: int) -> tuple[dict, dict]:
+                                extra_agent_rule_names: list[str]) -> tuple[dict, dict]:
     """Returns one question's answer line and grade line, answered with the tools and graded as in Stage 2."""
 
     # Setup C starts from setup A's bundle; setup B starts from none
@@ -127,7 +125,7 @@ def answer_and_grade_with_tools(question: dict, starting_retrieve: Callable[[str
     if starting_retrieve is not None:
         starting_items = starting_retrieve(question["question"])
     reply = answer_with_tools(mistral_client, answer_model, reasoning_effort, answer_rules, question["question"],
-                              starting_items, rule_tools, extra_agent_rule_names, prompt_version)
+                              starting_items, rule_tools, extra_agent_rule_names)
     answer_line = build_answer_line(question, reply, answer_model)
 
     # A reply that didn't fit the shape can't be checked or graded: it counts as a fail
@@ -191,7 +189,7 @@ def print_tool_use(tool_use: dict) -> None:
 # ===== Running one setup =====
 
 def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: bool,
-                    extra_agent_rule_names: list[str], prompt_version: int) -> dict:
+                    extra_agent_rule_names: list[str]) -> dict:
     """Answers, checks and grades every question with one agent setup, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
@@ -218,7 +216,7 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
     if setup_name == "hybrid":
         question_search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
         starting_retrieve = build_retrieve_function(question_search, DEFAULT_TOP_K, chunk_by_id, rule_map)
-    answer_rules = build_answer_rules([], prompt_version)
+    answer_rules = build_answer_rules([])
 
     # Name the run first, so each answer can be saved the moment it's done
     run_name = f"{datetime.now(timezone.utc):%Y%m%dT%H%M}-{label}"
@@ -236,8 +234,7 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
                                                               chunks, chunk_by_id, mistral_client,
                                                               settings.mistral_answer_model,
                                                               settings.mistral_reasoning_effort, anthropic_client,
-                                                              settings.claude_judge_model, extra_agent_rule_names,
-                                                              prompt_version)
+                                                              settings.claude_judge_model, extra_agent_rule_names)
         append_line(answers_path, answer_line)
         append_line(grades_path, grade_line)
         answer_lines.append(answer_line)
@@ -260,7 +257,9 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
         "split": split_name,
         "starting_sources": setup_name == "hybrid",
         "extra_agent_rules": extra_agent_rule_names,
-        "prompt_version": prompt_version,
+        "source_labels": True,
+        "tool_previews": True,
+        "citations": "sentence numbers",
         "max_answer_tokens": MAX_ANSWER_TOKENS,
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,
@@ -281,37 +280,26 @@ def main() -> None:
     parser.add_argument("--unseen", action="store_true", help="answer the unseen questions, once per setup")
     parser.add_argument("--agent-rule", action="append", default=[], choices=list(EXTRA_AGENT_RULES),
                         help="an extra agent rule to test; repeat for more than one")
-    parser.add_argument("--no-agent-rules", action="store_true",
-                        help="prompt version 1 with no extra agent rules, as before record 0022")
-    parser.add_argument("--prompt-version", type=int, default=1, choices=PROMPT_VERSIONS,
-                        help="1: the prompt of every earlier run; 2: the reviewed rule set, extra rules folded in")
+    parser.add_argument("--no-agent-rules", action="store_true", help="no extra agent rules, as before record 0022")
     parser.add_argument("--label", help="a short name for the run (default: the setup name)")
     parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     arguments = parser.parse_args()
 
-    # Version 2 already holds the extra rules, so adding one would test a prompt nobody asked for
-    if arguments.prompt_version == 2 and arguments.agent_rule:
-        parser.error("--prompt-version 2 has the extra agent rules folded in: drop --agent-rule")
-
-    # Record 0022: prompt version 1 runs with both agent rules unless rules are named or turned off
+    # Record 0022: a run uses both agent rules unless rules are named or turned off
     agent_rule_names = arguments.agent_rule
-    uses_default_rules = arguments.prompt_version == 1 and not agent_rule_names and not arguments.no_agent_rules
+    uses_default_rules = not agent_rule_names and not arguments.no_agent_rules
     if uses_default_rules:
         agent_rule_names = list(DEFAULT_AGENT_RULE_NAMES)
 
-    # Name the run by its setup, rules, prompt version and question set, unless a label is given
+    # Name the run by its setup, rules and question set, unless a label is given
     label = arguments.label
     if label is None:
-        label_parts = [arguments.setup] + agent_rule_names
-        if arguments.prompt_version == 2:
-            label_parts.append("prompt2")
-        label = "-".join(label_parts)
+        label = "-".join([arguments.setup] + agent_rule_names)
         if arguments.unseen:
             label = f"{label}-unseen"
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_agent_setup(arguments.setup, label, arguments.dry_run, arguments.unseen, agent_rule_names,
-                    arguments.prompt_version)
+    run_agent_setup(arguments.setup, label, arguments.dry_run, arguments.unseen, agent_rule_names)
 
 
 if __name__ == "__main__":

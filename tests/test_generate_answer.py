@@ -31,12 +31,12 @@ class StubChatClient:
         return SimpleNamespace(choices=[choice], usage=usage)
 
 
-## A reply in the RulesAnswer shape
+## A reply in the ModelAnswer shape: it cites sentence 1 of Law 1.4
 GOOD_REPLY_TEXT = json.dumps({
     "reasoning": "Law 1.4 gives the posts' height.",
     "refused": False,
     "answer": "1.55 metres.",
-    "citations": [{"chunk_id": "laws-1.4", "quote": "The posts shall be 1.55 metres in height"}],
+    "citations": [{"chunk_id": "laws-1.4", "sentence": 1}],
 })
 
 
@@ -46,6 +46,12 @@ def test_a_reply_in_the_shape_is_parsed():
     reply = generate_answer(StubChatClient(GOOD_REPLY_TEXT), "test-model", "low", ANSWER_RULES, "How tall are the posts?", full_items(SAMPLE_CHUNKS))
     assert not reply.is_format_error
     assert reply.answer.citations[0].chunk_id == "laws-1.4"
+
+
+def test_the_cited_sentence_is_copied_in_as_the_quote():
+    reply = generate_answer(StubChatClient(GOOD_REPLY_TEXT), "test-model", "low", ANSWER_RULES, "How tall are the posts?", full_items(SAMPLE_CHUNKS))
+    law_1_4 = next(chunk for chunk in SAMPLE_CHUNKS if chunk["id"] == "laws-1.4")
+    assert law_1_4["text"].startswith(reply.answer.citations[0].quote)
 
 
 def test_a_reply_cut_off_mid_json_is_a_format_error_that_keeps_its_tokens():

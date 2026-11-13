@@ -16,20 +16,15 @@ Within one question, a clause already shown in full comes back as one "shown abo
 its text again (start_question resets this for each question). read_clause always shows the clause it
 was asked for.
 
-Prompt version 2 (Stage 3, 10 Nov) changes one line: search_rules's query description said "in your own
-words", against the tool description's "use the rule books' own words" (build_tool_definitions).
-
 A bad call (a top_k outside 1 to 100, an unknown chunk id, a wrong argument) returns an error message
 as the tool result instead of raising. The model reads it and can try again; the run counts it.
 
 Use:
     rule_tools = RuleTools(chunks, search, rule_map)
     rule_tools.start_question(starting_ids)
-    tool_definitions = build_tool_definitions(prompt_version=2)
     tool_result = rule_tools.run_tool_call("search_rules", '{"query": "let", "top_k": 5}')
 """
 
-import copy
 import difflib
 import json
 from collections.abc import Callable
@@ -94,26 +89,6 @@ TOOL_DEFINITIONS = [
         },
     },
 ]
-
-## Prompt version 2's search_rules query description, which agrees with the tool description
-SEARCH_QUERY_DESCRIPTION_VERSION_2 = "What to search for, in the documents' own terms where you know them."
-
-
-# ===== The tool definitions of each prompt version =====
-
-def build_tool_definitions(prompt_version: int) -> list[dict]:
-    """Returns the tool definitions a prompt version sends: version 1 as above, version 2 with its query description."""
-    if prompt_version == 1:
-        return TOOL_DEFINITIONS
-
-    # A copy, so version 1's definitions stay exactly as every earlier run sent them
-    tool_definitions = copy.deepcopy(TOOL_DEFINITIONS)
-    for tool_definition in tool_definitions:
-        function_definition = tool_definition["function"]
-        if function_definition["name"] == "search_rules":
-            function_definition["parameters"]["properties"]["query"]["description"] = SEARCH_QUERY_DESCRIPTION_VERSION_2
-    return tool_definitions
-
 
 # ===== One tool result =====
 

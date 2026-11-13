@@ -1,12 +1,8 @@
 """Tests the agent's two tools on the real clauses and rule map, with a stub search, so no test calls the API."""
 
-import copy
-import json
-
 import pytest
 
-from agent.rule_tools import (LARGEST_TOP_K, SEARCH_QUERY_DESCRIPTION_VERSION_2, TOOL_DEFINITIONS, RuleTools,
-                              build_tool_definitions)
+from agent.rule_tools import LARGEST_TOP_K, RuleTools
 from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
 
@@ -30,15 +26,6 @@ RULE_TOOLS = RuleTools(CHUNKS, first_chunks_search, RULE_MAP)
 def new_question():
     """Each test is a new question: nothing shown yet."""
     RULE_TOOLS.start_question(set())
-
-
-# ===== The tool definitions of each prompt version =====
-
-def test_version_2_changes_only_the_query_description_and_leaves_version_1_untouched():
-    expected_definitions = copy.deepcopy(TOOL_DEFINITIONS)
-    expected_definitions[0]["function"]["parameters"]["properties"]["query"]["description"] = SEARCH_QUERY_DESCRIPTION_VERSION_2
-    assert build_tool_definitions(2) == expected_definitions
-    assert "in your own words" in json.dumps(build_tool_definitions(1)), "building version 2 must not change version 1"
 
 
 # ===== search_rules =====

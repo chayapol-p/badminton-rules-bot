@@ -5,8 +5,10 @@ read_clause all call build_bundle, so every source block has one format, whereve
 A bundle is the clauses the rule map brings for the hits (retrieval/expand_with_rule_links.py), each
 with its role label and one of three levels of detail:
 
-  full      a source block: the chunk id, the label, where the clause comes from, then its text.
-            The model may cite only what it saw in full.
+  full      a source block: the chunk id, the label, where the clause comes from, then its text,
+            one numbered sentence per line. The model cites a clause by chunk id and sentence
+            number, and code copies the sentence in as the quote, so a quote can never be
+            misquoted. The model may cite only what it saw in full.
   preview   one line: the chunk id, the label and the clause's opening words. The model reads the
             whole clause with read_clause when it needs it.
   shown     one line saying the clause was shown earlier for this question, so a tool never sends
@@ -22,6 +24,8 @@ Use:
     citable_chunks = full_chunks(items)
 """
 
+import re
+
 from retrieval.expand_with_rule_links import expand_with_links
 
 
@@ -30,6 +34,10 @@ from retrieval.expand_with_rule_links import expand_with_links
 FULL = "full"
 PREVIEW = "preview"
 SHOWN = "shown"
+
+## Where one sentence ends and the next begins: after ".", ";", ":", "!" or "?" and a space. Clauses list
+## their items with ";", so each item is a sentence the model can cite alone
+SENTENCE_BREAK_PATTERN = re.compile(r"(?<=[.;:!?])\s+")
 
 ## How many opening words a preview line holds
 PREVIEW_WORD_COUNT = 15
@@ -76,6 +84,21 @@ def parent_headings(chunk: dict) -> str:
     return " · ".join(headings)
 
 
+# ===== The numbered sentences of a clause =====
+
+def split_sentences(text: str) -> list[str]:
+    """Returns a clause's sentences in order; sentence n is item n - 1."""
+    return SENTENCE_BREAK_PATTERN.split(text.strip())
+
+
+def numbered_sentences(text: str) -> str:
+    """Returns a clause's sentences one per line, each after its number in brackets: "(1) …"."""
+    lines = []
+    for sentence_number, sentence in enumerate(split_sentences(text), start=1):
+        lines.append(f"({sentence_number}) {sentence}")
+    return "\n".join(lines)
+
+
 # ===== One clause at each level of detail =====
 
 def first_line(chunk_id: str, label: str | None, chunk: dict) -> str:
@@ -85,13 +108,13 @@ def first_line(chunk_id: str, label: str | None, chunk: dict) -> str:
 
 
 def format_source(chunk: dict, label: str | None = None) -> str:
-    """Returns one source block: the first line, the headings above the clause, then the clause text."""
+    """Returns one source block: the first line, the headings above the clause, then its numbered sentences."""
     # 8 Nov: clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:"), record 0017
     under_line = ""
     headings = parent_headings(chunk)
     if headings:
         under_line = f"Under: {headings}\n"
-    return f"{first_line(chunk['id'], label, chunk)}\n{under_line}{chunk['text']}"
+    return f"{first_line(chunk['id'], label, chunk)}\n{under_line}{numbered_sentences(chunk['text'])}"
 
 
 def format_preview(chunk: dict, label: str) -> str:

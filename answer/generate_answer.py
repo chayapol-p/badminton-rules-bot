@@ -1,5 +1,5 @@
 """
-Asks Mistral for one answer in the RulesAnswer shape, and returns it with the model's thinking and the tokens it used.
+Asks Mistral for one answer in the ModelAnswer shape, fills in its quotes, and returns it with the model's thinking and the tokens it used.
 
 Fixed for every eval run (experiment rule 2): the pinned model and reasoning effort from
 app/settings.py, and temperature 0. Mistral calls temperature 0 greedy sampling and rejects it
@@ -8,7 +8,8 @@ call sets both.
 
 Mistral Large 4 always thinks before it answers, and sends its reply as a list of chunks: thinking
 chunks, then text chunks with the answer (Mistral's reasoning docs: there is no plain-text mode).
-The answer text is parsed into RulesAnswer; the thinking is kept as text for reading failures.
+The answer text is parsed into ModelAnswer and its quotes filled in (RulesAnswer); the thinking is kept as text
+for reading failures.
 
 The reply is parsed here, not inside the SDK, so a reply that doesn't fit the shape still reports
 the tokens it cost. Such a reply comes back flagged as a format error, with the validation message
@@ -26,9 +27,10 @@ from mistralai.client.models import TextChunk, ThinkChunk
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import ValidationError
 
-from answer.answer_shape import RulesAnswer
+from answer.answer_shape import ModelAnswer, RulesAnswer
 from answer.build_answer_prompt import build_answer_prompt
-from retrieval.build_bundle import format_bundle
+from answer.fill_quotes import fill_quotes
+from retrieval.build_bundle import format_bundle, full_chunks
 
 
 # Constants
@@ -83,11 +85,11 @@ def generate_answer(client: Mistral, model: str, reasoning_effort: str, answer_r
                     source_items: list[dict]) -> AnswerReply:
     """Generates the model's answer to one question from the retrieved chunks: the generate step after retrieve."""
 
-    # Ask with the RulesAnswer schema, the same strict schema chat.parse would send
+    # Ask with the ModelAnswer schema, the same strict schema chat.parse would send
     response = client.chat.complete(
         model=model,
         messages=build_answer_prompt(answer_rules, question_text, format_bundle(source_items)),
-        response_format=response_format_from_pydantic_model(RulesAnswer),
+        response_format=response_format_from_pydantic_model(ModelAnswer),
         reasoning_effort=reasoning_effort,
         temperature=0,
         top_p=1,
@@ -100,7 +102,7 @@ def generate_answer(client: Mistral, model: str, reasoning_effort: str, answer_r
 
     # Parse here, so a bad reply still reports its tokens; keep the finish reason, so a cut-off reply shows "length"
     try:
-        rules_answer = RulesAnswer.model_validate_json(raw_reply)
+        model_answer = ModelAnswer.model_validate_json(raw_reply)
     except ValidationError as error:
         return AnswerReply(
             answer=None,
@@ -112,8 +114,10 @@ def generate_answer(client: Mistral, model: str, reasoning_effort: str, answer_r
             output_tokens=output_tokens,
         )
 
+    # Copy each cited sentence in as its quote, from the clauses the model saw in full
+    shown_chunk_by_id = {chunk["id"]: chunk for chunk in full_chunks(source_items)}
     return AnswerReply(
-        answer=rules_answer,
+        answer=fill_quotes(model_answer, shown_chunk_by_id),
         is_format_error=False,
         error_message=None,
         raw_reply=raw_reply,
