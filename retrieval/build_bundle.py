@@ -140,7 +140,7 @@ def build_bundle(hit_ids: list[str], chunks_by_id: dict[str, dict], rule_map: di
     [{"chunk", "label", "reached_from", "detail"}]. The hits and their list items are always full;
     the other clauses are full when related_in_full, otherwise previews. A clause in shown_ids is "shown".
     """
-    items = expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=question_is_para, include_nearby=False)
+    items = expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=question_is_para)
 
     # The hits' own list items, at every level: the map adds each item after the heading it hangs from
     hit_and_item_ids = set(hit_ids)

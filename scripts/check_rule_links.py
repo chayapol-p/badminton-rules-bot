@@ -2,7 +2,7 @@
 Checks the rule map against the golden questions, before any search runs.
 
 For each golden question with more than one answer location, it pretends search found
-one location and follows the rule map, plus the clauses around it, from there. The
+one location and follows the rule map from there. The
 question passes when the other locations arrive this way. This shows which hard cases
 one search hit can solve, and which still need search to find more than one clause.
 

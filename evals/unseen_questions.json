@@ -405,7 +405,7 @@
           "laws-16.2.1",
           "laws-16.2.2"
         ],
-        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links(include_nearby=False), plus the direct sub-clauses of any hit that is a list heading"
+        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links, plus the direct sub-clauses of any hit that is a list heading"
       },
       "split": "unseen",
       "checked": true
@@ -468,7 +468,7 @@
           "laws-2.3.3",
           "laws-2.2.6"
         ],
-        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links(include_nearby=False), plus the direct sub-clauses of any hit that is a list heading"
+        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links, plus the direct sub-clauses of any hit that is a list heading"
       },
       "split": "unseen",
       "checked": true
@@ -530,7 +530,7 @@
           "itto-5.17.10",
           "laws-16.7.1.2"
         ],
-        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links(include_nearby=False), plus the direct sub-clauses of any hit that is a list heading"
+        "vector_check": "pending: setup A predicted with BM25 top 5 standing in for vector top 5, expand_with_links, plus the direct sub-clauses of any hit that is a list heading"
       },
       "split": "unseen",
       "checked": true

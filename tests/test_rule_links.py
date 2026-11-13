@@ -44,9 +44,8 @@ def corpus():
 # ===== Every level of a list =====
 
 def context_ids(hit_ids, corpus, question_is_para=False):
-    """The ids expand_with_links returns for these hits, without the clauses around each hit."""
-    context = expand_with_links(hit_ids, corpus["chunks_by_id"], corpus["indexed_map"], question_is_para=question_is_para,
-                                include_nearby=False)
+    """The ids expand_with_links returns for these hits."""
+    context = expand_with_links(hit_ids, corpus["chunks_by_id"], corpus["indexed_map"], question_is_para=question_is_para)
     return [item["chunk"]["id"] for item in context]
 
 
@@ -166,39 +165,6 @@ def test_cited_list_heading_brings_its_sub_clauses(corpus):
     labels = labels_by_id(context)
     assert labels["laws-16.7"] == "CITED"
     assert labels["laws-16.7.1"] == "LIST ITEM"
-
-
-def test_list_item_brings_its_intro_and_the_other_items(corpus):
-    # "When is a shuttle not in play?" needs all of 15.1, 15.2 and 15.3
-    context = expand_with_links(["laws-15.2"], corpus["chunks_by_id"], corpus["indexed_map"])
-    labels = labels_by_id(context)
-
-    assert labels["laws-15"] == "LIST INTRO"
-    assert labels["laws-15.1"] == labels["laws-15.3"] == "SAME LIST"
-
-
-def test_clause_brings_the_clause_after_it(corpus):
-    # 20-all (7.4) runs on into 29-all (7.5)
-    context = expand_with_links(["laws-7.4"], corpus["chunks_by_id"], corpus["indexed_map"])
-    assert labels_by_id(context)["laws-7.5"] == "NEIGHBOUR"
-
-
-def test_long_list_keeps_the_items_closest_to_the_hit(corpus):
-    # ITTO 5.4 (the umpire's duties) has more items than MAX_LIST_ITEMS; 5.4.12 sits next to 5.4.13
-    context = expand_with_links(["itto-5.4.13"], corpus["chunks_by_id"], corpus["indexed_map"])
-    reached_ids = labels_by_id(context)
-
-    assert "itto-5.4.12" in reached_ids
-    assert "itto-5.4.1" not in reached_ids
-
-
-def test_nearby_clauses_skip_para_items_for_regular_questions(corpus):
-    # 13.3.10 (Wheelchair net faults) is an item of the same fault list as 13.3.9
-    regular = expand_with_links(["laws-13.3.9"], corpus["chunks_by_id"], corpus["indexed_map"], question_is_para=False)
-    para = expand_with_links(["laws-13.3.9"], corpus["chunks_by_id"], corpus["indexed_map"], question_is_para=True)
-
-    assert "laws-13.3.10" not in labels_by_id(regular)
-    assert labels_by_id(para)["laws-13.3.10"] == "SAME LIST"
 
 
 def test_a_cited_laws_alternative_stays_one_line(corpus):

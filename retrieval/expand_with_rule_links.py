@@ -12,18 +12,13 @@ answer model must respect:
 - CITED          a clause that another clause names ("dealt with under Law 16.7")
 - INSTRUCTIONS   the ITTO clause that instructs the official a Law names (Law 17.3 -> ITTO 7.2)
 - DIAGRAM        the caption of a diagram that a clause names
-- LIST INTRO     the opening line of a list the hit belongs to ("A shuttle is not in play when:")
-- SAME LIST      another item of that list (15.1, 15.2 and 15.3 answer one question together)
-- NEIGHBOUR      the clause just before or after the hit (20-all in 7.4, then 29-all in 7.5)
 - LIST ITEM      an item under a list heading the context holds, at every level (16.7.1 -> 16.7.1.1)
 
-The rule map gives the first six. The rest come from where a clause sits in its document:
-the rule books never say "see the next clause", but answers often run on into it.
+The rule map gives the first six. LIST ITEM comes from where a clause sits in its document.
 
 A clause is either a rule to apply or context. Context is the regular rule shown beside the
-alternative or para exception that search found, the opening line of a list whose item search
-found, or an alternative reached through a cited Law (the one second hop): it comes as one line,
-without its items.
+alternative or para exception that search found, or an alternative reached through a cited Law
+(the one second hop): it comes as one line, without its items.
 
 The order is fixed in code: the default comes before its alternatives and exceptions.
 The labels go into the prompt (retrieval/build_bundle.py writes them on each source block), so the
@@ -51,9 +46,6 @@ MAX_CITED_PER_HIT = 4
 
 ## A clause this short, or ending in a colon, only introduces the clauses below it
 LIST_HEADING_MAX_WORDS = 5
-
-## How many items of the hit's list may come along, so a long list doesn't flood the prompt
-MAX_LIST_ITEMS = 6
 
 
 # ===== Loading the map into two lookups =====
@@ -139,48 +131,6 @@ def add_list_items(context: list[dict], hit_ids: set[str], context_ids: set[str]
     return expanded_context
 
 
-# ===== Finding the clauses around a hit =====
-
-def is_list_item(chunk, parent):
-    """True when the hit is one item of a list: its parent ends in a colon, or it ends in ";", "or" or "and"."""
-    text = chunk["text"].rstrip()
-    ends_like_an_item = text.endswith(";") or text.endswith(" or") or text.endswith(" and")
-    parent_opens_a_list = parent is not None and parent["text"].rstrip().endswith(":")
-    return ends_like_an_item or parent_opens_a_list
-
-
-def nearby_clauses(chunks_by_id, hit, question_is_para):
-    """
-    Returns [(chunk id, label)] for the clauses around a hit, in document order:
-    for a list item, the list's opening line and the other items; otherwise the clause
-    just before and just after it. Alternative Laws and headings get none.
-    """
-    has_parent = "." in hit["clause"] and hit["document"] != "alt"
-    if not has_parent:
-        return []
-
-    parent_id = hit["id"].rsplit(".", 1)[0]
-    parent = chunks_by_id.get(parent_id)
-    sibling_ids = [
-        sibling_id for sibling_id in direct_sub_clauses(chunks_by_id, parent_id)
-        if question_is_para or not chunks_by_id[sibling_id]["para_only"]
-    ]
-    if hit["id"] not in sibling_ids:
-        return []
-
-    position = sibling_ids.index(hit["id"])
-
-    # A long list (ITTO 5.4 has 15 items) keeps only the items closest to the hit
-    if is_list_item(hit, parent):
-        list_intro = [(parent["id"], "LIST INTRO")] if parent else []
-        first = max(position - MAX_LIST_ITEMS // 2, 0)
-        items = [(sibling_id, "SAME LIST") for sibling_id in sibling_ids[first:first + MAX_LIST_ITEMS]]
-        return list_intro + items
-
-    neighbour_ids = sibling_ids[max(position - 1, 0):position] + sibling_ids[position + 1:position + 2]
-    return [(neighbour_id, "NEIGHBOUR") for neighbour_id in neighbour_ids]
-
-
 # ===== Labelling a clause =====
 
 def alternative_label(chunk, today):
@@ -193,7 +143,7 @@ def alternative_label(chunk, today):
 
 # ===== Expanding search hits through the map =====
 
-def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, today=None, include_nearby=True):
+def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, today=None):
     """
     Returns the hits plus their linked clauses and their list items, in prompt order, as
     [{"chunk": ..., "label": ..., "reached_from": hit id or None}].
@@ -204,7 +154,7 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
     seen_ids = set()
 
     # Clauses added only as context: the regular rule beside the alternative or para exception search
-    # found, the opening line of a list whose item search found, and a cited Law's alternatives
+    # found, and a cited Law's alternatives
     context_ids = set()
 
     def add(chunk_id, label, reached_from=None):
@@ -248,15 +198,6 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
 
         # A hit with no regular rule (such as a format's intro) still goes in
         add(hit_id, "RULE")
-
-        # The clauses around the hit: the rest of its list, or the clause before and after
-        if include_nearby:
-            for nearby_id, label in nearby_clauses(chunks_by_id, hit, question_is_para):
-                add(nearby_id, label, hit_id)
-
-                # A list's opening line is context for the item search found: the nearest items already came
-                if label == "LIST INTRO":
-                    context_ids.add(nearby_id)
 
         # Then what the hit names: cited clauses (not bare headings) and diagrams
         cited_ids = [
