@@ -35,3 +35,14 @@ change once its run is read.
 - The earlier Phase 2 item "check quotes, then one fix-up turn listing the bad quotes" is replaced
   by change 3, where a misquote can't happen.
 - Each run costs more once the question set grows (about 3 times the dev questions).
+
+## Change 2 (slice 5): Job's design picks, 13 Nov
+- The write call's input is clean: the question and every part, an unanswered part marked NO SOURCE, an
+  answered part with its picked sentences under their label and Under: line. No handoff note in this
+  change; a structured handoff note is its own experiment after it.
+- The gate is code only: refuse when no part has a valid sentence. A per-part support check is added
+  only if missed refusals remain.
+- A bad pick (a clause not shown in full, or no such sentence) counts as no sentence, and is recorded
+  by name in the run file, so bad picks are counted apart from false refusals.
+- A refusal's related text is a sentence quoted by code, not a model-written note.
+- Built before slice 2's bigger question set; its paid run waits for that set and the branch review.

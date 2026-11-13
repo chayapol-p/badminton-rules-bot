@@ -30,7 +30,7 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from retrieval.build_bundle import build_bundle, format_bundle, full_chunks
+from retrieval.build_bundle import build_bundle, format_bundle, full_chunks, label_by_full_id
 
 
 # Constants
@@ -94,10 +94,11 @@ TOOL_DEFINITIONS = [
 
 @dataclass
 class ToolResult:
-    """What one tool call returns: the text the model reads, the chunks it showed, and the error, if any."""
+    """What one tool call returns: the text the model reads, the chunks it showed with their labels, and the error, if any."""
 
     text: str
     shown_chunks: list[dict] = field(default_factory=list)
+    shown_label_by_id: dict[str, str] = field(default_factory=dict)
     error: str | None = None
 
 
@@ -121,7 +122,9 @@ class RuleTools:
         items = build_bundle(hit_ids, self.chunk_by_id, self.rule_map, related_in_full=False, shown_ids=shown_ids)
         shown_chunks = full_chunks(items)
         self.shown_ids.update(chunk["id"] for chunk in shown_chunks)
-        return ToolResult(text=format_bundle(items), shown_chunks=shown_chunks)
+
+        # The labels go with the clauses, so slice 5's write call sees each sentence under its label
+        return ToolResult(text=format_bundle(items), shown_chunks=shown_chunks, shown_label_by_id=label_by_full_id(items))
 
     def search_rules(self, query: str, top_k: int) -> ToolResult:
         """Returns the top_k closest clauses to the query with previews of their links, or an error when top_k is out of range."""

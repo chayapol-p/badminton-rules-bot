@@ -177,3 +177,8 @@ def format_bundle(items: list[dict]) -> str:
 def full_chunks(items: list[dict]) -> list[dict]:
     """Returns the clauses the bundle shows in full: the only ones the model may cite."""
     return [item["chunk"] for item in items if item["detail"] == FULL]
+
+
+def label_by_full_id(items: list[dict]) -> dict[str, str]:
+    """Returns the label of each clause the bundle shows in full, by chunk id."""
+    return {item["chunk"]["id"]: item["label"] for item in items if item["detail"] == FULL}

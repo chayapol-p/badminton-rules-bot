@@ -24,13 +24,13 @@ from dataclasses import dataclass, field
 
 from mistralai.client import Mistral
 from mistralai.extra import response_format_from_pydantic_model
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
-from agent.rule_tools import TOOL_DEFINITIONS, RuleTools
+from agent.rule_tools import TOOL_DEFINITIONS, RuleTools, ToolResult
 from answer.answer_shape import ModelAnswer, RulesAnswer
 from answer.assemble_answer import assemble_answer
 from answer.generate_answer import MAX_ANSWER_TOKENS, split_reply_content
-from retrieval.build_bundle import format_bundle, full_chunks
+from retrieval.build_bundle import format_bundle, full_chunks, label_by_full_id
 
 
 # Constants
@@ -74,7 +74,8 @@ EXTRA_AGENT_RULES = {
 
 @dataclass
 class AgentReply:
-    """One answer, or a format error, plus every chunk the model saw, the tool calls it made and the tokens they used."""
+    """One answer, or a format error, plus every chunk the model saw, the tool calls it made and the tokens they used.
+    Slice 5 also records the gather call's bad picks and whether the write call ran."""
 
     answer: RulesAnswer | None
     is_format_error: bool
@@ -85,6 +86,8 @@ class AgentReply:
     tool_rounds: int
     tool_calls: list[dict] = field(default_factory=list)
     tools_turned_off: bool = False
+    bad_picks: list[dict] = field(default_factory=list)
+    write_called: bool = False
     model_calls: int = 0
     input_tokens: int = 0
     output_tokens: int = 0
@@ -118,7 +121,8 @@ def build_agent_prompt(answer_rules: str, question_text: str, starting_items: li
 
 # ===== One model call =====
 
-def call_model(client: Mistral, model: str, reasoning_effort: str, messages: list, tools_allowed: bool):
+def call_model(client: Mistral, model: str, reasoning_effort: str, messages: list, tools_allowed: bool,
+               answer_shape: type[BaseModel] = ModelAnswer):
     """Sends the conversation so far with the tools, at the fixed settings of every eval run, and returns the response."""
 
     # After the last round, the tools stay listed but the model may not call them
@@ -130,7 +134,7 @@ def call_model(client: Mistral, model: str, reasoning_effort: str, messages: lis
         messages=messages,
         tools=TOOL_DEFINITIONS,
         tool_choice=tool_choice,
-        response_format=response_format_from_pydantic_model(ModelAnswer),
+        response_format=response_format_from_pydantic_model(answer_shape),
         reasoning_effort=reasoning_effort,
         temperature=0,
         top_p=1,
@@ -148,14 +152,14 @@ def has_reached_tool_limit(tool_rounds_used: int) -> bool:
 # ===== One tool round =====
 
 def run_tool_round(tool_calls: list, rule_tools: RuleTools, round_number: int,
-                   is_last_round: bool) -> tuple[list[dict], list[dict], list[dict]]:
-    """Runs every tool call in one reply; returns the tool messages, the log lines and the chunks shown."""
+                   is_last_round: bool) -> tuple[list[dict], list[dict], list[ToolResult]]:
+    """Runs every tool call in one reply; returns the tool messages, the log lines and the tool results."""
     tool_messages = []
     log_lines = []
-    shown_chunks = []
+    tool_results = []
     for tool_call in tool_calls:
         tool_result = rule_tools.run_tool_call(tool_call.function.name, tool_call.function.arguments)
-        shown_chunks.extend(tool_result.shown_chunks)
+        tool_results.append(tool_result)
 
         # One tool message per call, matched to it by id, and one log line for the run file
         tool_messages.append({"role": "tool", "name": tool_call.function.name, "content": tool_result.text,
@@ -167,7 +171,7 @@ def run_tool_round(tool_calls: list, rule_tools: RuleTools, round_number: int,
     # In the last round, the last result tells the model the tools are now off
     if is_last_round:
         tool_messages[-1]["content"] += LAST_ROUND_NOTE
-    return tool_messages, log_lines, shown_chunks
+    return tool_messages, log_lines, tool_results
 
 
 # ===== Reading the final reply =====
@@ -184,15 +188,28 @@ def parse_final_reply(choice, shown_chunk_by_id: dict[str, dict]) -> tuple[Rules
 
 # ===== The loop =====
 
-def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer_rules: str, question_text: str,
-                      starting_items: list[dict], rule_tools: RuleTools,
-                      extra_agent_rule_names: list[str] | None = None) -> AgentReply:
-    """Answers one question, calling tools until the model replies with no tool calls."""
-    messages = build_agent_prompt(answer_rules, question_text, starting_items, extra_agent_rule_names)
+@dataclass
+class ToolLoopResult:
+    """The loop's last reply, every clause shown in full with its label, the tool calls, and the calls and tokens used."""
+
+    choice: object
+    shown_chunk_by_id: dict[str, dict]
+    label_by_id: dict[str, str]
+    tool_rounds: int
+    tool_calls: list[dict]
+    tools_turned_off: bool
+    model_calls: int
+    input_tokens: int
+    output_tokens: int
+
+
+def run_tool_loop(client: Mistral, model: str, reasoning_effort: str, messages: list, starting_items: list[dict],
+                  rule_tools: RuleTools, answer_shape: type[BaseModel]) -> ToolLoopResult:
+    """Calls the model, runs the tools each reply asks for, and calls again, until a reply asks for none."""
 
     # The clauses shown in full so far: the tools leave these out of their results, and the model may cite them
-    starting_chunks = full_chunks(starting_items)
-    shown_chunk_by_id = {chunk["id"]: chunk for chunk in starting_chunks}
+    shown_chunk_by_id = {chunk["id"]: chunk for chunk in full_chunks(starting_items)}
+    label_by_id = label_by_full_id(starting_items)
     rule_tools.start_question(set(shown_chunk_by_id))
     tool_call_log = []
     tool_rounds_used = 0
@@ -204,7 +221,7 @@ def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer
     # Ask, run the tools the reply asks for, and ask again. A while loop, because the number of
     # calls is the model's choice; the round limit makes sure it ends
     while True:
-        response = call_model(client, model, reasoning_effort, messages, tools_allowed)
+        response = call_model(client, model, reasoning_effort, messages, tools_allowed, answer_shape)
         choice = response.choices[0]
         model_calls += 1
         input_tokens += response.usage.prompt_tokens
@@ -230,33 +247,59 @@ def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer
         tool_rounds_used += 1
         messages.append(choice.message)
 
-        # Tool round: run the tools it asked for, and get the tool messages, the log lines and the chunks they showed
-        tool_calls = choice.message.tool_calls
-        tool_messages, log_lines, shown_chunks = run_tool_round(tool_calls, rule_tools, tool_rounds_used,
+        # Tool round: run the tools it asked for, and get the tool messages, the log lines and the results
+        tool_messages, log_lines, tool_results = run_tool_round(choice.message.tool_calls, rule_tools, tool_rounds_used,
                                                                 has_reached_tool_limit(tool_rounds_used))
 
-        # Add the tool messages to the conversation, and the log lines to the run file, and the chunks to the seen set
+        # Add the tool messages to the conversation, the log lines to the run file, and the clauses to the seen set.
+        # A clause keeps the first label it was shown with
         messages.extend(tool_messages)
         tool_call_log.extend(log_lines)
-        shown_chunk_by_id.update({chunk["id"]: chunk for chunk in shown_chunks})
+        for tool_result in tool_results:
+            shown_chunk_by_id.update({chunk["id"]: chunk for chunk in tool_result.shown_chunks})
+            for chunk_id, label in tool_result.shown_label_by_id.items():
+                label_by_id.setdefault(chunk_id, label)
 
         # After the last round, the next call can only answer
         if has_reached_tool_limit(tool_rounds_used):
             tools_allowed = False
 
-    # The last reply is the answer, or a format error that still reports its tokens
-    rules_answer, error_message, raw_reply, thinking = parse_final_reply(choice, shown_chunk_by_id)
-    return AgentReply(
-        answer=rules_answer,
-        is_format_error=rules_answer is None,
-        error_message=error_message,
-        raw_reply=raw_reply,
-        thinking=thinking,
-        shown_chunks=list(shown_chunk_by_id.values()),
+    return ToolLoopResult(
+        choice=choice,
+        shown_chunk_by_id=shown_chunk_by_id,
+        label_by_id=label_by_id,
         tool_rounds=tool_rounds_used,
         tool_calls=tool_call_log,
         tools_turned_off=not tools_allowed,
         model_calls=model_calls,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+    )
+
+
+# ===== One agent answer, in one call (slice 4) =====
+
+def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer_rules: str, question_text: str,
+                      starting_items: list[dict], rule_tools: RuleTools,
+                      extra_agent_rule_names: list[str] | None = None) -> AgentReply:
+    """Answers one question, calling tools until the model replies with no tool calls."""
+    messages = build_agent_prompt(answer_rules, question_text, starting_items, extra_agent_rule_names)
+    loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, ModelAnswer)
+
+    # The last reply is the answer, or a format error that still reports its tokens
+    rules_answer, error_message, raw_reply, thinking = parse_final_reply(loop_result.choice,
+                                                                         loop_result.shown_chunk_by_id)
+    return AgentReply(
+        answer=rules_answer,
+        is_format_error=rules_answer is None,
+        error_message=error_message,
+        raw_reply=raw_reply,
+        thinking=thinking,
+        shown_chunks=list(loop_result.shown_chunk_by_id.values()),
+        tool_rounds=loop_result.tool_rounds,
+        tool_calls=loop_result.tool_calls,
+        tools_turned_off=loop_result.tools_turned_off,
+        model_calls=loop_result.model_calls,
+        input_tokens=loop_result.input_tokens,
+        output_tokens=loop_result.output_tokens,
     )

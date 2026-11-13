@@ -25,3 +25,11 @@ def test_a_run_uses_both_agent_rules_by_default(monkeypatch):
 def test_no_agent_rules_reproduces_the_runs_before_record_0022(monkeypatch):
     arguments = capture_run_arguments(monkeypatch, ["--setup", "hybrid", "--no-agent-rules"])
     assert arguments[4] == []
+
+
+def test_a_run_uses_slice_4s_one_call_flow_unless_gather_write_is_named(monkeypatch):
+    default_arguments = capture_run_arguments(monkeypatch, ["--setup", "hybrid"])
+    gather_arguments = capture_run_arguments(monkeypatch, ["--setup", "hybrid", "--flow", "gather-write"])
+    assert default_arguments[5] == "one-call"
+    assert gather_arguments[5] == "gather-write"
+    assert gather_arguments[1] == "hybrid-check-each-part-search-before-gaps-gather-write"

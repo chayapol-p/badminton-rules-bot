@@ -17,6 +17,9 @@ the questions themselves use their saved vectors.
   --agent-rule  an extra agent rule to test, by name (agent/answer_with_tools.py EXTRA_AGENT_RULES). With none
               named, the run uses DEFAULT_AGENT_RULE_NAMES (record 0022)
   --no-agent-rules  run with no extra agent rules, as the runs before record 0022 did
+  --flow      one-call (slice 4, the default): one tool loop picks sentences and writes the answer
+              gather-write (slice 5): the tool loop only picks sentences, code refuses when no part has one,
+              and a write call with no tools answers (agent/gather_then_write.py)
   --unseen    answer the unseen questions instead of dev and the probes (once per setup)
   --label     a short name for the run (default: the setup name)
   --dry-run   answer only the first question, and don't log the run
@@ -27,7 +30,7 @@ Writes the same two files per run as Stage 2 (evals/answer_runs/<time>-<label>-a
 Run from the project root:
     uv run python -m experiments.compare_agent_setups --setup hybrid --unseen --dry-run
     uv run python -m experiments.compare_agent_setups --setup hybrid --unseen
-    uv run python -m experiments.compare_agent_setups --setup hybrid --unseen --prompt-version 2
+    uv run python -m experiments.compare_agent_setups --setup hybrid --flow gather-write --dry-run
 """
 
 import argparse
@@ -42,8 +45,9 @@ from anthropic import Anthropic
 from mistralai.client import Mistral
 
 from agent.answer_with_tools import DEFAULT_AGENT_RULE_NAMES, EXTRA_AGENT_RULES, AgentReply, answer_with_tools
+from agent.gather_then_write import gather_then_write
 from agent.rule_tools import RuleTools
-from answer.build_answer_prompt import build_answer_rules
+from answer.build_answer_prompt import GATHER_RULES, build_answer_rules
 from answer.check_refusals import should_refuse
 from answer.generate_answer import MAX_ANSWER_TOKENS
 from app.settings import load_settings
@@ -63,6 +67,10 @@ from retrieval.vector_search import VectorSearch
 # Constants
 ## The two agent setups, by their --setup name
 SETUP_NAMES = ["agentic", "hybrid"]
+
+## The two answer flows, by their --flow name: the function that answers one question, and its rules
+ANSWER_FUNCTION_BY_FLOW = {"one-call": answer_with_tools, "gather-write": gather_then_write}
+DEFAULT_FLOW = "one-call"
 
 
 # ===== The tools' search: live query vectors =====
@@ -108,6 +116,8 @@ def build_answer_line(question: dict, reply: AgentReply, answer_model: str) -> d
         "tool_calls": reply.tool_calls,
         "tools_turned_off": reply.tools_turned_off,
         "model_calls": reply.model_calls,
+        "bad_picks": reply.bad_picks,
+        "write_called": reply.write_called,
         "answer_cost": call_cost(answer_model, reply.input_tokens, reply.output_tokens),
         "judge_cost": 0.0,
     }
@@ -117,15 +127,16 @@ def answer_and_grade_with_tools(question: dict, starting_retrieve: Callable[[str
                                 rule_tools: RuleTools, answer_rules: str, chunks: list[dict],
                                 chunk_by_id: dict[str, dict], mistral_client: Mistral, answer_model: str,
                                 reasoning_effort: str, anthropic_client: Anthropic, judge_model: str,
-                                extra_agent_rule_names: list[str]) -> tuple[dict, dict]:
+                                extra_agent_rule_names: list[str], flow: str = DEFAULT_FLOW) -> tuple[dict, dict]:
     """Returns one question's answer line and grade line, answered with the tools and graded as in Stage 2."""
 
     # Setup C starts from setup A's bundle; setup B starts from none
     starting_items = []
     if starting_retrieve is not None:
         starting_items = starting_retrieve(question["question"])
-    reply = answer_with_tools(mistral_client, answer_model, reasoning_effort, answer_rules, question["question"],
-                              starting_items, rule_tools, extra_agent_rule_names)
+    answer_function = ANSWER_FUNCTION_BY_FLOW[flow]
+    reply = answer_function(mistral_client, answer_model, reasoning_effort, answer_rules, question["question"],
+                            starting_items, rule_tools, extra_agent_rule_names)
     answer_line = build_answer_line(question, reply, answer_model)
 
     # A reply that didn't fit the shape can't be checked or graded: it counts as a fail
@@ -173,6 +184,9 @@ def summarise_tool_use(answer_lines: list[dict]) -> dict:
         "tool_errors": sum(1 for call in tool_calls if call["error"]),
         "questions_at_limit": sum(1 for line in answer_lines if line["tools_turned_off"]),
         "mean_model_calls": round(mean(line["model_calls"] for line in answer_lines), 2),
+        "bad_picks": sum(len(line["bad_picks"]) for line in answer_lines),
+        "questions_with_a_bad_pick": sum(1 for line in answer_lines if line["bad_picks"]),
+        "write_calls": sum(1 for line in answer_lines if line["write_called"]),
         "requested_top_ks": requested_top_ks,
     }
 
@@ -184,12 +198,14 @@ def print_tool_use(tool_use: dict) -> None:
     print(f"tool calls {tool_use['tool_calls']}  · errors {tool_use['tool_errors']}  "
           f"· questions that reached the round limit {tool_use['questions_at_limit']}")
     print(f"top_k asked for: {tool_use['requested_top_ks']}")
+    print(f"bad picks {tool_use['bad_picks']} on {tool_use['questions_with_a_bad_pick']} questions  "
+          f"· write calls {tool_use['write_calls']}")
 
 
 # ===== Running one setup =====
 
 def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: bool,
-                    extra_agent_rule_names: list[str]) -> dict:
+                    extra_agent_rule_names: list[str], flow: str = DEFAULT_FLOW) -> dict:
     """Answers, checks and grades every question with one agent setup, then prints, saves and logs the run."""
     settings = load_settings()
     chunks = load_chunks()
@@ -217,6 +233,8 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
         question_search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
         starting_retrieve = build_retrieve_function(question_search, DEFAULT_TOP_K, chunk_by_id, rule_map)
     answer_rules = build_answer_rules([])
+    if flow == "gather-write":
+        answer_rules = GATHER_RULES
 
     # Name the run first, so each answer can be saved the moment it's done
     run_name = f"{datetime.now(timezone.utc):%Y%m%dT%H%M}-{label}"
@@ -234,7 +252,8 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
                                                               chunks, chunk_by_id, mistral_client,
                                                               settings.mistral_answer_model,
                                                               settings.mistral_reasoning_effort, anthropic_client,
-                                                              settings.claude_judge_model, extra_agent_rule_names)
+                                                              settings.claude_judge_model, extra_agent_rule_names,
+                                                              flow)
         append_line(answers_path, answer_line)
         append_line(grades_path, grade_line)
         answer_lines.append(answer_line)
@@ -248,6 +267,10 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
     scores["tool_use"] = summarise_tool_use(answer_lines)
     print_scores(scores, answer_lines, passed_by_id)
     print_tool_use(scores["tool_use"])
+    # Slice 4 refuses inside the one answer; slice 5 refuses at the gate, before the write call
+    refusal_setting = "code, from the parts"
+    if flow == "gather-write":
+        refusal_setting = "code gate before the write call"
     run_settings = {
         "run": run_name,
         "setup": setup_name,
@@ -257,10 +280,11 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
         "split": split_name,
         "starting_sources": setup_name == "hybrid",
         "extra_agent_rules": extra_agent_rule_names,
+        "flow": flow,
         "source_labels": True,
         "tool_previews": True,
         "citations": "sentence numbers",
-        "refusal": "code, from the parts",
+        "refusal": refusal_setting,
         "max_answer_tokens": MAX_ANSWER_TOKENS,
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,
@@ -282,6 +306,8 @@ def main() -> None:
     parser.add_argument("--agent-rule", action="append", default=[], choices=list(EXTRA_AGENT_RULES),
                         help="an extra agent rule to test; repeat for more than one")
     parser.add_argument("--no-agent-rules", action="store_true", help="no extra agent rules, as before record 0022")
+    parser.add_argument("--flow", default=DEFAULT_FLOW, choices=list(ANSWER_FUNCTION_BY_FLOW),
+                        help="one-call (slice 4) or gather-write (slice 5)")
     parser.add_argument("--label", help="a short name for the run (default: the setup name)")
     parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     arguments = parser.parse_args()
@@ -296,11 +322,13 @@ def main() -> None:
     label = arguments.label
     if label is None:
         label = "-".join([arguments.setup] + agent_rule_names)
+        if arguments.flow != DEFAULT_FLOW:
+            label = f"{label}-{arguments.flow}"
         if arguments.unseen:
             label = f"{label}-unseen"
     if arguments.dry_run:
         label = f"{label}-dry-run"
-    run_agent_setup(arguments.setup, label, arguments.dry_run, arguments.unseen, agent_rule_names)
+    run_agent_setup(arguments.setup, label, arguments.dry_run, arguments.unseen, agent_rule_names, arguments.flow)
 
 
 if __name__ == "__main__":
