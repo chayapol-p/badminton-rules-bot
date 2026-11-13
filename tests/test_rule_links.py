@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from retrieval.expand_with_rule_links import add_list_items, expand_with_links, format_for_prompt, index_links
+from retrieval.expand_with_rule_links import expand_with_links, format_for_prompt, index_links
 from scripts.build_rule_links import build_rule_links
 
 
@@ -43,25 +43,39 @@ def corpus():
 
 # ===== Every level of a list =====
 
+def context_ids(hit_ids, corpus, question_is_para=False):
+    """The ids expand_with_links returns for these hits, without the clauses around each hit."""
+    context = expand_with_links(hit_ids, corpus["chunks_by_id"], corpus["indexed_map"], question_is_para=question_is_para,
+                                include_nearby=False)
+    return [item["chunk"]["id"] for item in context]
+
+
 def test_an_item_that_is_a_heading_brings_its_own_items(corpus):
     """11 Nov: 14.2 ("It shall be a let, if:") brought 14.2.3 ("the shuttle is:") but not its two cases."""
-    expanded_ids = add_list_items(["laws-14.2"], {"laws-14.2"}, corpus["chunks_by_id"])
-    assert "laws-14.2.3" in expanded_ids
-    assert {"laws-14.2.3.1", "laws-14.2.3.2"}.issubset(expanded_ids)
+    assert {"laws-14.2.3", "laws-14.2.3.1", "laws-14.2.3.2"}.issubset(context_ids(["laws-14.2"], corpus))
 
 
-def test_a_heading_reached_by_a_link_brings_its_items(corpus):
-    """11 Nov: sweat-on-court got Law 16.7.1 ("... by:") through a link, without its three steps."""
-    expanded_ids = add_list_items(["itto-5.9.1.6", "laws-16.7.1"], {"itto-5.9.1.6"}, corpus["chunks_by_id"])
-    assert {"laws-16.7.1.1", "laws-16.7.1.2", "laws-16.7.1.3"}.issubset(expanded_ids)
+def test_a_cited_heading_brings_every_level_of_its_items(corpus):
+    """11 Nov: sweat-on-court got Law 16.7.1 ("... by:") through a citation, without its three steps."""
+    assert {"laws-16.7.1.1", "laws-16.7.1.2", "laws-16.7.1.3"}.issubset(context_ids(["itto-5.9.1.6"], corpus))
 
 
-def test_a_reached_heading_skips_para_items_but_a_found_one_keeps_them(corpus):
-    """Law 13.3's item 13.3.10 is Wheelchair Badminton only: it comes only when search found 13.3 itself."""
-    reached_ids = add_list_items(["laws-13.3"], set(), corpus["chunks_by_id"])
-    found_ids = add_list_items(["laws-13.3"], {"laws-13.3"}, corpus["chunks_by_id"])
-    assert "laws-13.3.10" not in reached_ids
-    assert "laws-13.3.10" in found_ids
+def test_an_alternative_laws_heading_brings_its_items(corpus):
+    """13 Nov: items were found by an "alt-16.2." prefix, but the ids hold the format ("alt-best-of-3-games-21:16.2.1")."""
+    assert "alt-best-of-3-games-21:16.2.1" in context_ids(["alt-best-of-3-games-21:16.2"], corpus)
+
+
+def test_a_regular_rule_shown_as_context_stays_one_line(corpus):
+    """13 Nov: the wheelchair rule 13.3.10 pulled in Law 13.3 as context, and with it nine regular faults."""
+    found_ids = context_ids(["laws-13.3.10"], corpus)
+    assert "laws-13.3" in found_ids
+    assert "laws-13.3.1" not in found_ids
+    assert "laws-13.3.10.1" in found_ids, "the para rule search found still brings its own items"
+
+
+def test_a_found_heading_keeps_its_para_items_and_a_cited_one_drops_them(corpus):
+    """Law 13.3's item 13.3.10 is Wheelchair Badminton only: it comes when search found 13.3 itself."""
+    assert "laws-13.3.10" in context_ids(["laws-13.3"], corpus)
 
 
 def labels_by_id(context):
@@ -149,7 +163,9 @@ def test_para_exceptions_appear_only_for_para_questions(corpus):
 def test_cited_list_heading_brings_its_sub_clauses(corpus):
     # ITTO 5.15.1 (phone rings) cites Law 16.7, a heading; the warning-and-fault rule is 16.7.1
     context = expand_with_links(["itto-5.15.1"], corpus["chunks_by_id"], corpus["indexed_map"])
-    assert labels_by_id(context)["laws-16.7.1"] == "CITED"
+    labels = labels_by_id(context)
+    assert labels["laws-16.7"] == "CITED"
+    assert labels["laws-16.7.1"] == "LIST ITEM"
 
 
 def test_prompt_names_documents_outside_the_corpus(corpus):
@@ -192,3 +208,10 @@ def test_nearby_clauses_skip_para_items_for_regular_questions(corpus):
 
     assert "laws-13.3.10" not in labels_by_id(regular)
     assert labels_by_id(para)["laws-13.3.10"] == "SAME LIST"
+
+
+def test_a_cited_laws_alternative_stays_one_line(corpus):
+    """13 Nov: ITTO 5.17.3 cites Law 16.2, whose alternatives brought other formats' interval rules to card questions."""
+    found_ids = context_ids(["itto-5.17.3"], corpus)
+    assert "alt-best-of-3-games-21:16.2" in found_ids
+    assert "alt-best-of-3-games-21:16.2.1" not in found_ids

@@ -15,9 +15,15 @@ answer model must respect:
 - LIST INTRO     the opening line of a list the hit belongs to ("A shuttle is not in play when:")
 - SAME LIST      another item of that list (15.1, 15.2 and 15.3 answer one question together)
 - NEIGHBOUR      the clause just before or after the hit (20-all in 7.4, then 29-all in 7.5)
+- LIST ITEM      an item under a list heading the context holds, at every level (16.7.1 -> 16.7.1.1)
 
-The rule map gives the first six. The last three come from where a clause sits in its
-document: the rule books never say "see the next clause", but answers often run on into it.
+The rule map gives the first six. The rest come from where a clause sits in its document:
+the rule books never say "see the next clause", but answers often run on into it.
+
+A clause is either a rule to apply or context. Context is the regular rule shown beside the
+alternative or para exception that search found, the opening line of a list whose item search
+found, or an alternative reached through a cited Law (the one second hop): it comes as one line,
+without its items.
 
 The order is fixed in code: the default comes before its alternatives and exceptions.
 The labels go into the prompt, so the model never has to guess which rule is the default.
@@ -42,9 +48,6 @@ LINKS_FILE = PROJECT_FOLDER / "data" / "rule_links.json"
 
 ## How many CITED clauses one hit may bring, so a clause that names ten Laws doesn't flood the prompt
 MAX_CITED_PER_HIT = 4
-
-## How many sub-clauses a cited list heading may bring ("Law 16.7" -> 16.7.1, 16.7.2)
-MAX_SUB_CLAUSES_PER_CITED = 4
 
 ## A clause this short, or ending in a colon, only introduces the clauses below it
 LIST_HEADING_MAX_WORDS = 5
@@ -92,55 +95,56 @@ def is_list_heading(chunk):
     return text.endswith(":") or len(text.split()) <= LIST_HEADING_MAX_WORDS
 
 
-def direct_sub_clauses(chunks_by_id, chunk):
-    """Ids of the clauses one level below this one (16.7 -> 16.7.1, 16.7.2), in document order."""
-    return clauses_below(chunks_by_id, chunk["document"], chunk["clause"])
-
-
-def clauses_below(chunks_by_id, document, clause_number):
-    """Ids of the clauses one level below a clause number, such as "15" -> 15.1, 15.2, 15.3."""
-    prefix = f"{document}-{clause_number}."
-    depth = clause_number.count(".") + 1
-    return [
-        chunk_id for chunk_id, other in chunks_by_id.items()
-        if chunk_id.startswith(prefix) and other["clause"].count(".") == depth
-    ]
+def direct_sub_clauses(chunks_by_id: dict[str, dict], parent_id: str) -> list[str]:
+    """Ids of the clauses one level below a clause id (laws-16.7 -> laws-16.7.1, laws-16.7.2), in document order."""
+    # Matched on the id, not on the document and clause number: an Alternative Laws id holds its format
+    # ("alt-best-of-3-games-21:16.2.1"), so the old "alt-16.2." prefix never matched (13 Nov: 7 headings lost their items)
+    prefix = f"{parent_id}."
+    sub_clause_ids = []
+    for chunk_id in chunks_by_id:
+        is_one_level_below = chunk_id.startswith(prefix) and "." not in chunk_id.removeprefix(prefix)
+        if is_one_level_below:
+            sub_clause_ids.append(chunk_id)
+    return sub_clause_ids
 
 
 # ===== Bringing every level of a list =====
 
-def brings_its_items(chunk: dict, is_hit: bool) -> bool:
-    """True for a list heading whose items should come: any heading search found, or a regular heading reached another way."""
-    if not is_list_heading(chunk):
+def brings_its_items(chunk: dict, is_hit: bool, is_context: bool, question_is_para: bool) -> bool:
+    """True for a list heading whose items should come: one that is a rule to apply, not context for another clause."""
+    # Context (the kinds are listed at the top of this file) comes as one line: 13 Nov, wheelchair-shuttle-on-net
+    # got Law 13.3's nine regular faults only because the wheelchair rule 13.3.10 is its para exception
+    if not is_list_heading(chunk) or is_context:
         return False
 
     # A para heading reached through a link stays bare for a regular question; one search found comes whole
-    return is_hit or not chunk["para_only"]
+    return is_hit or question_is_para or not chunk["para_only"]
 
 
-def add_list_items(retrieved_ids: list[str], hit_ids: set[str], chunks_by_id: dict[str, dict]) -> list[str]:
-    """Returns the retrieved ids with each list heading's items added, down every level (16.7.1 -> 16.7.1.1)."""
+def add_list_items(context: list[dict], hit_ids: set[str], context_ids: set[str], chunks_by_id: dict[str, dict],
+                   question_is_para: bool) -> list[dict]:
+    """Returns the context with each list heading's items added after it, down every level (16.7.1 -> 16.7.1.1)."""
     # 11 Nov: only a heading search found brought its items, so sweat-on-court got Law 16.7.1 ("... by:")
     # without its three steps, and every-let-situation got 14.2.3 ("the shuttle is:") without its two cases
-    expanded_ids = list(retrieved_ids)
-    seen_ids = set(retrieved_ids)
+    expanded_context = list(context)
+    seen_ids = {item["chunk"]["id"] for item in context}
 
     # A for loop over a list that grows: an item that is itself a heading is reached later in the same loop,
     # so every level is covered without a separate recursive call
-    for chunk_id in expanded_ids:
-        chunk = chunks_by_id[chunk_id]
-        is_hit = chunk_id in hit_ids
-        if not brings_its_items(chunk, is_hit):
+    for item in expanded_context:
+        chunk = item["chunk"]
+        is_hit = chunk["id"] in hit_ids
+        if not brings_its_items(chunk, is_hit, chunk["id"] in context_ids, question_is_para):
             continue
 
-        # A heading search found brings every item, as before; one reached another way skips para-only items
-        for item_id in direct_sub_clauses(chunks_by_id, chunk):
-            is_para_item_of_a_reached_heading = chunks_by_id[item_id]["para_only"] and not is_hit
-            if item_id in seen_ids or is_para_item_of_a_reached_heading:
+        # A heading search found brings every item; one reached another way skips para-only items for a regular question
+        for item_id in direct_sub_clauses(chunks_by_id, chunk["id"]):
+            is_unwanted_para_item = chunks_by_id[item_id]["para_only"] and not (is_hit or question_is_para)
+            if item_id in seen_ids or is_unwanted_para_item:
                 continue
-            expanded_ids.append(item_id)
+            expanded_context.append({"chunk": chunks_by_id[item_id], "label": "LIST ITEM", "reached_from": chunk["id"]})
             seen_ids.add(item_id)
-    return expanded_ids
+    return expanded_context
 
 
 # ===== Finding the clauses around a hit =====
@@ -163,10 +167,10 @@ def nearby_clauses(chunks_by_id, hit, question_is_para):
     if not has_parent:
         return []
 
-    parent_clause = hit["clause"].rsplit(".", 1)[0]
-    parent = chunks_by_id.get(f"{hit['document']}-{parent_clause}")
+    parent_id = hit["id"].rsplit(".", 1)[0]
+    parent = chunks_by_id.get(parent_id)
     sibling_ids = [
-        sibling_id for sibling_id in clauses_below(chunks_by_id, hit["document"], parent_clause)
+        sibling_id for sibling_id in direct_sub_clauses(chunks_by_id, parent_id)
         if question_is_para or not chunks_by_id[sibling_id]["para_only"]
     ]
     if hit["id"] not in sibling_ids:
@@ -199,13 +203,17 @@ def alternative_label(chunk, today):
 
 def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, today=None, include_nearby=True):
     """
-    Returns the hits plus their linked clauses, in prompt order, as
+    Returns the hits plus their linked clauses and their list items, in prompt order, as
     [{"chunk": ..., "label": ..., "reached_from": hit id or None}].
     Each clause appears once, under the first label it was given.
     """
     today = today or date.today()
     context = []
     seen_ids = set()
+
+    # Clauses added only as context: the regular rule beside the alternative or para exception search
+    # found, the opening line of a list whose item search found, and a cited Law's alternatives
+    context_ids = set()
 
     def add(chunk_id, label, reached_from=None):
         if chunk_id in seen_ids or chunk_id not in chunks_by_id:
@@ -239,6 +247,8 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
             regular_label = "DEFAULT" if has_alternative_or_exception else "RULE"
             linked_from = None if regular_id == hit_id else hit_id
             add(regular_id, regular_label, linked_from)
+            if linked_from is not None:
+                context_ids.add(regular_id)
             for alternative_id in alternative_ids:
                 add(alternative_id, alternative_label(chunks_by_id[alternative_id], today), regular_id)
             for para_id in shown_para_ids:
@@ -252,6 +262,10 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
             for nearby_id, label in nearby_clauses(chunks_by_id, hit, question_is_para):
                 add(nearby_id, label, hit_id)
 
+                # A list's opening line is context for the item search found: the nearest items already came
+                if label == "LIST INTRO":
+                    context_ids.add(nearby_id)
+
         # Then what the hit names: cited clauses (not bare headings) and diagrams
         cited_ids = [
             cited_id for cited_id in linked_ids(rule_map, hit_id, "cites", "outgoing")
@@ -260,25 +274,19 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
         for cited_id in cited_ids[:MAX_CITED_PER_HIT]:
             add(cited_id, "CITED", hit_id)
 
-            # A cited Law brings its alternatives too (ITTO 7.4.1 -> Law 9.1.6 -> the waist rule)
+            # A cited Law brings its alternatives too (ITTO 7.4.1 -> Law 9.1.6 -> the waist rule). This second hop
+            # is context: 13 Nov, Law 16.2's alternatives brought other formats' interval rules to card questions
             for alternative_id in linked_ids(rule_map, cited_id, "overrides", "incoming"):
                 add(alternative_id, alternative_label(chunks_by_id[alternative_id], today), cited_id)
+                context_ids.add(alternative_id)
 
-            # A cited list heading brings the regular clauses below it, where the actual rule is
-            cited_chunk = chunks_by_id[cited_id]
-            if is_list_heading(cited_chunk):
-                sub_clause_ids = [
-                    sub_id for sub_id in direct_sub_clauses(chunks_by_id, cited_chunk)
-                    if question_is_para or not chunks_by_id[sub_id]["para_only"]
-                ]
-                for sub_id in sub_clause_ids[:MAX_SUB_CLAUSES_PER_CITED]:
-                    add(sub_id, "CITED", cited_id)
         for instruction_id in linked_ids(rule_map, hit_id, "instructions_for", "outgoing"):
             add(instruction_id, "INSTRUCTIONS", hit_id)
         for diagram_id in linked_ids(rule_map, hit_id, "shows_diagram", "outgoing"):
             add(diagram_id, "DIAGRAM", hit_id)
 
-    return context
+    # Then the items of every list heading that is a rule to apply; a clause search found is never context
+    return add_list_items(context, set(hit_ids), context_ids.difference(hit_ids), chunks_by_id, question_is_para)
 
 
 # ===== Writing the context for the answer model =====

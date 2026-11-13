@@ -175,7 +175,7 @@ class RuleTools:
         # The clause, then the clauses one level below it, as source blocks
         chunk = self.chunk_by_id[chunk_id]
         shown_chunks = [chunk]
-        for sub_clause_id in direct_sub_clauses(self.chunk_by_id, chunk):
+        for sub_clause_id in direct_sub_clauses(self.chunk_by_id, chunk_id):
             shown_chunks.append(self.chunk_by_id[sub_clause_id])
         source_blocks = [format_source(shown_chunk) for shown_chunk in shown_chunks]
 

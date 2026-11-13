@@ -61,7 +61,7 @@ from evals.log_eval_run import append_run
 from evals.probes import load_probes, load_unseen_questions
 from evals.token_costs import call_cost
 from retrieval.stored_embeddings import embeddings_file, load_embeddings
-from retrieval.expand_with_rule_links import add_list_items, expand_with_links, load_rule_map
+from retrieval.expand_with_rule_links import expand_with_links, load_rule_map
 from retrieval.vector_search import VectorSearch
 
 
@@ -120,22 +120,17 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
 
 def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str, dict],
                             rule_map: dict) -> Callable[[str], list[dict]]:
-    """Returns the retrieve step: the top k from search, the clauses they link to (record 0009), and a found list heading's items (record 0015)."""
+    """Returns the retrieve step: the top k from search, the clauses they link to (record 0009), and their list items (records 0015, 0023)."""
 
     def retrieve(question_text: str) -> list[dict]:
         """Returns the clauses handed to the answer model for one question."""
         hits = search(question_text, top_k)
 
-        # One hop along the rule map (cited clauses, alternatives, para exceptions), without the
-        # clauses before and after each hit
+        # One hop along the rule map (cited clauses, alternatives, para exceptions), then every list
+        # heading's items, without the clauses before and after each hit
         hit_ids = [chunk["id"] for chunk in hits]
         context = expand_with_links(hit_ids, chunk_by_id, rule_map, question_is_para=False, include_nearby=False)
-        retrieved_ids = [item["chunk"]["id"] for item in context]
-
-        # A list heading holds no rule itself: the rule is in its items, at every level. 8 Nov:
-        # wheelchair-shuttle-on-net got "in Wheelchair Badminton if the shuttle is:" without 13.3.10.1
-        retrieved_ids = add_list_items(retrieved_ids, set(hit_ids), chunk_by_id)
-        return [chunk_by_id[chunk_id] for chunk_id in retrieved_ids]
+        return [item["chunk"] for item in context]
 
     return retrieve
 
