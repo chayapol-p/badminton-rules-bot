@@ -1,5 +1,5 @@
 {
-  "about": "Phase 2 question set (slice 2). Written on 2026-11-13 to compare Phase 2 slices, above all the slice 5 refusal change: it adds should-refuse questions so one flip sits outside the noise floor. Separate from golden_questions.json, so earlier runs stay comparable. Every question is dev; nothing here was tuned on. Partial questions pass only when refused; a pointer to another document counts only as a related sentence.",
+  "about": "Phase 2 question set (slice 2). Written on 2026-11-13 to compare Phase 2 slices, above all the slice 5 refusal change: it adds should-refuse questions so one flip sits outside the noise floor. Separate from golden_questions.json, so earlier runs stay comparable. Every question is dev; nothing here was tuned on. Every unanswerable question passes only when refused; its near-miss clauses may appear only as related sentences. Answer locations follow the golden set's convention: the clauses that hold the answer's facts, not their parent list headings (the bot sees a parent's text through each sentence's heading line).",
   "corpus": {
     "laws": "BWF Statutes Section 4.1, Laws of Badminton, V5.0 (2), in force 26 April 2025",
     "itto": "BWF Statutes Section 4.1.1, Instructions to Technical Officials, V7.0 (5), in force 26 April 2025",
@@ -25,7 +25,7 @@
       "category": "direct_lookup",
       "wording": "exact_term",
       "question": "What mesh size must the net have?",
-      "answer": "Not less than 15 mm and not more than 20 mm, made of fine dark cord of even thickness.",
+      "answer": "Not less than 15 mm and not more than 20 mm.",
       "answer_locations": [
         {
           "doc": "laws",
@@ -52,7 +52,7 @@
       "id": "line-width-and-on-the-line",
       "category": "direct_lookup",
       "wording": "exact_term",
-      "question": "How wide are the court lines, and is a shuttle that lands on the line in?",
+      "question": "How wide are the court lines, and what's the call when a shuttle lands on a line?",
       "answer": "The lines are 40 mm wide, and every line is part of the area it marks, so a shuttle on the line is in.",
       "answer_locations": [
         {
@@ -62,6 +62,10 @@
         {
           "doc": "laws",
           "clause": "1.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "13.3.1"
         }
       ],
       "split": "dev"
@@ -209,7 +213,7 @@
       "category": "direct_lookup",
       "wording": "exact_term",
       "question": "When does the umpire call 'Game point'?",
-      "answer": "When the leading side reaches 20 points, and again whenever a side reaches 29 points. The call comes right after the server's score and before the receiver's score.",
+      "answer": "When the leading side reaches 20 points, and again whenever a side reaches 29 points ('Match point' instead when it would win the match). The call comes right after the server's score and before the receiver's score.",
       "answer_locations": [
         {
           "doc": "itto",
@@ -346,7 +350,7 @@
     },
     {
       "id": "umpire-in-doubt",
-      "category": "cross_reference",
+      "category": "direct_lookup",
       "wording": "paraphrased",
       "question": "What should an umpire do when they're not sure whether a fault happened?",
       "answer": "Not call a fault, and let the game go on.",
@@ -360,18 +364,14 @@
     },
     {
       "id": "racket-swap-mid-rally",
-      "category": "cross_reference",
+      "category": "direct_lookup",
       "wording": "paraphrased",
       "question": "My string broke during a rally. What am I allowed to do about my racket?",
-      "answer": "You may change the racket at courtside during the rally. Testing replacement rackets on court between rallies is not allowed (it counts as delaying play).",
+      "answer": "You may change the racket at courtside during the rally.",
       "answer_locations": [
         {
           "doc": "itto",
           "clause": "5.10.1"
-        },
-        {
-          "doc": "itto",
-          "clause": "5.11.1"
         }
       ],
       "split": "dev"
@@ -380,8 +380,8 @@
       "id": "shuttle-from-next-court",
       "category": "cross_reference",
       "wording": "paraphrased",
-      "question": "A shuttle from the next court rolled onto ours during a rally. Do we replay it?",
-      "answer": "Not automatically. The umpire calls a let only if the shuttle obstructed or distracted the players.",
+      "question": "What's the rule when a shuttle from the next court rolls onto ours during a rally?",
+      "answer": "It is not automatically a let. The umpire does not call a let if the shuttle did not obstruct or distract the players; otherwise it is a let, as an unforeseen or accidental situation.",
       "answer_locations": [
         {
           "doc": "itto",
@@ -410,10 +410,6 @@
           "clause": "5.17.5.2"
         },
         {
-          "doc": "laws",
-          "clause": "16.7.2"
-        },
-        {
           "doc": "itto",
           "clause": "3.6.2.2"
         }
@@ -424,7 +420,7 @@
       "id": "wheelchair-leave-court",
       "category": "para_question",
       "wording": "paraphrased",
-      "question": "I play wheelchair badminton and need to leave the court to catheterise. Is there a rule for that?",
+      "question": "I play wheelchair badminton. What do the rules allow if I need to leave the court to catheterise?",
       "answer": "A wheelchair player may be allowed to leave the court for one additional interval during a match to catheterise, accompanied by a BWF appointed Technical Official.",
       "answer_locations": [
         {
@@ -449,24 +445,16 @@
       "split": "dev"
     },
     {
-      "id": "one-game-match-at-11",
+      "id": "best-of-five-at-10-all",
       "category": "override",
       "wording": "paraphrased",
-      "question": "In a match of a single game to 21, what happens when a side first reaches 11?",
-      "answer": "The players have the interval and change ends.",
+      "question": "We're playing best of five games to 11 and it's 10-all. What score wins the game?",
+      "answer": "The side that first scores 11 points wins the game, so at 10-all the next point wins.",
       "answer_locations": [
         {
           "doc": "alt",
-          "clause": "8.1",
-          "alternative_format": "one-game-21"
-        },
-        {
-          "doc": "itto",
-          "clause": "5.6.10"
-        },
-        {
-          "doc": "laws",
-          "clause": "16.2.1"
+          "clause": "7.2",
+          "alternative_format": "best-of-5-games-11"
         }
       ],
       "split": "dev"
@@ -475,7 +463,7 @@
       "id": "best-of-five-intervals",
       "category": "override",
       "wording": "paraphrased",
-      "question": "In a best of five games to 11, how long is the break between games, and is there a break in the middle of a game?",
+      "question": "In a best of five games to 11, how long is the break between games, and when is there a break during a game?",
       "answer": "Up to 120 seconds between games. A mid-game interval of up to 60 seconds happens only in the fifth game, when the leading score reaches 6.",
       "answer_locations": [
         {
@@ -514,7 +502,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "Law 4.1.1 defines the handle, and Law 4.1 limits only overall length and width; no handle size is given.",
-      "pass_rule": "Gives no number. May cite Law 4.1's 680 mm by 230 mm frame limits as the only size rules.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. Laws 4.1 and 4.1.1 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -526,7 +514,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "Law 4 limits length, width and the stringed area, and Law 4.3.1 allows weights for distribution, but no racket weight is given.",
-      "pass_rule": "Gives no weight. Must not borrow the shuttle's 4.74 to 5.50 grams.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. Laws 4.1, 4.3.1 and 2.2.6 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -534,11 +522,11 @@
       "category": "unanswerable",
       "kind": "missing_field",
       "wording": "exact_term",
-      "question": "How much tension should the net cord have?",
+      "question": "What force, in newtons, should the net cord be stretched to?",
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "Law 1.9 says the cord shall be stretched firmly, flush with the top of the posts, but gives no force.",
-      "pass_rule": "Gives no force value. May quote 'stretched firmly' from Law 1.9.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. Laws 1.4 and 1.9 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -550,7 +538,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "ITTO 3.3.6.1 asks the Referee to check the surface is of good quality and safe, and 3.3.6.3 mentions court mats, but no material is required.",
-      "pass_rule": "Names no required material. May say the Referee checks the surface is good quality and safe.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. ITTO 3.3.6.1 and 3.3.6.3 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -562,7 +550,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "ITTO 3.3.6.4 says lighting must be adequate and points to BWF Statutes Section 5.3.4, Regulation 5 for TV, which is not in the corpus.",
-      "pass_rule": "Gives no lux number. May point to BWF Statutes 5.3.4, Regulation 5. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. ITTO 3.3.6.4 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -574,7 +562,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "ITTO 5.8.8 shows the umpire calling 'One' or 'No' challenge(s) remaining, and 5.8.4 points to BWF Statutes Section 4.1.8, which is not in the corpus; no number is given.",
-      "pass_rule": "Gives no number. May say the IRS regulations (BWF Statutes 4.1.8) set it. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. ITTO 5.8.4 and 5.8.8 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -586,7 +574,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "ITTO 3.5.15.4 says the Referee may report non-compliant clothing to BWF for fines, but no amount is given.",
-      "pass_rule": "Gives no amount. May say the Referee can report it to BWF for a fine. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. ITTO 3.5.15.4 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -598,7 +586,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "ITTO 3.8 says team tournaments follow their own regulations, which are not in the corpus.",
-      "pass_rule": "Gives no number of matches. May say the team tournament's own regulations decide. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. ITTO 3.8.1 and 3.8.5 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -610,7 +598,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "Laws 9.1.1 and 9.1.2 forbid undue delay, and Law 16.4.2 makes the umpire the sole judge of delay, but no time is given.",
-      "pass_rule": "Gives no number of seconds. May explain undue delay (Law 9.1.1, 9.1.2).",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. Laws 9.1.1, 9.1.2 and 16.4.2 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -622,7 +610,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "The corpus gives one net height (Law 1.10) and mentions junior tournaments only for rest times (ITTO 3.5.17.4); no junior equipment rules.",
-      "pass_rule": "Gives no junior height. Must not present Law 1.10's height as a junior rule.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. Law 1.10 and ITTO 3.5.17.4 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -634,7 +622,7 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "ITTO 4.3.2 covers the Referee's anti-doping duties only; no substance list is in the corpus.",
-      "pass_rule": "Names no substances. May say doping testing can happen during and after the tournament. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. ITTO 4.3.2 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -646,19 +634,19 @@
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "The Laws mention Wheelchair Classes and the standing class SL 3 (Diagram F), but never define WH1 or WH2.",
-      "pass_rule": "Does not define WH1 or WH2. May say the Laws refer to Wheelchair Classes without defining them.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. Diagrams D, E and F may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
-      "id": "umpire-certification",
+      "id": "shuttle-colour",
       "category": "unanswerable",
       "kind": "missing_field",
       "wording": "paraphrased",
-      "question": "What qualification does an umpire need to officiate at a BWF tournament?",
+      "question": "What colour does a shuttle have to be?",
       "answer": null,
       "answer_locations": [],
-      "why_unanswerable": "ITTO covers how umpires are appointed (2.2) and asks for neutrality and experience, but no qualification is stated.",
-      "pass_rule": "Names no qualification. May say the Referee appoints umpires.",
+      "why_unanswerable": "The Laws give colours for the court lines (1.2), the net (1.6) and the net tape (1.8), but none for the shuttle.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. Laws 1.2, 1.6 and 1.8 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     },
     {
@@ -666,11 +654,11 @@
       "category": "unanswerable",
       "kind": "known_from_memory",
       "wording": "paraphrased",
-      "question": "Do feather shuttles use goose or duck feathers?",
+      "question": "Which bird's feathers are used in feathered shuttles?",
       "answer": null,
       "answer_locations": [],
       "why_unanswerable": "Law 2.1 says natural and/or synthetic materials and Law 2.2.1 says 16 feathers, but no bird is named.",
-      "pass_rule": "Names no bird. May say the Laws only require 16 feathers fixed in the base.",
+      "pass_rule": "Passes only if refused: no part has a picked sentence. Laws 2.1 and 2.2.1 may appear only as related sentences; picking any of them as a part's answer, or giving a value from memory, fails.",
       "split": "dev"
     }
   ]
