@@ -80,11 +80,17 @@ def run_agent(client: StubToolClient, starting_items: list[dict] | None = None):
 
 # ===== The prompt (given code) =====
 
-def test_an_extra_agent_rule_is_added_to_the_agent_rules_only_when_named():
+def test_an_extra_agent_rule_is_one_more_note_in_the_tools_section_only_when_named(monkeypatch):
+    monkeypatch.setitem(EXTRA_AGENT_RULES, "test-rule", "Read every linked clause.")
     plain_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [])
-    ruled_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [], ["check-each-part"])
-    assert EXTRA_AGENT_RULES["check-each-part"] not in plain_messages[0]["content"]
-    assert ruled_messages[0]["content"].endswith("- " + EXTRA_AGENT_RULES["check-each-part"])
+    ruled_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [], ["test-rule"])
+    assert "Read every linked clause." not in plain_messages[0]["content"]
+    assert ruled_messages[0]["content"].endswith("- Read every linked clause.\n</tools>")
+
+
+def test_the_tools_section_comes_after_the_flows_own_sections():
+    system_prompt = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [])[0]["content"]
+    assert system_prompt.startswith(ANSWER_RULES + "\n\n<tools>\n")
 
 
 def test_setup_b_starts_with_the_question_only_and_setup_c_with_sources():
@@ -92,7 +98,7 @@ def test_setup_b_starts_with_the_question_only_and_setup_c_with_sources():
     hybrid_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", full_items([CHUNK_BY_ID["laws-1.4"]]))
     assert "No sources yet" in agentic_messages[1]["content"]
     assert "[laws-1.4]" in hybrid_messages[1]["content"]
-    assert "Tools:" in agentic_messages[0]["content"]
+    assert "<tools>" in agentic_messages[0]["content"]
 
 
 # ===== The round limit (Step 3) =====

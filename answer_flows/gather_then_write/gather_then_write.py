@@ -2,7 +2,7 @@
 Slice 5: answers one question in two calls with a code gate between them.
 
 1. Gather call: the same tool loop as slice 4 (answer_flows/shared/tool_loop.py run_tool_loop), with GATHER_RULES and
-   the agent rules. It sends GatheredAnswer: the sentences that answer each part, and no answer text.
+   the tools section. It sends GatheredAnswer: the sentences that answer each part, and no answer text.
 2. Code checks each pick, drops the bad ones and records them (answer_flows/gather_then_write/assemble_written_answer.py).
 3. Gate: when no part has a sentence left, code refuses and the write call never runs.
 4. Write call: no tools. It sees only the question and every part, each marked NO SOURCE or given with its

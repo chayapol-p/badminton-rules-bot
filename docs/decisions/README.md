@@ -43,7 +43,9 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0019](0019-tag-tool-questions-by-where-setup-a-got-its-head-start.md) | Tag "tool" and "map and tool" by where setup A's head start came from | Accepted |
 | [0020](0020-the-last-tool-round-carries-a-note-then-the-tools-turn-off.md) | The last tool round carries a note, then the tools turn off | Accepted |
 | [0021](0021-setup-c-goes-to-phase-2.md) | Setup C (RAG first, then tools) goes forward to Phase 2 | Accepted |
-| [0022](0022-setup-c-keeps-prompt-version-1-with-two-agent-rules.md) | Setup C keeps prompt version 1, with check-each-part and search-before-gaps | Accepted |
+| [0022](0022-setup-c-keeps-prompt-version-1-with-two-agent-rules.md) | Setup C keeps prompt version 1, with check-each-part and search-before-gaps | Superseded by 0024 |
+| [0023](0023-move-exact-work-from-prompt-rules-to-code.md) | Move the exact work from prompt rules to code, one change at a time | Proposed |
+| [0024](0024-every-prompt-as-task-steps-and-limits.md) | Every answer prompt as a task, numbered steps and limits with reasons | Accepted |
 
 ## Template
 

@@ -1,6 +1,6 @@
 # 0022 · Setup C keeps prompt version 1, with check-each-part and search-before-gaps
 
-- **Status:** Accepted (Job, 11 Nov)
+- **Status:** Superseded by 0024 (the two agent rules became search steps)
 - **Date:** 2026-11-11
 - **Stage:** 3 (agent vs plain RAG)
 

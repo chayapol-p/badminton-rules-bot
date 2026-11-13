@@ -18,7 +18,7 @@ Every chunk any tool showed in full counts as seen: code fills a citation's quot
 check accepts it.
 
 Use:
-    messages = build_agent_prompt(answer_rules, question_text, starting_items, extra_agent_rule_names)
+    messages = build_agent_prompt(system_prompt, question_text, starting_items, extra_agent_rule_names)
     loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, answer_shape)
 """
 
@@ -28,6 +28,7 @@ from mistralai.client import Mistral
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import BaseModel
 
+from answer_flows.shared.prompt_sections import bullet_lines, wrap_section
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import TOOL_DEFINITIONS, RuleTools, ToolResult
 from answer_flows.single_call.answer_shape import ModelAnswer
@@ -40,55 +41,52 @@ MAX_TOOL_ROUNDS = 10
 
 
 ## Added to the last tool result of the last round, so the model knows to answer now
-LAST_ROUND_NOTE = "\n\nThis was your last tool round: the tools are now off. Answer from the sources you have."
+LAST_ROUND_NOTE = "\n\nThis was your last tool round: the tools are now off. Reply from the sources you have."
 
 
 ## The finish reason of a reply that asks for tools
 FINISH_REASON_TOOL_CALLS = "tool_calls"
 
 
-## Added to the answer rules for the agent: where its sources come from, and how to use the tools
-AGENT_RULES = """
-Tools:
-- Your sources are the source blocks in this conversation: any given with the question, and every tool result.
-- When the sources don't fully answer the question, use the tools before you answer. search_rules finds clauses by meaning; read_clause reads one clause by its chunk id, with every clause under it and a preview of each clause it links to.
-- A source that names another rule ("Law 16.2") or ends with a colon ("the shuttle is:") often needs a read_clause.
-- When the sources already answer the question, answer without calling a tool.
-- Your final reply, with no tool calls, is the answer in the required JSON shape."""
+## The search steps every flow with tools puts between finding sentences and replying. They hold what the two
+## default agent rules said (record 0022): check-each-part (9 Nov: B read 27.5 clauses a question; C never searched
+## for yellow-card-before-play) and search-before-gaps (10 Nov: C still wrote "the sources don't cover" with 0 rounds,
+## because the old rule 3 won over searching). As steps, searching comes before giving up on a part (record 0024)
+SEARCH_STEPS = [
+    "For each part that no sentence answers yet, search for it with the tools before you give up on it.",
+    "Stop searching when every part has sentences, or when a search for the missing part finds nothing. "
+    "When the sources given with the question already answer every part, call no tool.",
+]
 
+## The tools section, added after the flow's own sections: where the sources come from, and what each tool does
+TOOL_NOTES = [
+    "Your sources are every source block in this conversation: any given with the question, and every tool result.",
+    "search_rules finds clauses by meaning. read_clause reads one clause by its chunk id, with every clause under it "
+    "and a preview of each clause it links to.",
+    "A clause that names another rule (\"Law 16.2\") or ends with a colon (\"the shuttle is:\") often needs a read_clause.",
+    "A preview line shows only a clause's opening words, so read_clause it before you pick its sentences: "
+    "only clauses shown in full can be cited.",
+    "Your last reply, with no tool calls, is your reply in the required JSON shape.",
+]
 
-## The extra agent rules a run uses by default (record 0022)
-DEFAULT_AGENT_RULE_NAMES = ("check-each-part", "search-before-gaps")
-
-
-## Extra agent rules under test, by name, one per run (experiment rule 1). Each comes from a measured failure
-EXTRA_AGENT_RULES = {
-    # 9 Nov, unseen set: setup C refused yellow-card-before-play twice with no tool call (it never searched for
-    # ITTO 3.7.3), and setup B read 27.5 clauses a question against C's 16.9, misquoting on cut-hand-mid-game.
-    # One generic line aimed at both: search when a part is uncovered, stop when every part is, cite only what is used
-    "check-each-part": ("Before you answer, check each part of the question against your sources. Search only "
-                        "for a part no source covers. Cite only the sentences your answer uses."),
-    # 10 Nov, unseen set with check-each-part: setup C still answered yellow-card-before-play twice with 0 tool rounds,
-    # writing that the sources don't cover the card report. Answer rule 3 (written for plain RAG: say what the sources
-    # don't cover) seems to win over searching when sources come with the question. This line says which rule wins
-    "search-before-gaps": ("You can search, so answer rule 3 changes for you: when a part of the question has no source, "
-                           "search for it first. Leave a part with no sentences only after a search for it finds nothing."),
-}
+## Extra agent rules under test, by name, one per run (experiment rule 1). Each comes from a measured failure.
+## Empty since record 0024: the two rules that were here became SEARCH_STEPS
+EXTRA_AGENT_RULES: dict[str, str] = {}
 
 
 # ===== The prompt =====
 
-def build_agent_rules(extra_agent_rule_names: list[str]) -> str:
-    """Returns the agent rules: the standing bullets, then each named extra rule as one more bullet."""
-    agent_rules = AGENT_RULES
+def build_tools_section(extra_agent_rule_names: list[str]) -> str:
+    """Returns the tools section: the standing notes, then each named extra agent rule as one more note."""
+    tool_notes = list(TOOL_NOTES)
     for rule_name in extra_agent_rule_names:
-        agent_rules += f"\n- {EXTRA_AGENT_RULES[rule_name]}"
-    return agent_rules
+        tool_notes.append(EXTRA_AGENT_RULES[rule_name])
+    return wrap_section("tools", bullet_lines(tool_notes))
 
 
-def build_agent_prompt(answer_rules: str, question_text: str, starting_items: list[dict],
+def build_agent_prompt(system_prompt: str, question_text: str, starting_items: list[dict],
                        extra_agent_rule_names: list[str] | None = None) -> list[dict]:
-    """Returns the first messages: the rules with the agent rules, then the starting bundle (if any) and the question."""
+    """Returns the first messages: the flow's system prompt with the tools section, then the starting bundle (if any) and the question."""
     question_block = f"<question>\n{question_text}\n</question>"
 
     # Setup B starts with no sources, setup C with setup A's bundle
@@ -97,7 +95,7 @@ def build_agent_prompt(answer_rules: str, question_text: str, starting_items: li
         sources_text = format_bundle(starting_items)
         user_message = f"<sources>\n{sources_text}\n</sources>\n\n{question_block}"
     return [
-        {"role": "system", "content": answer_rules + "\n" + build_agent_rules(extra_agent_rule_names or [])},
+        {"role": "system", "content": system_prompt + "\n\n" + build_tools_section(extra_agent_rule_names or [])},
         {"role": "user", "content": user_message},
     ]
 

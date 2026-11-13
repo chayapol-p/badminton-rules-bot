@@ -21,11 +21,10 @@ model at temperature 0 and the judge (record 0014).
   --setup         plain-rag | agentic | hybrid
   --flow          one of the setup's flows (default: its first)
   --top-k         clauses the starting search hands on, before the rule links (default 5; not for agentic)
-  --rule          an extra answer rule to test, by name (answer_flows/single_call/answer_rules.py EXTRA_ANSWER_RULES);
+  --rule          an extra answer limit to test, by name (answer_flows/single_call/answer_rules.py EXTRA_ANSWER_RULES);
                   repeat for more than one. Not for gather-then-write, which has its own rules
-  --agent-rule    an extra agent rule to test, by name (answer_flows/shared/tool_loop.py EXTRA_AGENT_RULES). With none
-                  named, a tool setup uses DEFAULT_AGENT_RULE_NAMES (record 0022). Tool setups only
-  --no-agent-rules  no extra agent rules, as the runs before record 0022 did
+  --agent-rule    an extra note to test in the tools section, by name (answer_flows/shared/tool_loop.py
+                  EXTRA_AGENT_RULES; empty since record 0024 made the two default ones search steps). Tool setups only
   --held-out      answer the held-out questions: once, for the published number (experiment rule 4)
   --unseen        answer the unseen questions: once per setup, read against each one's "needs" tag
   --label         a short name for the run, used in its file names
@@ -61,7 +60,7 @@ from answer_flows.loop_call_with_tools.answer_with_tools import answer_with_tool
 from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import RuleTools
-from answer_flows.shared.tool_loop import DEFAULT_AGENT_RULE_NAMES, EXTRA_AGENT_RULES
+from answer_flows.shared.tool_loop import EXTRA_AGENT_RULES
 from answer_flows.single_call.answer_rules import EXTRA_ANSWER_RULES, build_answer_rules
 from answer_flows.single_call.generate_answer import generate_answer
 from app.settings import Settings, load_settings
@@ -147,7 +146,6 @@ def build_parser() -> argparse.ArgumentParser:
                         help="an extra answer rule to test; repeat for more than one")
     parser.add_argument("--agent-rule", action="append", default=[], choices=list(EXTRA_AGENT_RULES),
                         help="an extra agent rule to test; repeat for more than one")
-    parser.add_argument("--no-agent-rules", action="store_true", help="no extra agent rules, as before record 0022")
     question_sets = parser.add_mutually_exclusive_group()
     question_sets.add_argument("--held-out", action="store_true", help="answer the held-out questions, once")
     question_sets.add_argument("--unseen", action="store_true", help="answer the unseen questions, once per setup")
@@ -162,9 +160,8 @@ def find_choice_problem(arguments: argparse.Namespace, setup: Setup, flow: str) 
         return f"--setup {arguments.setup} allows the flows {', '.join(setup.flows)}, not {flow}"
     if arguments.top_k is not None and not setup.has_starting_sources:
         return f"--top-k: --setup {arguments.setup} has no starting sources"
-    has_agent_rule_choice = arguments.agent_rule or arguments.no_agent_rules
-    if has_agent_rule_choice and not setup.has_tools:
-        return f"--agent-rule and --no-agent-rules: --setup {arguments.setup} has no tools"
+    if arguments.agent_rule and not setup.has_tools:
+        return f"--agent-rule: --setup {arguments.setup} has no tools"
     if arguments.rule and flow == "gather-then-write":
         return "--rule: gather-then-write has its own rules (answer_flows/gather_then_write/gather_and_write_rules.py)"
     return None
@@ -174,7 +171,7 @@ def build_label(arguments: argparse.Namespace, flow: str, top_k: int | None, age
                 question_set: str) -> str:
     """Returns the run's default name: what it changed, then the question set, as the old run files were named."""
 
-    # plain-rag runs keep their old names (top5, then each rule); tool setups start with the setup and agent rules
+    # plain-rag runs keep their old names (top5, then each rule); tool setups start with the setup and any extra agent rules
     if arguments.setup == "plain-rag":
         name_parts = [f"top{top_k}"] + arguments.rule
     else:
@@ -196,13 +193,11 @@ def parse_run_choices(command_line: list[str]) -> RunChoices:
     if problem is not None:
         parser.error(problem)
 
-    # A setup with starting sources uses the default top k unless told otherwise; record 0022 sets the agent rules
+    # A setup with starting sources uses the default top k unless told otherwise
     top_k = None
     if setup.has_starting_sources:
         top_k = arguments.top_k or DEFAULT_TOP_K
-    agent_rule_names = []
-    if setup.has_tools and not arguments.no_agent_rules:
-        agent_rule_names = arguments.agent_rule or list(DEFAULT_AGENT_RULE_NAMES)
+    agent_rule_names = arguments.agent_rule
 
     # The question set, and the run's name
     question_set = "dev"
@@ -311,6 +306,7 @@ def build_run_settings(run_name: str, choices: RunChoices, split_name: str, sett
         run_settings.update({"extra_agent_rules": choices.agent_rule_names, "tool_previews": True})
     run_settings.update({
         "source_labels": True,
+        "prompt_layout": "task, steps, limits",
         "citations": "sentence numbers",
         "refusal": REFUSAL_BY_FLOW[choices.flow],
         "max_answer_tokens": MAX_ANSWER_TOKENS,
@@ -349,8 +345,8 @@ def run_answer_experiment(choices: RunChoices) -> dict:
         live_search = build_live_vector_search(chunks, mistral_client, settings.mistral_embedding_model)
         rule_tools = RuleTools(chunks, live_search.search, rule_map)
 
-    # gather-then-write has its own rules; the other flows use the answer rules with any extra ones
-    answer_rules = build_answer_rules(choices.extra_rule_names)
+    # gather-then-write has its own prompt; the other flows use the answer prompt, with the search steps when they have tools
+    answer_rules = build_answer_rules(choices.extra_rule_names, uses_tools=setup.has_tools)
     if choices.flow == "gather-then-write":
         answer_rules = GATHER_RULES
 
