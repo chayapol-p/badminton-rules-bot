@@ -37,9 +37,9 @@ changed, so runs stay comparable with earlier grading.
 - runs.jsonl records `prompt_layout: "task, steps, limits"`.
 
 ## Evidence
-No paid run had used the Phase 2 code yet, so no baseline is lost. Prompt version 2 (a full rewrite,
-9-10 Nov) moved failures around rather than removing them (record 0023, option 1): read the first
-runs against the Stage 3 numbers with that in mind.
+No paid run had used the Phase 2 code yet, so no baseline is lost. Measurement restarts with Phase 2
+(Job, 13 Nov): every answer run from here on logs stage "phase2" in evals/runs.jsonl and is compared
+only with other phase2 runs, never with the Stage 2 or 3 numbers.
 
 ## Consequences
 - Supersedes record 0022's two default agent rules; prompt version 1's content is kept as steps and limits.

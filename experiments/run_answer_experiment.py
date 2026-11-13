@@ -116,6 +116,9 @@ SETUPS = {
     "hybrid": Setup(has_starting_sources=True, has_tools=True, flows=("loop-call-with-tools", "gather-then-write")),
 }
 
+## The stage every answer run logs since the measurement restarted with Phase 2 (record 0024)
+MEASUREMENT_STAGE = "phase2"
+
 ## Every flow any setup allows
 FLOW_NAMES = list(REFUSAL_BY_FLOW)
 
@@ -381,15 +384,12 @@ def run_answer_experiment(choices: RunChoices) -> dict:
         print_tool_use(scores["tool_use"])
     print(f"saved {run_name}-answers.jsonl and {run_name}-grades.jsonl in evals/answer_runs/", flush=True)
 
-    # Only a finished, real run is logged. Stage 2 is plain-rag on the golden questions; the rest is Stage 3 on
+    # Only a finished, real run is logged. Measurement restarted with Phase 2 (Job, 13 Nov): every answer run from
+    # here on is stage "phase2", so its numbers are read only against other phase2 runs, never Stage 2 or 3
     if choices.is_dry_run:
         print("dry run: not logged to evals/runs.jsonl")
         return scores
-    stage = "3"
-    is_stage_2_run = choices.setup_name == "plain-rag" and choices.question_set != "unseen"
-    if is_stage_2_run:
-        stage = "2"
-    append_run(stage, build_run_settings(run_name, choices, split_name, settings), scores, seconds)
+    append_run(MEASUREMENT_STAGE, build_run_settings(run_name, choices, split_name, settings), scores, seconds)
     return scores
 
 
