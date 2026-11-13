@@ -1,0 +1,677 @@
+{
+  "about": "Phase 2 question set (slice 2). Written on 2026-11-13 to compare Phase 2 slices, above all the slice 5 refusal change: it adds should-refuse questions so one flip sits outside the noise floor. Separate from golden_questions.json, so earlier runs stay comparable. Every question is dev; nothing here was tuned on. Partial questions pass only when refused; a pointer to another document counts only as a related sentence.",
+  "corpus": {
+    "laws": "BWF Statutes Section 4.1, Laws of Badminton, V5.0 (2), in force 26 April 2025",
+    "itto": "BWF Statutes Section 4.1.1, Instructions to Technical Officials, V7.0 (5), in force 26 April 2025",
+    "alt": "BWF Statutes Section 4.1.4, Alternative Laws of Badminton, V2.0, in force 4 January 2027"
+  },
+  "corpus_frozen": {
+    "laws": {
+      "file": "bwf-laws-of-badminton-2025-v5.0.pdf",
+      "sha256": "776169d2b9bb9f260dcff37d00e9a68f5ff80ce15af8a514a0a4f9b5c060ff43"
+    },
+    "itto": {
+      "file": "bwf-itto-2025-v7.0.pdf",
+      "sha256": "251d226178258babb897f03dfb68142184f91032424e1ec95af5b4a50bf762c2"
+    },
+    "alt": {
+      "file": "bwf-alternative-laws-2027-v2.0.pdf",
+      "sha256": "41ac5c19cfb099e0440b5c36fd27420ce902564842772c90f7fafb8c9c9638fa"
+    }
+  },
+  "questions": [
+    {
+      "id": "net-mesh-size",
+      "category": "direct_lookup",
+      "wording": "exact_term",
+      "question": "What mesh size must the net have?",
+      "answer": "Not less than 15 mm and not more than 20 mm, made of fine dark cord of even thickness.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "1.6"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "net-height-centre-and-sides",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "How high is the top of the net in the middle of the court, and how high at the sides?",
+      "answer": "1.524 metres at the centre of the court and 1.55 metres over the doubles side lines.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "1.10"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "line-width-and-on-the-line",
+      "category": "direct_lookup",
+      "wording": "exact_term",
+      "question": "How wide are the court lines, and is a shuttle that lands on the line in?",
+      "answer": "The lines are 40 mm wide, and every line is part of the area it marks, so a shuttle on the line is in.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "1.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "1.3"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "shuttle-speed-test",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "How do we check whether a shuttle has the right speed?",
+      "answer": "Hit it with a full underhand stroke from over the back boundary line, at an upward angle and parallel to the side lines. A shuttle of correct speed lands between 530 mm and 990 mm short of the other back boundary line.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "3.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "3.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "stringed-area-size",
+      "category": "direct_lookup",
+      "wording": "exact_term",
+      "question": "What is the maximum size of the stringed area?",
+      "answer": "280 mm long and 220 mm wide. The strings may extend into the throat area if the extended part is at most 35 mm wide and the whole stringed area is then at most 330 mm long.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "4.2.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "4.2.2.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "4.2.2.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "racket-attachments",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "What am I allowed to attach to my racket?",
+      "answer": "Only objects used solely to limit wear and tear or vibration, to distribute weight, or to tie the handle to the hand by a cord, and only if they are reasonable in size and placement. No device that lets the player materially change the racket's shape.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "4.3.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "4.3.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "toss-choices",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "What does the side that wins the toss get to choose?",
+      "answer": "Either to serve or receive first, or which end to start at. The side that loses the toss takes the remaining choice.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "6.1.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "6.1.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "6.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "doubles-serving-order",
+      "category": "direct_lookup",
+      "wording": "exact_term",
+      "question": "In doubles, in what order does the right to serve pass?",
+      "answer": "From the initial server (who started from the right service court), to the partner of the initial receiver, to the partner of the initial server, to the initial receiver, then back to the initial server, and so on.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "11.4.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "11.4.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "11.4.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "11.4.4"
+        },
+        {
+          "doc": "laws",
+          "clause": "11.4.5"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "shuttle-hits-frame-and-strings",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "The shuttle touched my racket frame and then the strings in the same swing. What's the ruling?",
+      "answer": "It is not a fault: a shuttle hitting the head and the stringed area of the racket in one stroke is allowed.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "13.3.7"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "racket-over-the-net",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "When is my racket allowed to cross over the net?",
+      "answer": "Only when following the shuttle through after hitting it, if the first contact with the shuttle was on your own side of the net. Otherwise reaching over is a fault.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "13.4.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "game-point-call",
+      "category": "direct_lookup",
+      "wording": "exact_term",
+      "question": "When does the umpire call 'Game point'?",
+      "answer": "When the leading side reaches 20 points, and again whenever a side reaches 29 points. The call comes right after the server's score and before the receiver's score.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.5.1"
+        },
+        {
+          "doc": "itto",
+          "clause": "5.5.2"
+        },
+        {
+          "doc": "itto",
+          "clause": "5.5.3"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "towel-and-drink-during-game",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "Between rallies, what are players allowed to take, like a towel or a drink?",
+      "answer": "If play is not unduly held up, a quick towel only, or a towel and a drink at the umpire's discretion.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.10.3.1"
+        },
+        {
+          "doc": "itto",
+          "clause": "5.10.3.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "line-judge-distance",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "How far from the court lines should the line judges sit?",
+      "answer": "Where practical, 2.5 to 3.5 metres from the court boundaries, protected from outside influence such as photographers.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "8.9"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "rest-between-matches",
+      "category": "direct_lookup",
+      "wording": "paraphrased",
+      "question": "What's the minimum rest a player gets between two matches?",
+      "answer": "60 minutes, which the Referee may cut to no less than 30 minutes in exceptional circumstances. In junior, para badminton and qualifying rounds the minimum is 30 minutes.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "3.5.17.4"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "who-tests-shuttles",
+      "category": "direct_lookup",
+      "wording": "exact_term",
+      "question": "Who should test the shuttles before the tournament, and which speeds get tested?",
+      "answer": "An active player in the tournament, preferably a male player, or a qualified person the Referee approves. Every available speed is tested from both ends of the court.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "3.5.4.1"
+        },
+        {
+          "doc": "itto",
+          "clause": "3.5.4.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "forgot-to-change-ends",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "We forgot to switch ends at 11 in the third game and only noticed at 14-12. What now?",
+      "answer": "Change ends as soon as the mistake is found, when the shuttle is not in play. The score stays 14-12.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "8.1.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "8.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "served-from-wrong-court",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "Two rallies ago a player served from the wrong service court. What happens to the points?",
+      "answer": "It is a service court error. It is corrected when the shuttle is not in play, and the existing score stands.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "12.1.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "12.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "shuttle-base-came-off",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "The cork came off the shuttle in the middle of a rally. What happens?",
+      "answer": "If the base completely separates from the rest of the shuttle it is a let: play since the last service doesn't count and the last server serves again.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "14.2.4"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.3"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "umpire-in-doubt",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "What should an umpire do when they're not sure whether a fault happened?",
+      "answer": "Not call a fault, and let the game go on.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "6.8"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "racket-swap-mid-rally",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "My string broke during a rally. What am I allowed to do about my racket?",
+      "answer": "You may change the racket at courtside during the rally. Testing replacement rackets on court between rallies is not allowed (it counts as delaying play).",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.10.1"
+        },
+        {
+          "doc": "itto",
+          "clause": "5.11.1"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "shuttle-from-next-court",
+      "category": "cross_reference",
+      "wording": "paraphrased",
+      "question": "A shuttle from the next court rolled onto ours during a rally. Do we replay it?",
+      "answer": "Not automatically. The umpire calls a let only if the shuttle obstructed or distracted the players.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.9.1.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.7"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "black-card",
+      "category": "cross_reference",
+      "wording": "exact_term",
+      "question": "What does a black card mean, and who decides to give it?",
+      "answer": "Disqualification for misconduct. The Referee decides and gives the black card to the umpire, who raises it, announces the disqualification and then the match winner. The player is disqualified from all events of the tournament.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.17.5"
+        },
+        {
+          "doc": "itto",
+          "clause": "5.17.5.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7.2"
+        },
+        {
+          "doc": "itto",
+          "clause": "3.6.2.2"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "wheelchair-leave-court",
+      "category": "para_question",
+      "wording": "paraphrased",
+      "question": "I play wheelchair badminton and need to leave the court to catheterise. Is there a rule for that?",
+      "answer": "A wheelchair player may be allowed to leave the court for one additional interval during a match to catheterise, accompanied by a BWF appointed Technical Official.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "16.5.3"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "wheelchair-lift-off-seat",
+      "category": "para_question",
+      "wording": "paraphrased",
+      "question": "In wheelchair badminton, what's the rule about lifting off the seat when I hit the shuttle?",
+      "answer": "It is a fault if, at the moment the shuttle is hit, no part of the player's trunk is touching the seat.",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "13.4.6.1"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "one-game-match-at-11",
+      "category": "override",
+      "wording": "paraphrased",
+      "question": "In a match of a single game to 21, what happens when a side first reaches 11?",
+      "answer": "The players have the interval and change ends.",
+      "answer_locations": [
+        {
+          "doc": "alt",
+          "clause": "8.1",
+          "alternative_format": "one-game-21"
+        },
+        {
+          "doc": "itto",
+          "clause": "5.6.10"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.2.1"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "best-of-five-intervals",
+      "category": "override",
+      "wording": "paraphrased",
+      "question": "In a best of five games to 11, how long is the break between games, and is there a break in the middle of a game?",
+      "answer": "Up to 120 seconds between games. A mid-game interval of up to 60 seconds happens only in the fifth game, when the leading score reaches 6.",
+      "answer_locations": [
+        {
+          "doc": "alt",
+          "clause": "16.2.1",
+          "alternative_format": "best-of-5-games-11"
+        },
+        {
+          "doc": "alt",
+          "clause": "16.2.2",
+          "alternative_format": "best-of-5-games-11"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "itto-version",
+      "category": "in_force_date",
+      "wording": "exact_term",
+      "question": "Which version of the Instructions to Technical Officials do you use, and since when has it been in force?",
+      "answer": "Version 7.0 (5), in force from 26 April 2025.",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "In Force"
+        }
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "grip-size",
+      "category": "unanswerable",
+      "kind": "missing_field",
+      "wording": "paraphrased",
+      "question": "What's the maximum thickness of a racket handle?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "Law 4.1.1 defines the handle, and Law 4.1 limits only overall length and width; no handle size is given.",
+      "pass_rule": "Gives no number. May cite Law 4.1's 680 mm by 230 mm frame limits as the only size rules.",
+      "split": "dev"
+    },
+    {
+      "id": "racket-weight-limit",
+      "category": "unanswerable",
+      "kind": "missing_field",
+      "wording": "paraphrased",
+      "question": "How heavy is a racket allowed to be?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "Law 4 limits length, width and the stringed area, and Law 4.3.1 allows weights for distribution, but no racket weight is given.",
+      "pass_rule": "Gives no weight. Must not borrow the shuttle's 4.74 to 5.50 grams.",
+      "split": "dev"
+    },
+    {
+      "id": "net-cord-tension",
+      "category": "unanswerable",
+      "kind": "missing_field",
+      "wording": "exact_term",
+      "question": "How much tension should the net cord have?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "Law 1.9 says the cord shall be stretched firmly, flush with the top of the posts, but gives no force.",
+      "pass_rule": "Gives no force value. May quote 'stretched firmly' from Law 1.9.",
+      "split": "dev"
+    },
+    {
+      "id": "court-surface-material",
+      "category": "unanswerable",
+      "kind": "missing_field",
+      "wording": "paraphrased",
+      "question": "What material does the court floor have to be made of?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "ITTO 3.3.6.1 asks the Referee to check the surface is of good quality and safe, and 3.3.6.3 mentions court mats, but no material is required.",
+      "pass_rule": "Names no required material. May say the Referee checks the surface is good quality and safe.",
+      "split": "dev"
+    },
+    {
+      "id": "lighting-lux",
+      "category": "unanswerable",
+      "kind": "partial",
+      "wording": "exact_term",
+      "question": "How bright must the lighting over a court be, in lux?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "ITTO 3.3.6.4 says lighting must be adequate and points to BWF Statutes Section 5.3.4, Regulation 5 for TV, which is not in the corpus.",
+      "pass_rule": "Gives no lux number. May point to BWF Statutes 5.3.4, Regulation 5. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "split": "dev"
+    },
+    {
+      "id": "challenges-per-game",
+      "category": "unanswerable",
+      "kind": "partial",
+      "wording": "paraphrased",
+      "question": "How many line-call challenges does each player get per game?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "ITTO 5.8.8 shows the umpire calling 'One' or 'No' challenge(s) remaining, and 5.8.4 points to BWF Statutes Section 4.1.8, which is not in the corpus; no number is given.",
+      "pass_rule": "Gives no number. May say the IRS regulations (BWF Statutes 4.1.8) set it. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "split": "dev"
+    },
+    {
+      "id": "clothing-fine-amount",
+      "category": "unanswerable",
+      "kind": "partial",
+      "wording": "paraphrased",
+      "question": "How much is the fine if a player wears clothing that breaks the rules?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "ITTO 3.5.15.4 says the Referee may report non-compliant clothing to BWF for fines, but no amount is given.",
+      "pass_rule": "Gives no amount. May say the Referee can report it to BWF for a fine. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "split": "dev"
+    },
+    {
+      "id": "team-tie-matches",
+      "category": "unanswerable",
+      "kind": "partial",
+      "wording": "paraphrased",
+      "question": "How many matches are played in a tie at a team tournament like the Thomas Cup?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "ITTO 3.8 says team tournaments follow their own regulations, which are not in the corpus.",
+      "pass_rule": "Gives no number of matches. May say the team tournament's own regulations decide. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "split": "dev"
+    },
+    {
+      "id": "service-time-limit",
+      "category": "unanswerable",
+      "kind": "known_from_memory",
+      "wording": "paraphrased",
+      "question": "How many seconds does the server have to serve once the receiver is ready?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "Laws 9.1.1 and 9.1.2 forbid undue delay, and Law 16.4.2 makes the umpire the sole judge of delay, but no time is given.",
+      "pass_rule": "Gives no number of seconds. May explain undue delay (Law 9.1.1, 9.1.2).",
+      "split": "dev"
+    },
+    {
+      "id": "junior-net-height",
+      "category": "unanswerable",
+      "kind": "missing_field",
+      "wording": "paraphrased",
+      "question": "What net height do under-11 juniors play with?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "The corpus gives one net height (Law 1.10) and mentions junior tournaments only for rest times (ITTO 3.5.17.4); no junior equipment rules.",
+      "pass_rule": "Gives no junior height. Must not present Law 1.10's height as a junior rule.",
+      "split": "dev"
+    },
+    {
+      "id": "banned-substances",
+      "category": "unanswerable",
+      "kind": "partial",
+      "wording": "paraphrased",
+      "question": "Which substances are players banned from taking?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "ITTO 4.3.2 covers the Referee's anti-doping duties only; no substance list is in the corpus.",
+      "pass_rule": "Names no substances. May say doping testing can happen during and after the tournament. Passes only if refused: the pointer may appear only as a related sentence, never as a part's answer.",
+      "split": "dev"
+    },
+    {
+      "id": "wheelchair-class-codes",
+      "category": "unanswerable",
+      "kind": "known_from_memory",
+      "wording": "exact_term",
+      "question": "What is the difference between the WH1 and WH2 wheelchair classes?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "The Laws mention Wheelchair Classes and the standing class SL 3 (Diagram F), but never define WH1 or WH2.",
+      "pass_rule": "Does not define WH1 or WH2. May say the Laws refer to Wheelchair Classes without defining them.",
+      "split": "dev"
+    },
+    {
+      "id": "umpire-certification",
+      "category": "unanswerable",
+      "kind": "missing_field",
+      "wording": "paraphrased",
+      "question": "What qualification does an umpire need to officiate at a BWF tournament?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "ITTO covers how umpires are appointed (2.2) and asks for neutrality and experience, but no qualification is stated.",
+      "pass_rule": "Names no qualification. May say the Referee appoints umpires.",
+      "split": "dev"
+    },
+    {
+      "id": "feather-bird",
+      "category": "unanswerable",
+      "kind": "known_from_memory",
+      "wording": "paraphrased",
+      "question": "Do feather shuttles use goose or duck feathers?",
+      "answer": null,
+      "answer_locations": [],
+      "why_unanswerable": "Law 2.1 says natural and/or synthetic materials and Law 2.2.1 says 16 feathers, but no bird is named.",
+      "pass_rule": "Names no bird. May say the Laws only require 16 feathers fixed in the base.",
+      "split": "dev"
+    }
+  ]
+}
