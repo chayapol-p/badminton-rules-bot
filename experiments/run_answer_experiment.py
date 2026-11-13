@@ -6,13 +6,13 @@ the flows that fit it:
 
   setup       starting sources                       tools   flows (the first is the default)
   plain-rag   vector top k + rule links, all in full   no      single-call
-  agentic     none                                     yes     one-call-with-tools, gather-then-write
-  hybrid      as plain-rag (record 0021)               yes     one-call-with-tools, gather-then-write
+  agentic     none                                     yes     loop-call-with-tools, gather-then-write
+  hybrid      as plain-rag (record 0021)               yes     loop-call-with-tools, gather-then-write
 
-  single-call          one call picks the sentences per part and writes the answer (answer_flows/single_call)
-  one-call-with-tools  the same, after a tool loop (slice 4, answer_flows/one_call_with_tools)
-  gather-then-write    a tool loop picks the sentences only, code refuses when no part has one, and a write
-                       call with no tools answers (slice 5, answer_flows/gather_then_write)
+  single-call           one call picks the sentences per part and writes the answer (answer_flows/single_call)
+  loop-call-with-tools  the same, after a tool loop (slice 4, answer_flows/loop_call_with_tools)
+  gather-then-write     a tool loop picks the sentences only, code refuses when no part has one, and a write
+                        call with no tools answers (slice 5, answer_flows/gather_then_write)
 
 One run changes one thing (experiment rule 1). Fixed for every run: vector search on the clauses'
 search_text (record 0006), source blocks with the headings above each clause (record 0017), the answer
@@ -57,7 +57,7 @@ from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES
 from answer_flows.gather_then_write.gather_then_write import gather_then_write
-from answer_flows.one_call_with_tools.answer_with_tools import answer_with_tools
+from answer_flows.loop_call_with_tools.answer_with_tools import answer_with_tools
 from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import RuleTools
@@ -87,12 +87,12 @@ SECONDS_BETWEEN_QUESTIONS = 1.0
 MISTRAL_RETRY = RetryConfig("backoff", BackoffStrategy(2_000, 60_000, 2.0, 300_000), retry_connection_errors=True)
 
 ## The answer flows that use tools, by their --flow name. Each takes the same arguments
-TOOL_FLOW_FUNCTIONS = {"one-call-with-tools": answer_with_tools, "gather-then-write": gather_then_write}
+TOOL_FLOW_FUNCTIONS = {"loop-call-with-tools": answer_with_tools, "gather-then-write": gather_then_write}
 
 ## How each flow decides a refusal, as runs.jsonl records it
 REFUSAL_BY_FLOW = {
     "single-call": "code, from the parts",
-    "one-call-with-tools": "code, from the parts",
+    "loop-call-with-tools": "code, from the parts",
     "gather-then-write": "code gate before the write call",
 }
 
@@ -113,8 +113,8 @@ class Setup:
 
 SETUPS = {
     "plain-rag": Setup(has_starting_sources=True, has_tools=False, flows=("single-call",)),
-    "agentic": Setup(has_starting_sources=False, has_tools=True, flows=("one-call-with-tools", "gather-then-write")),
-    "hybrid": Setup(has_starting_sources=True, has_tools=True, flows=("one-call-with-tools", "gather-then-write")),
+    "agentic": Setup(has_starting_sources=False, has_tools=True, flows=("loop-call-with-tools", "gather-then-write")),
+    "hybrid": Setup(has_starting_sources=True, has_tools=True, flows=("loop-call-with-tools", "gather-then-write")),
 }
 
 ## Every flow any setup allows

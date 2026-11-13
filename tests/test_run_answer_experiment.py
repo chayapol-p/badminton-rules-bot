@@ -19,7 +19,7 @@ def test_plain_rag_answers_in_one_call_with_the_default_top_k_and_keeps_its_old_
 def test_a_tool_setup_uses_both_agent_rules_and_slice_4_by_default():
     """Record 0022: setup C keeps check-each-part and search-before-gaps."""
     choices = parse_run_choices(["--setup", "hybrid"])
-    assert choices.flow == "one-call-with-tools"
+    assert choices.flow == "loop-call-with-tools"
     assert choices.agent_rule_names == ["check-each-part", "search-before-gaps"]
     assert choices.label == "hybrid-check-each-part-search-before-gaps"
 

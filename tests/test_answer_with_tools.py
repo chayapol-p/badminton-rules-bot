@@ -1,13 +1,13 @@
 """
 Tests the agent loop with a stub client that replays scripted replies, so no test calls the API.
 
-Most tests need the Stage 3, Step 3 blanks filled in answer_flows/one_call_with_tools/answer_with_tools.py.
+Most tests need the Stage 3, Step 3 blanks filled in answer_flows/loop_call_with_tools/answer_with_tools.py.
 """
 
 import json
 from types import SimpleNamespace
 
-from answer_flows.one_call_with_tools.answer_with_tools import answer_with_tools
+from answer_flows.loop_call_with_tools.answer_with_tools import answer_with_tools
 from answer_flows.shared.tool_loop import (EXTRA_AGENT_RULES, LAST_ROUND_NOTE, MAX_TOOL_ROUNDS, build_agent_prompt,
                                            has_reached_tool_limit)
 from answer_flows.shared.rule_tools import RuleTools

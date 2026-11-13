@@ -50,7 +50,7 @@ flowchart LR
 
 1. **Ingest** (`scripts/build_rule_chunks.py`): reads each PDF line by line with PyMuPDF, then cuts it into clauses. Runs once.
 2. **Search** (`retrieval/`): finds the clauses that match a question, by words (BM25) and by meaning (vectors in pgvector).
-3. **Answer** (`answer_flows/`): one folder per way of answering, with `shared/` for what they all use: `single_call/` (one call, no tools), `one_call_with_tools/` (a tool loop, then the answer) and `gather_then_write/` (a tool loop picks the sentences, code decides a refusal, a write call answers). `experiments/run_answer_experiment.py` runs any setup with any flow it allows.
+3. **Answer** (`answer_flows/`): one folder per way of answering, with `shared/` for what they all use: `single_call/` (one call, no tools), `loop_call_with_tools/` (a tool loop, then the answer) and `gather_then_write/` (a tool loop picks the sentences, code decides a refusal, a write call answers). `experiments/run_answer_experiment.py` runs any setup with any flow it allows.
 4. **Serve** (`app/`): FastAPI. Today it has only `/health`. `/chat` comes later.
 5. **Chat UI** *(planned)*: a React web chat.
 
