@@ -10,7 +10,7 @@ from answer.build_answer_prompt import ANSWER_RULES, EXTRA_ANSWER_RULES, build_a
 
 def test_a_false_premise_is_corrected_and_answered_not_refused():
     """FreshQA credits a false-premise reply only when it points the premise out; refusing would be a false refusal."""
-    assert "Correcting an assumption is an answer, not a refusal" in ANSWER_RULES
+    assert "Correcting an assumption answers the part." in ANSWER_RULES
 
 
 def test_the_rules_go_in_the_system_message_and_the_question_in_its_tags():
@@ -28,9 +28,9 @@ def test_the_sources_text_goes_in_its_tags_before_the_question():
 # ===== The answer shape =====
 
 def test_the_model_writes_its_reasoning_before_it_decides():
-    """The model writes fields in schema order, so reasoning must come before refused and the answer."""
+    """The model writes fields in schema order, so reasoning must come before it picks the parts' sentences."""
     field_names = list(ModelAnswer.model_json_schema()["properties"])
-    assert field_names == ["reasoning", "refused", "answer", "citations"]
+    assert field_names == ["reasoning", "parts", "related_sentences", "related_note"]
 
 
 # ===== Extra rules under test =====
@@ -46,7 +46,9 @@ def test_extra_rules_are_numbered_on_after_the_standing_rules():
     assert "\n10. " in ANSWER_RULES and "\n11. " not in ANSWER_RULES
 
 
-def test_the_model_cites_a_sentence_number_not_a_quote():
-    """Phase 2: code copies the cited sentence in, so the rules never ask the model to copy words."""
-    assert "the number of the sentence that supports it" in ANSWER_RULES
-    assert "quote the exact words" not in ANSWER_RULES
+def test_the_model_picks_sentences_and_code_quotes_and_refuses():
+    """Phase 2: the model's one decision per part is which sentences answer it; code does the exact work."""
+    assert "the sentence number" in ANSWER_RULES
+    assert "Code copies each sentence in as its quote." in ANSWER_RULES
+    assert "refuses when no part is answered" in ANSWER_RULES
+    assert "set refused to true" not in ANSWER_RULES

@@ -1,5 +1,6 @@
 """
-Asks Mistral for one answer in the ModelAnswer shape, fills in its quotes, and returns it with the model's thinking and the tokens it used.
+Asks Mistral for one answer in the ModelAnswer shape, builds the checked answer from it, and returns that with the model's
+thinking and the tokens it used.
 
 Fixed for every eval run (experiment rule 2): the pinned model and reasoning effort from
 app/settings.py, and temperature 0. Mistral calls temperature 0 greedy sampling and rejects it
@@ -8,8 +9,8 @@ call sets both.
 
 Mistral Large 4 always thinks before it answers, and sends its reply as a list of chunks: thinking
 chunks, then text chunks with the answer (Mistral's reasoning docs: there is no plain-text mode).
-The answer text is parsed into ModelAnswer and its quotes filled in (RulesAnswer); the thinking is kept as text
-for reading failures.
+The answer text is parsed into ModelAnswer and assembled into RulesAnswer (answer/assemble_answer.py); the thinking
+is kept as text for reading failures.
 
 The reply is parsed here, not inside the SDK, so a reply that doesn't fit the shape still reports
 the tokens it cost. Such a reply comes back flagged as a format error, with the validation message
@@ -29,7 +30,7 @@ from pydantic import ValidationError
 
 from answer.answer_shape import ModelAnswer, RulesAnswer
 from answer.build_answer_prompt import build_answer_prompt
-from answer.fill_quotes import fill_quotes
+from answer.assemble_answer import assemble_answer
 from retrieval.build_bundle import format_bundle, full_chunks
 
 
@@ -114,10 +115,10 @@ def generate_answer(client: Mistral, model: str, reasoning_effort: str, answer_r
             output_tokens=output_tokens,
         )
 
-    # Copy each cited sentence in as its quote, from the clauses the model saw in full
+    # Code builds the answer from the parts: the quotes from the clauses the model saw in full, and the refusal
     shown_chunk_by_id = {chunk["id"]: chunk for chunk in full_chunks(source_items)}
     return AnswerReply(
-        answer=fill_quotes(model_answer, shown_chunk_by_id),
+        answer=assemble_answer(model_answer, shown_chunk_by_id),
         is_format_error=False,
         error_message=None,
         raw_reply=raw_reply,

@@ -1,16 +1,18 @@
 """
 The two shapes of an answer: the one the model writes, and the checked one code builds from it.
 
-ModelAnswer   what the model sends: its reasoning, the refuse-or-answer decision, the answer, and a
-              citation per claim as a chunk id and a sentence number. The model never copies a quote.
-RulesAnswer   what every check, the judge and the run files read: the same answer with each citation's
-              quote copied in by code (answer/fill_quotes.py), so a quote can never be misquoted.
+ModelAnswer   what the model sends: its reasoning, then each part the question asks with the sentences
+              that answer it (a chunk id and a sentence number each) and that part's answer, then any
+              related sentences. Its one decision per part is which sentences answer it.
+RulesAnswer   what every check, the judge and the run files read, built by code (answer/assemble_answer.py):
+              the answer text, each citation with its sentence copied in as the quote, and the refusal,
+              which code sets when no part has a sentence that answers it.
 
 Mistral's chat.complete takes ModelAnswer as the response_format (Mistral's structured-output docs).
 The field descriptions go into the JSON schema the model sees, so they double as instructions.
 
 Field order matters: the model writes the fields in schema order, so reasoning comes first and
-the refuse-or-answer decision is made after it. A model only reasons in words it writes
+the parts are picked after it. A model only reasons in words it writes
 (Anthropic's "Let Claude think" guide), and a reasoning field placed before the answer is a
 common structured-output pattern. One public experiment found field order made little
 difference, so treat it as something to measure, not a given.
@@ -42,16 +44,24 @@ class RulesAnswer(BaseModel):
 # ===== What the model writes =====
 
 class SentenceCitation(BaseModel):
-    """One claim's source as the model gives it: a chunk it was shown, and the number of the sentence it relies on."""
+    """One sentence the model relies on: a chunk it was shown, and the sentence's number in that chunk."""
 
     chunk_id: str = Field(description="The id in square brackets at the top of the source, such as laws-7.4")
-    sentence: int = Field(description="The number in brackets before the sentence that supports the claim, such as 2 for (2)")
+    sentence: int = Field(description="The number in brackets before the sentence, such as 2 for (2)")
+
+
+class QuestionPart(BaseModel):
+    """One thing the question asks, and the sentences that answer it."""
+
+    asks: str = Field(description="One thing the question asks, as words that complete 'The sources do not say …', such as 'the highest string tension allowed'")
+    sentences: list[SentenceCitation] = Field(description="The sentences that answer this part; empty when no sentence answers it")
+    answer: str = Field(description="The answer to this part, from those sentences only; empty when there are none")
 
 
 class ModelAnswer(BaseModel):
-    """The model's answer to one question, citing sentences by number."""
+    """The model's answer to one question: one decision per part, which sentences answer it. Code decides the rest."""
 
-    reasoning: str = Field(description="Before deciding: which sources bear on the question, and whether together they answer what was asked. Name what is missing, if anything.")
-    refused: bool = Field(description="True when the sources don't answer the question that was asked")
-    answer: str = Field(description="The answer. When refusing, say what the sources do cover and what they don't.")
-    citations: list[SentenceCitation] = Field(description="One citation per claim; empty only when no source applies")
+    reasoning: str = Field(description="First: each part the question asks, and which sentences in the sources answer it, if any.")
+    parts: list[QuestionPart] = Field(description="Every part the question asks, in the question's order")
+    related_sentences: list[SentenceCitation] = Field(description="Sentences that bear on the question without answering a part, such as the rule nearest to a part the sources don't answer; often empty")
+    related_note: str = Field(description="What the related sentences say, in one or two sentences; empty when there are none")

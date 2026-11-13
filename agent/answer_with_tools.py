@@ -28,7 +28,7 @@ from pydantic import ValidationError
 
 from agent.rule_tools import TOOL_DEFINITIONS, RuleTools
 from answer.answer_shape import ModelAnswer, RulesAnswer
-from answer.fill_quotes import fill_quotes
+from answer.assemble_answer import assemble_answer
 from answer.generate_answer import MAX_ANSWER_TOKENS, split_reply_content
 from retrieval.build_bundle import format_bundle, full_chunks
 
@@ -60,13 +60,13 @@ EXTRA_AGENT_RULES = {
     # 9 Nov, unseen set: setup C refused yellow-card-before-play twice with no tool call (it never searched for
     # ITTO 3.7.3), and setup B read 27.5 clauses a question against C's 16.9, misquoting on cut-hand-mid-game.
     # One generic line aimed at both: search when a part is uncovered, stop when every part is, cite only what is used
-    "check-each-part": ("Before you answer or refuse, check each part of the question against your sources. Search only "
-                        "for a part no source covers. Cite only the clauses your answer uses."),
+    "check-each-part": ("Before you answer, check each part of the question against your sources. Search only "
+                        "for a part no source covers. Cite only the sentences your answer uses."),
     # 10 Nov, unseen set with check-each-part: setup C still answered yellow-card-before-play twice with 0 tool rounds,
     # writing that the sources don't cover the card report. Answer rule 3 (written for plain RAG: say what the sources
     # don't cover) seems to win over searching when sources come with the question. This line says which rule wins
     "search-before-gaps": ("You can search, so answer rule 3 changes for you: when a part of the question has no source, "
-                           "search for it first. Say the sources don't cover a part only after a search for it finds nothing."),
+                           "search for it first. Leave a part with no sentences only after a search for it finds nothing."),
 }
 
 
@@ -173,11 +173,11 @@ def run_tool_round(tool_calls: list, rule_tools: RuleTools, round_number: int,
 # ===== Reading the final reply =====
 
 def parse_final_reply(choice, shown_chunk_by_id: dict[str, dict]) -> tuple[RulesAnswer | None, str | None, str, str]:
-    """Returns the answer with its quotes filled in (or None), the format error message (or None), the raw reply and the thinking."""
+    """Returns the answer code builds from the reply (or None), the format error message (or None), the raw reply and the thinking."""
     raw_reply, thinking = split_reply_content(choice.message.content)
     try:
         model_answer = ModelAnswer.model_validate_json(raw_reply)
-        return fill_quotes(model_answer, shown_chunk_by_id), None, raw_reply, thinking
+        return assemble_answer(model_answer, shown_chunk_by_id), None, raw_reply, thinking
     except ValidationError as error:
         return None, f"finish reason {choice.finish_reason}: {error}", raw_reply, thinking
 

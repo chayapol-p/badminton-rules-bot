@@ -390,6 +390,7 @@ def run_answer_setup(top_k: int, extra_rule_names: list[str], label: str, is_dry
         "show_parents": True,
         "source_labels": True,
         "citations": "sentence numbers",
+        "refusal": "code, from the parts",
         "max_answer_tokens": MAX_ANSWER_TOKENS,
         "extra_rules": extra_rule_names,
         "answer_model": settings.mistral_answer_model,

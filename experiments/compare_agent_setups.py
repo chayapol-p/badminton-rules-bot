@@ -260,6 +260,7 @@ def run_agent_setup(setup_name: str, label: str, is_dry_run: bool, uses_unseen: 
         "source_labels": True,
         "tool_previews": True,
         "citations": "sentence numbers",
+        "refusal": "code, from the parts",
         "max_answer_tokens": MAX_ANSWER_TOKENS,
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,

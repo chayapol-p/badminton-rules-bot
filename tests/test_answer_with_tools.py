@@ -21,12 +21,13 @@ from tests.sample_data import full_items
 CHUNKS = load_chunks()
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}
 
-## A reply in the ModelAnswer shape, citing sentence 1 of the clause the search below returns
+## A reply in the ModelAnswer shape: one part, answered by sentence 1 of the clause the search below returns
 ANSWER_TEXT = json.dumps({
     "reasoning": "Law 1.4 gives the posts' height.",
-    "refused": False,
-    "answer": "1.55 metres.",
-    "citations": [{"chunk_id": "laws-1.4", "sentence": 1}],
+    "parts": [{"asks": "how tall the posts are", "sentences": [{"chunk_id": "laws-1.4", "sentence": 1}],
+               "answer": "1.55 metres."}],
+    "related_sentences": [],
+    "related_note": "",
 })
 
 

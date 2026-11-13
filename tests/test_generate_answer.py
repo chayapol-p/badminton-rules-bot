@@ -31,12 +31,13 @@ class StubChatClient:
         return SimpleNamespace(choices=[choice], usage=usage)
 
 
-## A reply in the ModelAnswer shape: it cites sentence 1 of Law 1.4
+## A reply in the ModelAnswer shape: one part, answered by sentence 1 of Law 1.4
 GOOD_REPLY_TEXT = json.dumps({
     "reasoning": "Law 1.4 gives the posts' height.",
-    "refused": False,
-    "answer": "1.55 metres.",
-    "citations": [{"chunk_id": "laws-1.4", "sentence": 1}],
+    "parts": [{"asks": "how tall the posts are", "sentences": [{"chunk_id": "laws-1.4", "sentence": 1}],
+               "answer": "1.55 metres."}],
+    "related_sentences": [],
+    "related_note": "",
 })
 
 
@@ -78,7 +79,7 @@ def test_the_request_sends_the_strict_schema_with_greedy_sampling():
     assert request["top_p"] == 1, "Mistral rejects temperature 0 unless top_p is 1"
     assert request["reasoning_effort"] == "low"
     assert request["response_format"]["json_schema"]["strict"] is True
-    assert list(request["response_format"]["json_schema"]["schema"]["properties"]) == ["reasoning", "refused", "answer", "citations"]
+    assert list(request["response_format"]["json_schema"]["schema"]["properties"]) == ["reasoning", "parts", "related_sentences", "related_note"]
 
 
 def test_a_reply_in_chunks_is_parsed_and_its_thinking_kept():
