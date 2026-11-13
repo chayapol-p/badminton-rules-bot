@@ -1,16 +1,20 @@
 """
-The two tools the agent can call: search_rules and read_clause.
+The two tools the agent can call: search_rules and read_clause. Both answer with a bundle
+(retrieval/build_bundle.py), the same builder setup A's sources come from, so every source block has
+one format, and the model cites tool results exactly as it cites the starting sources.
 
 search_rules(query, top_k)  vector search on the clauses, the same search as setup A, but with the
-                            model's own words and its own top_k (1 to 100). No rule links: following
-                            links is the model's job.
-read_clause(chunk_id)       one clause, its direct sub-clauses, the ids of the clauses it links to, and
-                            the ids of its alternatives and para exceptions. Ids only, so the model
-                            decides which links are worth a read.
+                            model's own words and its own top_k (1 to 100). Each hit comes in full,
+                            with its list items; every clause the rule map brings for it comes as a
+                            one-line preview.
+read_clause(chunk_id)       one clause in full, with its list items at every level, and a preview of
+                            every clause it links to (cited clauses, alternatives, para exceptions,
+                            official's instructions, diagrams). Previews leave the model to decide
+                            which links are worth a read.
 
-Both return source blocks in the same format as the answer prompt (answer/build_answer_prompt.py), so
-the model cites tool results exactly as it cites the starting sources, and the citation check works
-on them unchanged.
+Within one question, a clause already shown in full comes back as one "shown above" line instead of
+its text again (start_question resets this for each question). read_clause always shows the clause it
+was asked for.
 
 Prompt version 2 (Stage 3, 10 Nov) changes one line: search_rules's query description said "in your own
 words", against the tool description's "use the rule books' own words" (build_tool_definitions).
@@ -20,6 +24,7 @@ as the tool result instead of raising. The model reads it and can try again; the
 
 Use:
     rule_tools = RuleTools(chunks, search, rule_map)
+    rule_tools.start_question(starting_ids)
     tool_definitions = build_tool_definitions(prompt_version=2)
     tool_result = rule_tools.run_tool_call("search_rules", '{"query": "let", "top_k": 5}')
 """
@@ -30,8 +35,7 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from answer.build_answer_prompt import format_source
-from retrieval.expand_with_rule_links import direct_sub_clauses
+from retrieval.build_bundle import build_bundle, format_bundle, full_chunks
 
 
 # Constants
@@ -42,24 +46,6 @@ LARGEST_TOP_K = 100
 ## How many near ids an unknown chunk id error suggests
 SUGGESTED_ID_COUNT = 5
 
-## Links that point back to a clause and that read_clause also lists, as it names them. The rule books
-## write these one way only: an Alternative Laws clause names the Law it replaces, but the Law never
-## names its alternatives, so without them read_clause("laws-8.1.3") would show no way to the
-## best-of-five rule. The map follows the same two (retrieval/expand_with_rule_links.py)
-POINTING_BACK_NAMES = {
-    "overrides": "alternative",
-    "para_exception_of": "para exception",
-}
-
-## Each link relation in data/rule_links.json, as the read_clause result names it
-RELATION_NAMES = {
-    "cites": "cites",
-    "instructions_for": "official's instructions",
-    "overrides": "alternative to",
-    "para_exception_of": "para exception to",
-    "shows_diagram": "diagram",
-}
-
 ## The tool definitions sent to the model on every call (Mistral's function-calling format)
 TOOL_DEFINITIONS = [
     {
@@ -68,8 +54,9 @@ TOOL_DEFINITIONS = [
             "name": "search_rules",
             "description": (
                 "Searches the badminton rule books (Laws of Badminton, Instructions to Technical Officials, "
-                "Alternative Laws) by meaning, and returns the closest clauses as source blocks. Use the rule "
-                "books' own words when you can (for example 'let', 'unsighted', 'suspended')."
+                "Alternative Laws) by meaning, and returns the closest clauses as source blocks, each with a "
+                "one-line preview of the clauses it links to. Use the rule books' own words when you can (for "
+                "example 'let', 'unsighted', 'suspended')."
             ),
             "parameters": {
                 "type": "object",
@@ -92,9 +79,10 @@ TOOL_DEFINITIONS = [
         "function": {
             "name": "read_clause",
             "description": (
-                "Reads one clause by its chunk id (the id in square brackets on a source block, such as "
-                "laws-16.7). Returns the clause, the clauses directly under it, and the ids of the clauses "
-                "it links to. Use it when a source names another rule ('Law 16.2') or ends with a colon."
+                "Reads one clause by its chunk id (the id in square brackets on a source block or a preview, "
+                "such as laws-16.7). Returns the clause with every clause under it, and a one-line preview of "
+                "each clause it links to. Use it when a source names another rule ('Law 16.2'), or when a "
+                "preview looks like it answers part of the question."
             ),
             "parameters": {
                 "type": "object",
@@ -147,9 +135,21 @@ class RuleTools:
         self.chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
         self.search = search
         self.rule_map = rule_map
+        self.shown_ids: set[str] = set()
+
+    def start_question(self, shown_ids: set[str]) -> None:
+        """Starts a new question: the clauses its starting sources showed in full are the only ones shown so far."""
+        self.shown_ids = set(shown_ids)
+
+    def answer_with_bundle(self, hit_ids: list[str], shown_ids: set[str]) -> ToolResult:
+        """Returns the bundle for these hits as a tool result, and counts its full clauses as shown."""
+        items = build_bundle(hit_ids, self.chunk_by_id, self.rule_map, related_in_full=False, shown_ids=shown_ids)
+        shown_chunks = full_chunks(items)
+        self.shown_ids.update(chunk["id"] for chunk in shown_chunks)
+        return ToolResult(text=format_bundle(items), shown_chunks=shown_chunks)
 
     def search_rules(self, query: str, top_k: int) -> ToolResult:
-        """Returns the top_k closest clauses to the query, or an error when top_k is out of range."""
+        """Returns the top_k closest clauses to the query with previews of their links, or an error when top_k is out of range."""
 
         # Reject an out-of-range top_k instead of clamping it, so the model learns the rule
         is_whole_number = isinstance(top_k, int) and not isinstance(top_k, bool)
@@ -158,13 +158,12 @@ class RuleTools:
             error = f"top_k must be a whole number from {SMALLEST_TOP_K} to {LARGEST_TOP_K}; got {top_k!r}."
             return ToolResult(text=f"Error: {error}", error=error)
 
-        # Search, and show each hit as a source block
-        hits = self.search(query, top_k)
-        source_blocks = [format_source(chunk) for chunk in hits]
-        return ToolResult(text="\n\n".join(source_blocks), shown_chunks=hits)
+        # Search, and answer with the hits' bundle
+        hit_ids = [chunk["id"] for chunk in self.search(query, top_k)]
+        return self.answer_with_bundle(hit_ids, self.shown_ids)
 
     def read_clause(self, chunk_id: str) -> ToolResult:
-        """Returns one clause, its direct sub-clauses and the ids it links to, or an error with near ids."""
+        """Returns one clause with its list items and previews of its links, or an error with near ids."""
 
         # An unknown id gets the closest real ids, so the model can correct a typo or a missing format
         if chunk_id not in self.chunk_by_id:
@@ -172,35 +171,9 @@ class RuleTools:
             error = f"No clause has the id {chunk_id!r}. Close ids: {', '.join(near_ids) or 'none'}."
             return ToolResult(text=f"Error: {error}", error=error)
 
-        # The clause, then the clauses one level below it, as source blocks
-        chunk = self.chunk_by_id[chunk_id]
-        shown_chunks = [chunk]
-        for sub_clause_id in direct_sub_clauses(self.chunk_by_id, chunk_id):
-            shown_chunks.append(self.chunk_by_id[sub_clause_id])
-        source_blocks = [format_source(shown_chunk) for shown_chunk in shown_chunks]
-
-        # The ids it links to, by relation, without their text
-        link_lines = self.describe_links(chunk_id)
-        text = "\n\n".join(source_blocks)
-        if link_lines:
-            text += "\n\nLinks from this clause (read any with read_clause):\n" + "\n".join(link_lines)
-        return ToolResult(text=text, shown_chunks=shown_chunks)
-
-    def describe_links(self, chunk_id: str) -> list[str]:
-        """Returns one line per linked clause: those this chunk links to, then its alternatives and para exceptions."""
-
-        # Links written in this clause
-        link_lines = []
-        for link in self.rule_map["outgoing"].get(chunk_id, []):
-            is_in_corpus = link["to_id"] in self.chunk_by_id
-            if is_in_corpus:
-                link_lines.append(f"- {RELATION_NAMES[link['relation']]}: {link['to_id']}")
-
-        # Links written the other way: clauses that replace or adapt this one
-        for link in self.rule_map["incoming"].get(chunk_id, []):
-            if link["relation"] in POINTING_BACK_NAMES:
-                link_lines.append(f"- {POINTING_BACK_NAMES[link['relation']]}: {link['from_id']}")
-        return link_lines
+        # The clause asked for is always shown in full, even when shown before
+        shown_ids_but_this_one = self.shown_ids.difference({chunk_id})
+        return self.answer_with_bundle([chunk_id], shown_ids_but_this_one)
 
     def run_tool_call(self, tool_name: str, arguments: str | dict) -> ToolResult:
         """Runs one tool call by name, or returns an error for an unknown tool or bad arguments."""

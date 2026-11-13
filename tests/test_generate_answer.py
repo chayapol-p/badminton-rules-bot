@@ -9,7 +9,7 @@ from mistralai.client.models import TextChunk, ThinkChunk
 
 from answer.build_answer_prompt import ANSWER_RULES
 from answer.generate_answer import generate_answer
-from tests.sample_data import SAMPLE_CHUNKS
+from tests.sample_data import SAMPLE_CHUNKS, full_items
 
 
 # ===== A stub client that answers with fixed text =====
@@ -43,14 +43,14 @@ GOOD_REPLY_TEXT = json.dumps({
 # ===== Tests =====
 
 def test_a_reply_in_the_shape_is_parsed():
-    reply = generate_answer(StubChatClient(GOOD_REPLY_TEXT), "test-model", "low", ANSWER_RULES, "How tall are the posts?", SAMPLE_CHUNKS)
+    reply = generate_answer(StubChatClient(GOOD_REPLY_TEXT), "test-model", "low", ANSWER_RULES, "How tall are the posts?", full_items(SAMPLE_CHUNKS))
     assert not reply.is_format_error
     assert reply.answer.citations[0].chunk_id == "laws-1.4"
 
 
 def test_a_reply_cut_off_mid_json_is_a_format_error_that_keeps_its_tokens():
     reply = generate_answer(StubChatClient(GOOD_REPLY_TEXT[:40], finish_reason="length"), "test-model", "low", ANSWER_RULES,
-                            "How tall are the posts?", SAMPLE_CHUNKS)
+                            "How tall are the posts?", full_items(SAMPLE_CHUNKS))
     assert reply.is_format_error
     assert reply.answer is None
     assert reply.error_message.startswith("finish reason length")
@@ -59,14 +59,14 @@ def test_a_reply_cut_off_mid_json_is_a_format_error_that_keeps_its_tokens():
 
 
 def test_a_reply_with_no_text_is_a_format_error():
-    reply = generate_answer(StubChatClient(None), "test-model", "low", ANSWER_RULES, "How tall are the posts?", SAMPLE_CHUNKS)
+    reply = generate_answer(StubChatClient(None), "test-model", "low", ANSWER_RULES, "How tall are the posts?", full_items(SAMPLE_CHUNKS))
     assert reply.is_format_error
     assert reply.raw_reply == ""
 
 
 def test_the_request_sends_the_strict_schema_with_greedy_sampling():
     client = StubChatClient(GOOD_REPLY_TEXT)
-    generate_answer(client, "test-model", "low", ANSWER_RULES, "How tall are the posts?", SAMPLE_CHUNKS)
+    generate_answer(client, "test-model", "low", ANSWER_RULES, "How tall are the posts?", full_items(SAMPLE_CHUNKS))
     request = client.requests[0]
     assert request["temperature"] == 0
     assert request["top_p"] == 1, "Mistral rejects temperature 0 unless top_p is 1"
@@ -81,7 +81,7 @@ def test_a_reply_in_chunks_is_parsed_and_its_thinking_kept():
         ThinkChunk(thinking=[TextChunk(text="The posts question. "), TextChunk(text="Law 1.4 has it.")]),
         TextChunk(text=GOOD_REPLY_TEXT),
     ]
-    reply = generate_answer(StubChatClient(chunks), "test-model", "low", ANSWER_RULES, "How tall are the posts?", SAMPLE_CHUNKS)
+    reply = generate_answer(StubChatClient(chunks), "test-model", "low", ANSWER_RULES, "How tall are the posts?", full_items(SAMPLE_CHUNKS))
     assert not reply.is_format_error
     assert reply.answer.answer == "1.55 metres."
     assert reply.thinking == "The posts question. Law 1.4 has it."

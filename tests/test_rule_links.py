@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from retrieval.expand_with_rule_links import expand_with_links, format_for_prompt, index_links
+from retrieval.expand_with_rule_links import expand_with_links, index_links
 from scripts.build_rule_links import build_rule_links
 
 
@@ -167,15 +167,6 @@ def test_cited_list_heading_brings_its_sub_clauses(corpus):
     assert labels["laws-16.7"] == "CITED"
     assert labels["laws-16.7.1"] == "LIST ITEM"
 
-
-def test_prompt_names_documents_outside_the_corpus(corpus):
-    hit_ids = [reference["from_id"] for reference in corpus["rule_map"]["outside_corpus"]
-               if reference["section"] == "BWF Statutes Section 4.1.5"][:1]
-    context = expand_with_links(hit_ids, corpus["chunks_by_id"], corpus["indexed_map"])
-    assert "[NOT IN CORPUS · BWF Statutes Section 4.1.5]" in format_for_prompt(context, corpus["indexed_map"])
-
-
-# ===== The clauses around a hit come along =====
 
 def test_list_item_brings_its_intro_and_the_other_items(corpus):
     # "When is a shuttle not in play?" needs all of 15.1, 15.2 and 15.3

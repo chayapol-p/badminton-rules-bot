@@ -122,12 +122,12 @@ def answer_and_grade_with_tools(question: dict, starting_retrieve: Callable[[str
                                 extra_agent_rule_names: list[str], prompt_version: int) -> tuple[dict, dict]:
     """Returns one question's answer line and grade line, answered with the tools and graded as in Stage 2."""
 
-    # Setup C starts from setup A's sources; setup B starts from none
-    starting_chunks = []
+    # Setup C starts from setup A's bundle; setup B starts from none
+    starting_items = []
     if starting_retrieve is not None:
-        starting_chunks = starting_retrieve(question["question"])
+        starting_items = starting_retrieve(question["question"])
     reply = answer_with_tools(mistral_client, answer_model, reasoning_effort, answer_rules, question["question"],
-                              starting_chunks, rule_tools, extra_agent_rule_names, prompt_version)
+                              starting_items, rule_tools, extra_agent_rule_names, prompt_version)
     answer_line = build_answer_line(question, reply, answer_model)
 
     # A reply that didn't fit the shape can't be checked or graded: it counts as a fail

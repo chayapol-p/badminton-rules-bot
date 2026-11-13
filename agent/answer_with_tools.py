@@ -19,8 +19,8 @@ Prompt version 2 (Stage 3, 10 Nov) swaps in AGENT_RULES_VERSION_2 (with the extr
 so it takes none), LAST_ROUND_NOTE_VERSION_2 and version 2's tool definitions. Version 1 is unchanged.
 
 Use:
-    reply = answer_with_tools(client, model, reasoning_effort, answer_rules, question_text, starting_chunks, rule_tools)
-    reply = answer_with_tools(client, model, reasoning_effort, answer_rules, question_text, starting_chunks, rule_tools,
+    reply = answer_with_tools(client, model, reasoning_effort, answer_rules, question_text, starting_items, rule_tools)
+    reply = answer_with_tools(client, model, reasoning_effort, answer_rules, question_text, starting_items, rule_tools,
                               prompt_version=2)
 """
 
@@ -32,8 +32,8 @@ from pydantic import ValidationError
 
 from agent.rule_tools import RuleTools, build_tool_definitions
 from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import format_source
 from answer.generate_answer import MAX_ANSWER_TOKENS, split_reply_content
+from retrieval.build_bundle import format_bundle, full_chunks
 
 
 # Constants
@@ -123,15 +123,15 @@ def build_agent_rules(extra_agent_rule_names: list[str], prompt_version: int = 1
     return agent_rules
 
 
-def build_agent_prompt(answer_rules: str, question_text: str, starting_chunks: list[dict],
+def build_agent_prompt(answer_rules: str, question_text: str, starting_items: list[dict],
                        extra_agent_rule_names: list[str] | None = None, prompt_version: int = 1) -> list[dict]:
-    """Returns the first messages: the rules with the agent rules, then the starting sources (if any) and the question."""
+    """Returns the first messages: the rules with the agent rules, then the starting bundle (if any) and the question."""
     question_block = f"<question>\n{question_text}\n</question>"
 
-    # Setup B starts with no sources, setup C with setup A's
+    # Setup B starts with no sources, setup C with setup A's bundle
     user_message = f"No sources yet: use the tools to find them.\n\n{question_block}"
-    if starting_chunks:
-        sources_text = "\n\n".join(format_source(chunk) for chunk in starting_chunks)
+    if starting_items:
+        sources_text = format_bundle(starting_items)
         user_message = f"<sources>\n{sources_text}\n</sources>\n\n{question_block}"
     return [
         {"role": "system", "content": answer_rules + "\n" + build_agent_rules(extra_agent_rule_names or [], prompt_version)},
@@ -215,11 +215,15 @@ def parse_final_reply(choice) -> tuple[RulesAnswer | None, str | None, str, str]
 # ===== The loop =====
 
 def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer_rules: str, question_text: str,
-                      starting_chunks: list[dict], rule_tools: RuleTools,
+                      starting_items: list[dict], rule_tools: RuleTools,
                       extra_agent_rule_names: list[str] | None = None, prompt_version: int = 1) -> AgentReply:
     """Answers one question, calling tools until the model replies with no tool calls."""
-    messages = build_agent_prompt(answer_rules, question_text, starting_chunks, extra_agent_rule_names, prompt_version)
+    messages = build_agent_prompt(answer_rules, question_text, starting_items, extra_agent_rule_names, prompt_version)
+
+    # The clauses shown in full so far: the tools leave these out of their results, and the model may cite them
+    starting_chunks = full_chunks(starting_items)
     shown_chunk_by_id = {chunk["id"]: chunk for chunk in starting_chunks}
+    rule_tools.start_question(set(shown_chunk_by_id))
     tool_call_log = []
     tool_rounds_used = 0
     tools_allowed = True

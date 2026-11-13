@@ -61,7 +61,8 @@ from evals.log_eval_run import append_run
 from evals.probes import load_probes, load_unseen_questions
 from evals.token_costs import call_cost
 from retrieval.stored_embeddings import embeddings_file, load_embeddings
-from retrieval.expand_with_rule_links import expand_with_links, load_rule_map
+from retrieval.build_bundle import build_bundle, full_chunks
+from retrieval.expand_with_rule_links import load_rule_map
 from retrieval.vector_search import VectorSearch
 
 
@@ -120,17 +121,13 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
 
 def build_retrieve_function(search: Callable, top_k: int, chunk_by_id: dict[str, dict],
                             rule_map: dict) -> Callable[[str], list[dict]]:
-    """Returns the retrieve step: the top k from search, the clauses they link to (record 0009), and their list items (records 0015, 0023)."""
+    """Returns the retrieve step: the top k from search, and the bundle the rule map builds for them (records 0009, 0015, 0023)."""
 
     def retrieve(question_text: str) -> list[dict]:
-        """Returns the clauses handed to the answer model for one question."""
+        """Returns the bundle handed to the answer model for one question: every clause in full, with its role label."""
         hits = search(question_text, top_k)
-
-        # One hop along the rule map (cited clauses, alternatives, para exceptions), then every list
-        # heading's items, without the clauses before and after each hit
         hit_ids = [chunk["id"] for chunk in hits]
-        context = expand_with_links(hit_ids, chunk_by_id, rule_map, question_is_para=False, include_nearby=False)
-        return [item["chunk"] for item in context]
+        return build_bundle(hit_ids, chunk_by_id, rule_map, related_in_full=True)
 
     return retrieve
 
@@ -143,9 +140,10 @@ def answer_and_grade(question: dict, retrieve: Callable[[str], list[dict]], answ
     """Returns one question's answer line (sources, answer, code checks) and its grade line (the judge's grade, if judged)."""
 
     # Retrieve, then answer from what was retrieved
-    retrieved_chunks = retrieve(question["question"])
+    source_items = retrieve(question["question"])
+    retrieved_chunks = full_chunks(source_items)
     reply = generate_answer(mistral_client, answer_model, reasoning_effort, answer_rules, question["question"],
-                            retrieved_chunks)
+                            source_items)
     answer_line = {
         "id": question["id"],
         "split": question["split"],

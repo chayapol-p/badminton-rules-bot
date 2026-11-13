@@ -14,6 +14,7 @@ from agent.rule_tools import SEARCH_QUERY_DESCRIPTION_VERSION_2, RuleTools
 from answer.build_answer_prompt import ANSWER_RULES, build_answer_rules
 from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from tests.sample_data import full_items
 
 
 # ===== The stub client and the tools =====
@@ -70,10 +71,10 @@ class StubToolClient:
         return SimpleNamespace(choices=[choice], usage=usage)
 
 
-def run_agent(client: StubToolClient, starting_chunks: list[dict] | None = None):
+def run_agent(client: StubToolClient, starting_items: list[dict] | None = None):
     """Runs the loop on one question with the stub client."""
     return answer_with_tools(client, "test-model", "low", ANSWER_RULES, "How tall are the posts?",
-                             starting_chunks or [], RULE_TOOLS)
+                             starting_items or [], RULE_TOOLS)
 
 
 # ===== The prompt (given code) =====
@@ -87,7 +88,7 @@ def test_an_extra_agent_rule_is_added_to_the_agent_rules_only_when_named():
 
 def test_setup_b_starts_with_the_question_only_and_setup_c_with_sources():
     agentic_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [])
-    hybrid_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", [CHUNK_BY_ID["laws-1.4"]])
+    hybrid_messages = build_agent_prompt(ANSWER_RULES, "How tall are the posts?", full_items([CHUNK_BY_ID["laws-1.4"]]))
     assert "No sources yet" in agentic_messages[1]["content"]
     assert "[laws-1.4]" in hybrid_messages[1]["content"]
     assert "Tools:" in agentic_messages[0]["content"]
@@ -158,7 +159,7 @@ def test_the_limit_is_reached_at_round_10_and_stays_reached_past_it():
 
 def test_a_reply_with_no_tool_calls_is_the_answer():
     client = StubToolClient(tool_reply_count=0)
-    reply = run_agent(client, [CHUNK_BY_ID["laws-1.4"]])
+    reply = run_agent(client, full_items([CHUNK_BY_ID["laws-1.4"]]))
     assert not reply.is_format_error
     assert (reply.tool_rounds, reply.model_calls) == (0, 1)
     assert (reply.input_tokens, reply.output_tokens) == (1000, 100)

@@ -1,10 +1,10 @@
 """
 Builds the messages for one answer: the answer rules as the system message, the sources and the question as the user message.
 
-Each source block starts with its chunk id in square brackets, then where the clause comes
-from (document, version, in-force date, format, heading, clause number), then the clause
-text as printed. Answers quote and cite that text (data rule 4), and the model cites by
-chunk id, so code can check every citation against what the model was shown.
+The sources come as one text, built by retrieval/build_bundle.py: each source block starts with its
+chunk id in square brackets and its role label, then where the clause comes from, then the clause
+text as printed. Answers quote and cite that text (data rule 4), and the model cites by chunk id, so
+code can check every citation against what the model was shown.
 
 Extra rules are tested one per run (experiment rule 1): each has a name, and a run turns it on with
 --rule <name>. A rule that wins moves into ANSWER_RULES.
@@ -16,7 +16,7 @@ rules folded in, so it takes no extra rules. Only the subject (RULES_SUBJECT) is
 Use:
     answer_rules = build_answer_rules(["complete-answers"])
     answer_rules = build_answer_rules([], prompt_version=2)
-    messages = build_answer_prompt(answer_rules, question_text, retrieved_chunks)
+    messages = build_answer_prompt(answer_rules, question_text, format_bundle(source_items))
 """
 
 
@@ -63,58 +63,6 @@ ANSWER_RULES_VERSION_2 = """You answer questions about {subject}. Your sources a
 9. A quote is one continuous run of words, copied character for character from that block's clause text. Do not use "...", do not join pieces, and use no words from header lines or from another clause. Use the fewest words that hold the fact, one sentence at most. When a fact sits only in a header (document, version, date, the clause above), cite the chunk id and quote the clause words it applies to. When a clause makes sense only with its parent's lead-in, cite the parent and the child separately, each with a quote from its own text."""
 
 
-# ===== One source block =====
-
-def describe_source(chunk: dict) -> str:
-    """Returns where a clause comes from: document, version and in-force date, format, heading and clause number."""
-    parts = [f"{chunk['document_title']} {chunk['version']}, in force {chunk['in_force']}"]
-
-    # Only Alternative Laws clauses have a format, only some clauses are para-only, and introductions have no heading
-    if chunk["alternative_format"] is not None:
-        parts.append(f"format: {chunk['alternative_format']}")
-    if chunk["para_only"]:
-        parts.append("Para Badminton only")
-    if chunk["heading"]:
-        parts.append(chunk["heading"])
-
-    parts.append(f"Clause {chunk['clause']}")
-    return " · ".join(parts)
-
-
-## A parent clause this short, or ending in a colon, only names the subject of the clauses below it
-PARENT_HEADING_MAX_WORDS = 5
-
-
-def is_parent_heading(parent_text: str) -> bool:
-    """True for a parent clause that only names a subject ("4.2 The stringed area:"), not a rule of its own."""
-    return parent_text.endswith(":") or len(parent_text.split()) <= PARENT_HEADING_MAX_WORDS
-
-
-def parent_headings(chunk: dict) -> str:
-    """Returns the headings above this clause, as search_text_with_parents holds them ("4.2 The stringed area:"), or "".
-
-    8 Nov: a full parent rule shown here got quoted as if it were the clause (string-tension quoted Law 4.1
-    under 4.1.2), so only parents that name a subject are kept.
-    """
-    lines_after_header = chunk["search_text_with_parents"].split("\n", 1)[1]
-    parents_text = lines_after_header.removesuffix(chunk["text"]).strip()
-    headings = []
-    for parent_text in parents_text.split(" · "):
-        if parent_text and is_parent_heading(parent_text):
-            headings.append(parent_text)
-    return " · ".join(headings)
-
-
-def format_source(chunk: dict) -> str:
-    """Returns one source block: the chunk id in square brackets, where it comes from, the headings above it, then the clause text."""
-    # 8 Nov: clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:"), record 0017
-    under_line = ""
-    headings = parent_headings(chunk)
-    if headings:
-        under_line = f"Under: {headings}\n"
-    return f"[{chunk['id']}] {describe_source(chunk)}\n{under_line}{chunk['text']}"
-
-
 # ===== The messages =====
 
 def build_answer_rules(extra_rule_names: list[str], prompt_version: int = 1) -> str:
@@ -132,10 +80,8 @@ def build_answer_rules(extra_rule_names: list[str], prompt_version: int = 1) -> 
     return rules_text
 
 
-def build_answer_prompt(answer_rules: str, question_text: str, retrieved_chunks: list[dict]) -> list[dict]:
+def build_answer_prompt(answer_rules: str, question_text: str, sources_text: str) -> list[dict]:
     """Returns the prompt for one answer call: the rules as the system message, then the sources and the question as the user message."""
-    source_blocks = [format_source(chunk) for chunk in retrieved_chunks]
-    sources_text = "\n\n".join(source_blocks)
     user_message = f"<sources>\n{sources_text}\n</sources>\n\n<question>\n{question_text}\n</question>"
     return [
         {"role": "system", "content": answer_rules},

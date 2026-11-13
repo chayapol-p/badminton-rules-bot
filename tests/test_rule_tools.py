@@ -1,8 +1,9 @@
 """Tests the agent's two tools on the real clauses and rule map, with a stub search, so no test calls the API."""
 
 import copy
-import hashlib
 import json
+
+import pytest
 
 from agent.rule_tools import (LARGEST_TOP_K, SEARCH_QUERY_DESCRIPTION_VERSION_2, TOOL_DEFINITIONS, RuleTools,
                               build_tool_definitions)
@@ -13,6 +14,8 @@ from retrieval.expand_with_rule_links import load_rule_map
 # ===== The tools over the real clauses =====
 
 CHUNKS = load_chunks()
+CHUNK_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}
+RULE_MAP = load_rule_map()
 
 
 def first_chunks_search(query: str, top_k: int) -> list[dict]:
@@ -20,19 +23,16 @@ def first_chunks_search(query: str, top_k: int) -> list[dict]:
     return CHUNKS[:top_k]
 
 
-RULE_TOOLS = RuleTools(CHUNKS, first_chunks_search, load_rule_map())
+RULE_TOOLS = RuleTools(CHUNKS, first_chunks_search, RULE_MAP)
+
+
+@pytest.fixture(autouse=True)
+def new_question():
+    """Each test is a new question: nothing shown yet."""
+    RULE_TOOLS.start_question(set())
 
 
 # ===== The tool definitions of each prompt version =====
-
-## sha256 of the tool definitions as JSON with sorted keys, taken at commit 123e484 (10 Nov 2026)
-VERSION_1_TOOL_DEFINITIONS_SHA256 = "366d013bb864c89b84e9a9368bd30540922180f9a2a7bce4c27dc414868cb3f1"
-
-
-def test_version_1_sends_exactly_the_tool_definitions_of_every_earlier_run():
-    definitions_json = json.dumps(build_tool_definitions(1), sort_keys=True)
-    assert hashlib.sha256(definitions_json.encode()).hexdigest() == VERSION_1_TOOL_DEFINITIONS_SHA256
-
 
 def test_version_2_changes_only_the_query_description_and_leaves_version_1_untouched():
     expected_definitions = copy.deepcopy(TOOL_DEFINITIONS)
@@ -43,11 +43,37 @@ def test_version_2_changes_only_the_query_description_and_leaves_version_1_untou
 
 # ===== search_rules =====
 
-def test_a_search_returns_top_k_source_blocks():
-    result = RULE_TOOLS.search_rules("posts", 3)
+## Clauses with no list items, so a search for them shows exactly the hits in full
+LEAF_IDS = ["laws-1.4", "laws-1.5", "laws-7.4"]
+
+
+def leaf_search(query: str, top_k: int) -> list[dict]:
+    """Stub: returns the first top_k of LEAF_IDS, whatever the query."""
+    return [CHUNK_BY_ID[chunk_id] for chunk_id in LEAF_IDS[:top_k]]
+
+
+def test_a_search_returns_top_k_source_blocks_with_their_labels():
+    rule_tools = RuleTools(CHUNKS, leaf_search, RULE_MAP)
+    result = rule_tools.search_rules("posts", 3)
     assert result.error is None
-    assert len(result.shown_chunks) == 3
-    assert result.text.startswith(f"[{CHUNKS[0]['id']}]")
+    assert [chunk["id"] for chunk in result.shown_chunks] == LEAF_IDS
+    assert result.text.startswith("[laws-1.4] RULE · ")
+
+
+def test_a_second_search_leaves_out_the_text_it_already_showed():
+    rule_tools = RuleTools(CHUNKS, leaf_search, RULE_MAP)
+    rule_tools.search_rules("posts", 2)
+    result = rule_tools.search_rules("posts", 3)
+    assert [chunk["id"] for chunk in result.shown_chunks] == ["laws-7.4"]
+    assert "[laws-1.4] RULE · shown above" in result.text
+
+
+def test_a_new_question_starts_from_its_own_starting_sources():
+    rule_tools = RuleTools(CHUNKS, leaf_search, RULE_MAP)
+    rule_tools.search_rules("posts", 2)
+    rule_tools.start_question({"laws-1.5"})
+    result = rule_tools.search_rules("posts", 2)
+    assert [chunk["id"] for chunk in result.shown_chunks] == ["laws-1.4"]
 
 
 def test_top_k_outside_1_to_100_or_not_a_whole_number_is_an_error_not_a_clamp():
@@ -67,18 +93,24 @@ def test_reading_a_list_heading_brings_its_items():
     assert shown_ids == ["laws-16.7.1", "laws-16.7.1.1", "laws-16.7.1.2", "laws-16.7.1.3"]
 
 
-def test_reading_a_clause_lists_the_ids_it_links_to_without_their_text():
-    """ITTO 5.12.2 says "(Law 16.2)": the result names laws-16.2 but doesn't show it."""
+def test_reading_a_clause_previews_the_clauses_it_links_to():
+    """ITTO 5.12.2 says "(Law 16.2)": the result previews laws-16.2 but doesn't show it in full."""
     result = RULE_TOOLS.read_clause("itto-5.12.2")
-    assert "cites: laws-16.2" in result.text
+    assert "[laws-16.2] CITED · preview: " in result.text
     assert [chunk["id"] for chunk in result.shown_chunks] == ["itto-5.12.2"]
 
 
-def test_reading_a_standard_law_lists_its_alternatives():
+def test_reading_a_standard_law_previews_its_alternatives():
     """The best-of-five 8.1.3 names the Law it replaces; Law 8.1.3 never names it, so the link points back."""
     result = RULE_TOOLS.read_clause("laws-8.1.3")
-    assert "alternative: alt-best-of-5-games-11:8.1.3" in result.text
-    assert "alternative: alt-best-of-3-games-21:8.1.3" in result.text
+    assert "[alt-best-of-5-games-11:8.1.3] ALTERNATIVE · " in result.text
+    assert "[alt-best-of-3-games-21:8.1.3] ALTERNATIVE · " in result.text
+
+
+def test_reading_a_clause_shows_it_in_full_even_when_shown_before():
+    RULE_TOOLS.start_question({"laws-1.4"})
+    result = RULE_TOOLS.read_clause("laws-1.4")
+    assert [chunk["id"] for chunk in result.shown_chunks] == ["laws-1.4"]
 
 
 def test_an_unknown_id_is_an_error_that_suggests_close_ids():

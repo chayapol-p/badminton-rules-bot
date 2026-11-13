@@ -26,12 +26,12 @@ found, or an alternative reached through a cited Law (the one second hop): it co
 without its items.
 
 The order is fixed in code: the default comes before its alternatives and exceptions.
-The labels go into the prompt, so the model never has to guess which rule is the default.
+The labels go into the prompt (retrieval/build_bundle.py writes them on each source block), so the
+model never has to guess which rule is the default.
 
 Use:
     rule_map = load_rule_map()
     context = expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False)
-    prompt_text = format_for_prompt(context)
 """
 
 import json
@@ -54,9 +54,6 @@ LIST_HEADING_MAX_WORDS = 5
 
 ## How many items of the hit's list may come along, so a long list doesn't flood the prompt
 MAX_LIST_ITEMS = 6
-
-## Short document names for citations
-DOCUMENT_NAMES = {"laws": "Laws", "itto": "ITTO", "alt": "Alternative Laws"}
 
 
 # ===== Loading the map into two lookups =====
@@ -287,27 +284,3 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
 
     # Then the items of every list heading that is a rule to apply; a clause search found is never context
     return add_list_items(context, set(hit_ids), context_ids.difference(hit_ids), chunks_by_id, question_is_para)
-
-
-# ===== Writing the context for the answer model =====
-
-def format_for_prompt(context, rule_map=None):
-    """
-    One block per clause: a label line with the citation and version, then the clause text.
-    With the rule map, it ends with the BWF documents these clauses name but the corpus
-    does not hold, so the model can point there instead of guessing (such as Section 4.1.5).
-    """
-    blocks = []
-    for item in context:
-        chunk = item["chunk"]
-        citation = f"{DOCUMENT_NAMES[chunk['document']]} {chunk['clause']} · V{chunk['version']}"
-        blocks.append(f"[{item['label']} · {citation}]\n{chunk['text']}")
-
-    if rule_map:
-        outside_sections = sorted({
-            section for item in context for section in rule_map["outside"].get(item["chunk"]["id"], [])
-        })
-        for section in outside_sections:
-            blocks.append(f"[NOT IN CORPUS · {section}]\nNamed by the clauses above. Its text is not available.")
-
-    return "\n\n".join(blocks)

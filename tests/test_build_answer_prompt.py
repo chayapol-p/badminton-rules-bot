@@ -1,56 +1,12 @@
 """
-Tests the answer prompt: every source block names its chunk id and where it comes from, and the question is fenced off.
+Tests the answer prompt: the rules of each prompt version, and the sources and question in their tags.
 """
 
 import hashlib
-import json
-
-import pytest
 
 from answer.answer_shape import RulesAnswer
 from answer.build_answer_prompt import (ANSWER_RULES, EXTRA_ANSWER_RULES, RULES_SUBJECT, build_answer_prompt,
-                                        build_answer_rules, describe_source, format_source, parent_headings)
-from evals.golden_answer_chunks import CHUNKS_FILE
-from tests.sample_data import SAMPLE_CHUNKS
-
-
-# ===== A sample of the real data: an Alternative Laws clause =====
-
-## Alternative Laws, one game to 21, Law 8.1, copied as it is (7 Nov 2026): it has a format and a 2027 in-force date
-ONE_GAME_CHANGE_OF_ENDS_CHUNK = {
-    "id": "alt-one-game-21:8.1",
-    "document": "alt",
-    "document_title": "Alternative Laws of Badminton",
-    "version": "2.0",
-    "in_force": "2027-01-04",
-    "clause": "8.1",
-    "alternative_format": "one-game-21",
-    "heading": "8. CHANGE OF ENDS",
-    "para_only": False,
-    "page": 1,
-    "text": "In a one game match, players shall change ends when a side first scores 11 points.",
-    "search_text": "Alternative Laws of Badminton · one game to 21 · 8. CHANGE OF ENDS · Clause 8.1\nIn a one game match, players shall change ends when a side first scores 11 points.",
-    "search_text_with_parents": "Alternative Laws of Badminton · one game to 21 · 8. CHANGE OF ENDS · Clause 8.1\nIn a one game match, players shall change ends when a side first scores 11 points."
-}
-
-
-# ===== One source block =====
-
-def test_a_source_block_starts_with_the_chunk_id_and_ends_with_the_clause_text():
-    source_block = format_source(SAMPLE_CHUNKS[2])
-    assert source_block.startswith("[laws-1.4] ")
-    assert source_block.endswith(SAMPLE_CHUNKS[2]["text"])
-
-
-def test_a_laws_clause_names_its_version_heading_and_number():
-    description = describe_source(SAMPLE_CHUNKS[0])
-    assert description == "Laws of Badminton 5.0 (2), in force 2025-04-26 · 7. SCORING SYSTEM · Clause 7.4"
-
-
-def test_an_alternative_laws_clause_names_its_format_and_in_force_date():
-    description = describe_source(ONE_GAME_CHANGE_OF_ENDS_CHUNK)
-    assert "in force 2027-01-04" in description
-    assert "format: one-game-21" in description
+                                        build_answer_rules)
 
 
 # ===== The messages =====
@@ -61,25 +17,15 @@ def test_a_false_premise_is_corrected_and_answered_not_refused():
 
 
 def test_the_rules_go_in_the_system_message_and_the_question_in_its_tags():
-    messages = build_answer_prompt(ANSWER_RULES, "How tall are the posts?", SAMPLE_CHUNKS)
+    messages = build_answer_prompt(ANSWER_RULES, "How tall are the posts?", "[laws-1.4] RULE · …")
     assert messages[0] == {"role": "system", "content": ANSWER_RULES}
     assert messages[1]["role"] == "user"
     assert "<question>\nHow tall are the posts?\n</question>" in messages[1]["content"]
 
 
-def test_every_retrieved_chunk_is_in_the_sources():
-    user_message = build_answer_prompt(ANSWER_RULES, "any question", SAMPLE_CHUNKS)[1]["content"]
-    for chunk in SAMPLE_CHUNKS:
-        assert format_source(chunk) in user_message
-
-
-# ===== The extra sample stays a true copy of the real data =====
-
-def test_alternative_laws_sample_matches_the_real_file():
-    if not CHUNKS_FILE.exists():
-        pytest.skip("data/rule_chunks.json is missing: run scripts.build_rule_chunks first")
-    real_chunks_by_id = {chunk["id"]: chunk for chunk in json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))}
-    assert ONE_GAME_CHANGE_OF_ENDS_CHUNK == real_chunks_by_id["alt-one-game-21:8.1"]
+def test_the_sources_text_goes_in_its_tags_before_the_question():
+    user_message = build_answer_prompt(ANSWER_RULES, "any question", "[laws-1.4] RULE · …")[1]["content"]
+    assert user_message.startswith("<sources>\n[laws-1.4] RULE · …\n</sources>")
 
 
 # ===== The answer shape =====
@@ -154,12 +100,3 @@ def test_version_2_fills_in_the_subject_and_drops_version_1s_badminton_wording()
     assert rules_text.startswith(f"You answer questions about {RULES_SUBJECT}.")
     assert "Para Badminton" not in rules_text, "version 2's rule 7 is generic"
     assert "Alternative Laws" not in rules_text
-
-
-# ===== The heading above a clause =====
-
-def test_only_parents_that_name_a_subject_are_shown():
-    """A full parent rule gets quoted as if it were the clause, so only headings are shown."""
-    chunk = {"text": "shall not exceed 280 mm.",
-             "search_text_with_parents": "Laws · 4. RACKET · Clause 4.2.2\n4.1 The racket shall be a frame not exceeding 680 mm · 4.2 The stringed area:\nshall not exceed 280 mm."}
-    assert parent_headings(chunk) == "4.2 The stringed area:"

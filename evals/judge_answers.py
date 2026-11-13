@@ -35,7 +35,7 @@ from anthropic import Anthropic
 from pydantic import BaseModel, Field
 
 from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import format_source
+from retrieval.build_bundle import format_source
 
 
 # Constants

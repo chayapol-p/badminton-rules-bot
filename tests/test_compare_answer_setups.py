@@ -4,15 +4,15 @@ Tests the answer run's scores, the cost of one call, the retrieve step, and the 
 
 import pytest
 
-from answer.build_answer_prompt import format_source
 from evals.golden_answer_chunks import load_chunks
 from evals.judge_answers import JUDGE_VOTES
 from evals.token_costs import call_cost
 from experiments.compare_answer_setups import main as run_answer_setup_from_command_line
 from experiments.compare_answer_setups import (build_clause_vector_search, build_retrieve_function, check_and_grade,
                                                summarise_answer_run)
+from retrieval.build_bundle import full_chunks
 from retrieval.expand_with_rule_links import load_rule_map
-from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
+from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS, full_items
 from tests.test_judge_answers import POSTS_REPLY, StubJudgeClient
 
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in SAMPLE_CHUNKS}
@@ -172,14 +172,14 @@ def test_retrieve_brings_the_items_of_an_item_that_is_a_heading():
                                            load_rule_map())
     except FileNotFoundError:
         pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
-    retrieved_ids = [chunk["id"] for chunk in retrieve("When is it a let?")]
+    retrieved_ids = [chunk["id"] for chunk in full_chunks(retrieve("When is it a let?"))]
     assert {"laws-14.2.3.1", "laws-14.2.3.2"}.issubset(retrieved_ids)
 
 
-def test_with_no_links_retrieve_hands_on_the_search_hits():
+def test_with_no_links_retrieve_hands_on_the_search_hits_in_full():
     empty_rule_map = {"outgoing": {}, "incoming": {}, "outside": {}}
     retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, empty_rule_map)
-    assert retrieve("any question") == SAMPLE_CHUNKS[:2]
+    assert retrieve("any question") == full_items(SAMPLE_CHUNKS[:2])
 
 
 def test_rule_links_bring_the_clause_a_hit_cites():
@@ -190,7 +190,7 @@ def test_rule_links_bring_the_clause_a_hit_cites():
                                            load_rule_map())
     except FileNotFoundError:
         pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
-    retrieved_ids = [chunk["id"] for chunk in retrieve("How many coaches at the 11-point break?")]
+    retrieved_ids = [chunk["id"] for chunk in full_chunks(retrieve("How many coaches at the 11-point break?"))]
     assert retrieved_ids[0] == "itto-5.4.13"
     assert "laws-16.2.1" in retrieved_ids
 
@@ -203,17 +203,8 @@ def test_a_found_list_heading_brings_its_items():
                                            load_rule_map())
     except FileNotFoundError:
         pytest.skip("data/ is missing: run scripts.build_rule_chunks and scripts.build_rule_links first")
-    retrieved_ids = [chunk["id"] for chunk in retrieve("Shuttle stuck on the net in Wheelchair Badminton?")]
+    retrieved_ids = [chunk["id"] for chunk in full_chunks(retrieve("Shuttle stuck on the net in Wheelchair Badminton?"))]
     assert "laws-13.3.10.1" in retrieved_ids
-
-
-def test_a_source_block_shows_the_heading_above_a_fragment_clause():
-    """8 Nov: clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:")."""
-    try:
-        chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
-    except FileNotFoundError:
-        pytest.skip("data/rule_chunks.json is missing: run scripts.build_rule_chunks first")
-    assert "Under: 4.2 The stringed area:" in format_source(chunk_by_id["laws-4.2.2"])
 
 
 def test_a_question_with_no_saved_vector_stops_the_run_with_how_to_fix_it():

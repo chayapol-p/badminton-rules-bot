@@ -91,3 +91,10 @@ SAMPLE_QUESTIONS = [
         "split": "dev",
     },
 ]
+
+
+# ===== The sample chunks as a bundle =====
+
+def full_items(chunks: list[dict]) -> list[dict]:
+    """Returns chunks as bundle items, each in full as a plain RULE, the way setup A hands over a search with no links."""
+    return [{"chunk": chunk, "label": "RULE", "reached_from": None, "detail": "full"} for chunk in chunks]
