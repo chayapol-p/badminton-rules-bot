@@ -167,7 +167,7 @@ def test_retrieve_brings_the_items_of_an_item_that_is_a_heading():
 
 
 def test_with_no_links_retrieve_hands_on_the_search_hits_in_full():
-    empty_rule_map = {"outgoing": {}, "incoming": {}, "outside": {}}
+    empty_rule_map = {"outgoing": {}, "incoming": {}}
     retrieve = build_retrieve_function(lambda question_text, top_k: SAMPLE_CHUNKS[:top_k], 2, CHUNK_BY_ID, empty_rule_map)
     assert retrieve("any question") == full_items(SAMPLE_CHUNKS[:2])
 

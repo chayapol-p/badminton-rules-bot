@@ -37,7 +37,7 @@ def corpus():
         "chunks_by_id": {chunk["id"]: chunk for chunk in chunks},
         "rule_map": rule_map,
         "link_keys": link_keys,
-        "indexed_map": index_links(rule_map["links"], rule_map["outside_corpus"]),
+        "indexed_map": index_links(rule_map["links"]),
     }
 
 

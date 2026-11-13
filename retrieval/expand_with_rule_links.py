@@ -61,21 +61,16 @@ MAX_LIST_ITEMS = 6
 def load_rule_map(links_file=LINKS_FILE):
     """Reads rule_links.json and indexes the links by where they start and where they end."""
     saved_map = json.loads(Path(links_file).read_text(encoding="utf-8"))
-    return index_links(saved_map["links"], saved_map["outside_corpus"])
+    return index_links(saved_map["links"])
 
 
-def index_links(links, outside_corpus=()):
-    """
-    Returns {"outgoing": {from_id: [links]}, "incoming": {to_id: [links]},
-    "outside": {from_id: [section names]}}.
-    """
-    outgoing, incoming, outside = {}, {}, {}
+def index_links(links):
+    """Returns {"outgoing": {from_id: [links]}, "incoming": {to_id: [links]}}."""
+    outgoing, incoming = {}, {}
     for link in links:
         outgoing.setdefault(link["from_id"], []).append(link)
         incoming.setdefault(link["to_id"], []).append(link)
-    for reference in outside_corpus:
-        outside.setdefault(reference["from_id"], []).append(reference["section"])
-    return {"outgoing": outgoing, "incoming": incoming, "outside": outside}
+    return {"outgoing": outgoing, "incoming": incoming}
 
 
 def linked_ids(rule_map, chunk_id, relation, direction):
