@@ -7,8 +7,8 @@ from types import SimpleNamespace
 
 from mistralai.client.models import TextChunk, ThinkChunk
 
-from answer.build_answer_prompt import ANSWER_RULES
-from answer.generate_answer import generate_answer
+from answer_flows.single_call.answer_rules import ANSWER_RULES
+from answer_flows.single_call.generate_answer import generate_answer
 from tests.sample_data import SAMPLE_CHUNKS, full_items
 
 

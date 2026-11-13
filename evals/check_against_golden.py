@@ -9,7 +9,7 @@ These need the golden set, so they run in the eval, not on live requests.
     number is not a fail by itself.
 """
 
-from answer.check_numbers import numbers_in
+from evals.checks.check_numbers import numbers_in
 from evals.golden_answer_chunks import expected_chunk_ids
 
 

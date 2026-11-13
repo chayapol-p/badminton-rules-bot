@@ -9,7 +9,7 @@ call sets both.
 
 Mistral Large 4 always thinks before it answers, and sends its reply as a list of chunks: thinking
 chunks, then text chunks with the answer (Mistral's reasoning docs: there is no plain-text mode).
-The answer text is parsed into ModelAnswer and assembled into RulesAnswer (answer/assemble_answer.py); the thinking
+The answer text is parsed into ModelAnswer and assembled into RulesAnswer (answer_flows/single_call/assemble_answer.py); the thinking
 is kept as text for reading failures.
 
 The reply is parsed here, not inside the SDK, so a reply that doesn't fit the shape still reports
@@ -24,21 +24,15 @@ Use:
 from dataclasses import dataclass
 
 from mistralai.client import Mistral
-from mistralai.client.models import TextChunk, ThinkChunk
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import ValidationError
 
-from answer.answer_shape import ModelAnswer, RulesAnswer
-from answer.build_answer_prompt import build_answer_prompt
-from answer.assemble_answer import assemble_answer
+from answer_flows.shared.answer_shape import RulesAnswer
+from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS, split_reply_content
+from answer_flows.single_call.answer_rules import build_answer_prompt
+from answer_flows.single_call.answer_shape import ModelAnswer
+from answer_flows.single_call.assemble_answer import assemble_answer
 from retrieval.build_bundle import format_bundle, full_chunks
-
-
-# Constants
-## An upper bound on the reply's length, thinking included, so one runaway reply can't run up the bill.
-## Only used tokens are paid for. 4,096 cut off one long question in most runs on 8 Nov (red-card's
-## thinking ran to about 3,500 tokens), so the cap is 16,000
-MAX_ANSWER_TOKENS = 16_000
 
 
 # ===== The reply =====
@@ -54,30 +48,6 @@ class AnswerReply:
     thinking: str
     input_tokens: int
     output_tokens: int
-
-
-# ===== Reading the reply's chunks =====
-
-def split_reply_content(content: str | list | None) -> tuple[str, str]:
-    """Returns the reply's answer text and its thinking text."""
-
-    # Models that don't think send plain text; a reply with no content has neither part
-    if content is None:
-        return "", ""
-    if isinstance(content, str):
-        return content, ""
-
-    # Large 4 sends thinking chunks, each holding text chunks, then text chunks with the answer
-    answer_parts = []
-    thinking_parts = []
-    for chunk in content:
-        if isinstance(chunk, ThinkChunk):
-            for thinking_part in chunk.thinking:
-                if isinstance(thinking_part, TextChunk):
-                    thinking_parts.append(thinking_part.text)
-        elif isinstance(chunk, TextChunk):
-            answer_parts.append(chunk.text)
-    return "".join(answer_parts), "".join(thinking_parts)
 
 
 # ===== One answer =====

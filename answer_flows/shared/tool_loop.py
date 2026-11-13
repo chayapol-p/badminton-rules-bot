@@ -1,5 +1,6 @@
 """
-Answers one question with tools: the model searches and reads clauses until it answers, in the ModelAnswer shape.
+The tool loop every agent flow uses (slice 4's one call, slice 5's gather call): the model searches and reads
+clauses until it replies with no tool calls, in the answer shape the flow asks for.
 
 The loop (Stage 3):
 1. Send the question, with the starting sources (setup C) or none (setup B), and the two tools.
@@ -17,19 +18,20 @@ Every chunk any tool showed in full counts as seen: code fills a citation's quot
 check accepts it.
 
 Use:
-    reply = answer_with_tools(client, model, reasoning_effort, answer_rules, question_text, starting_items, rule_tools)
+    messages = build_agent_prompt(answer_rules, question_text, starting_items, extra_agent_rule_names)
+    loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, answer_shape)
 """
 
 from dataclasses import dataclass, field
 
 from mistralai.client import Mistral
 from mistralai.extra import response_format_from_pydantic_model
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
-from agent.rule_tools import TOOL_DEFINITIONS, RuleTools, ToolResult
-from answer.answer_shape import ModelAnswer, RulesAnswer
-from answer.assemble_answer import assemble_answer
-from answer.generate_answer import MAX_ANSWER_TOKENS, split_reply_content
+from answer_flows.shared.answer_shape import RulesAnswer
+from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
+from answer_flows.shared.rule_tools import TOOL_DEFINITIONS, RuleTools, ToolResult
+from answer_flows.single_call.answer_shape import ModelAnswer
 from retrieval.build_bundle import format_bundle, full_chunks, label_by_full_id
 
 
@@ -37,11 +39,14 @@ from retrieval.build_bundle import format_bundle, full_chunks, label_by_full_id
 ## The most tool rounds per question before the limit message replaces the results
 MAX_TOOL_ROUNDS = 10
 
+
 ## Added to the last tool result of the last round, so the model knows to answer now
 LAST_ROUND_NOTE = "\n\nThis was your last tool round: the tools are now off. Answer from the sources you have."
 
+
 ## The finish reason of a reply that asks for tools
 FINISH_REASON_TOOL_CALLS = "tool_calls"
+
 
 ## Added to the answer rules for the agent: where its sources come from, and how to use the tools
 AGENT_RULES = """
@@ -52,8 +57,10 @@ Tools:
 - When the sources already answer the question, answer without calling a tool.
 - Your final reply, with no tool calls, is the answer in the required JSON shape."""
 
+
 ## The extra agent rules a run uses by default (record 0022)
 DEFAULT_AGENT_RULE_NAMES = ("check-each-part", "search-before-gaps")
+
 
 ## Extra agent rules under test, by name, one per run (experiment rule 1). Each comes from a measured failure
 EXTRA_AGENT_RULES = {
@@ -174,18 +181,6 @@ def run_tool_round(tool_calls: list, rule_tools: RuleTools, round_number: int,
     return tool_messages, log_lines, tool_results
 
 
-# ===== Reading the final reply =====
-
-def parse_final_reply(choice, shown_chunk_by_id: dict[str, dict]) -> tuple[RulesAnswer | None, str | None, str, str]:
-    """Returns the answer code builds from the reply (or None), the format error message (or None), the raw reply and the thinking."""
-    raw_reply, thinking = split_reply_content(choice.message.content)
-    try:
-        model_answer = ModelAnswer.model_validate_json(raw_reply)
-        return assemble_answer(model_answer, shown_chunk_by_id), None, raw_reply, thinking
-    except ValidationError as error:
-        return None, f"finish reason {choice.finish_reason}: {error}", raw_reply, thinking
-
-
 # ===== The loop =====
 
 @dataclass
@@ -274,32 +269,4 @@ def run_tool_loop(client: Mistral, model: str, reasoning_effort: str, messages: 
         model_calls=model_calls,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
-    )
-
-
-# ===== One agent answer, in one call (slice 4) =====
-
-def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer_rules: str, question_text: str,
-                      starting_items: list[dict], rule_tools: RuleTools,
-                      extra_agent_rule_names: list[str] | None = None) -> AgentReply:
-    """Answers one question, calling tools until the model replies with no tool calls."""
-    messages = build_agent_prompt(answer_rules, question_text, starting_items, extra_agent_rule_names)
-    loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, ModelAnswer)
-
-    # The last reply is the answer, or a format error that still reports its tokens
-    rules_answer, error_message, raw_reply, thinking = parse_final_reply(loop_result.choice,
-                                                                         loop_result.shown_chunk_by_id)
-    return AgentReply(
-        answer=rules_answer,
-        is_format_error=rules_answer is None,
-        error_message=error_message,
-        raw_reply=raw_reply,
-        thinking=thinking,
-        shown_chunks=list(loop_result.shown_chunk_by_id.values()),
-        tool_rounds=loop_result.tool_rounds,
-        tool_calls=loop_result.tool_calls,
-        tools_turned_off=loop_result.tools_turned_off,
-        model_calls=loop_result.model_calls,
-        input_tokens=loop_result.input_tokens,
-        output_tokens=loop_result.output_tokens,
     )

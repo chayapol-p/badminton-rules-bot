@@ -2,8 +2,9 @@
 Tests the answer prompt: the rules, the extra rules under test, and the sources and question in their tags.
 """
 
-from answer.answer_shape import ModelAnswer
-from answer.build_answer_prompt import ANSWER_RULES, EXTRA_ANSWER_RULES, build_answer_prompt, build_answer_rules
+from answer_flows.single_call.answer_shape import ModelAnswer
+from answer_flows.single_call.answer_rules import (ANSWER_RULES, EXTRA_ANSWER_RULES, build_answer_prompt,
+                                                   build_answer_rules)
 
 
 # ===== The messages =====

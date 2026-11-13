@@ -14,12 +14,12 @@ The tools' searches embed the model's own queries live with mistral-embed (a tin
 the questions themselves use their saved vectors.
 
   --setup     agentic | hybrid
-  --agent-rule  an extra agent rule to test, by name (agent/answer_with_tools.py EXTRA_AGENT_RULES). With none
+  --agent-rule  an extra agent rule to test, by name (answer_flows/shared/tool_loop.py EXTRA_AGENT_RULES). With none
               named, the run uses DEFAULT_AGENT_RULE_NAMES (record 0022)
   --no-agent-rules  run with no extra agent rules, as the runs before record 0022 did
   --flow      one-call (slice 4, the default): one tool loop picks sentences and writes the answer
               gather-write (slice 5): the tool loop only picks sentences, code refuses when no part has one,
-              and a write call with no tools answers (agent/gather_then_write.py)
+              and a write call with no tools answers (answer_flows/gather_then_write/gather_then_write.py)
   --unseen    answer the unseen questions instead of dev and the probes (once per setup)
   --label     a short name for the run (default: the setup name)
   --dry-run   answer only the first question, and don't log the run
@@ -44,12 +44,14 @@ import numpy
 from anthropic import Anthropic
 from mistralai.client import Mistral
 
-from agent.answer_with_tools import DEFAULT_AGENT_RULE_NAMES, EXTRA_AGENT_RULES, AgentReply, answer_with_tools
-from agent.gather_then_write import gather_then_write
-from agent.rule_tools import RuleTools
-from answer.build_answer_prompt import GATHER_RULES, build_answer_rules
-from answer.check_refusals import should_refuse
-from answer.generate_answer import MAX_ANSWER_TOKENS
+from answer_flows.one_call_with_tools.answer_with_tools import answer_with_tools
+from answer_flows.shared.tool_loop import DEFAULT_AGENT_RULE_NAMES, EXTRA_AGENT_RULES, AgentReply
+from answer_flows.gather_then_write.gather_then_write import gather_then_write
+from answer_flows.shared.rule_tools import RuleTools
+from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES
+from answer_flows.single_call.answer_rules import build_answer_rules
+from evals.checks.check_refusals import should_refuse
+from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from app.settings import load_settings
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line
 from evals.golden_answer_chunks import load_chunks, load_questions

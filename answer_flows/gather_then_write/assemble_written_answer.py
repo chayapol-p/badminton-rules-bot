@@ -2,7 +2,7 @@
 Slice 5's code between and after the two calls: checks the gather call's picks, decides the refusal,
 builds the write call's input, and builds the checked answer from both calls.
 
-The flow (agent/gather_then_write.py runs it):
+The flow (answer_flows/gather_then_write/gather_then_write.py runs it):
 1. The gather call (tools) sends GatheredAnswer: the sentences that answer each part, no answer text.
 2. Code checks each pick. A bad pick (a clause never shown in full, or no such sentence) is dropped, so its part
    counts as unanswered, and it is recorded by name in bad_picks, so the run counts it apart from
@@ -26,8 +26,9 @@ Use:
 
 from collections import Counter
 
-from answer.answer_shape import GatheredAnswer, GatheredPart, RulesAnswer, SentenceCitation, WrittenAnswer
-from answer.assemble_answer import NO_PARTS_ANSWER, add_citations, find_pick_problem, quote_for
+from answer_flows.gather_then_write.answer_shape import GatheredAnswer, GatheredPart, WrittenAnswer
+from answer_flows.shared.answer_shape import RulesAnswer, SentenceCitation
+from answer_flows.shared.cite_sentences import NO_PARTS_ANSWER, add_citations, find_pick_problem, quote_for
 from retrieval.build_bundle import first_line, parent_headings, split_sentences
 
 

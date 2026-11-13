@@ -18,8 +18,8 @@ Use:
     failures, warnings = find_code_failures(answer_line, question, chunks, chunk_by_id)
 """
 
-from answer.check_numbers import find_ungrounded_numbers
-from answer.check_refusals import ANSWERED, FALSE_REFUSAL, MISSED_REFUSAL
+from evals.checks.check_numbers import find_ungrounded_numbers
+from evals.checks.check_refusals import ANSWERED, FALSE_REFUSAL, MISSED_REFUSAL
 from evals.check_against_golden import cites_expected_clause, find_missing_golden_numbers
 from retrieval.build_bundle import format_source
 

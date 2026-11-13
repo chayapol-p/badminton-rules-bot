@@ -23,7 +23,7 @@ import time
 
 from anthropic import Anthropic
 
-from answer.answer_shape import RulesAnswer
+from answer_flows.shared.answer_shape import RulesAnswer
 from app.settings import load_settings
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line, read_lines
 from evals.code_checks import find_code_failures

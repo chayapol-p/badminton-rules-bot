@@ -2,7 +2,7 @@
 Tests the numbers-not-in-the-sources check: number words, clause numbers, normal forms and parent clauses.
 """
 
-from answer.check_numbers import find_ungrounded_numbers, normalise_number, numbers_in
+from evals.checks.check_numbers import find_ungrounded_numbers, normalise_number, numbers_in
 
 
 # ===== Reading numbers =====

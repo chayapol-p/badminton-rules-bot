@@ -34,7 +34,7 @@ from dataclasses import dataclass
 from anthropic import Anthropic
 from pydantic import BaseModel, Field
 
-from answer.answer_shape import RulesAnswer
+from answer_flows.shared.answer_shape import RulesAnswer
 from retrieval.build_bundle import format_source
 
 

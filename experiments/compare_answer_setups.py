@@ -7,7 +7,7 @@ and the items under a found list heading (record 0015), source blocks with the h
 clause (record 0017), the answer rules (records 0010 and 0015), the answer model at temperature 0,
 and the judge (record 0014).
   --top-k   clauses search hands on per question, before the rule links are added (default 5)
-  --rule    an extra answer rule to test, by name (answer/build_answer_prompt.py EXTRA_ANSWER_RULES);
+  --rule    an extra answer rule to test, by name (answer_flows/single_call/answer_rules.py EXTRA_ANSWER_RULES);
             repeat it for more than one
   --held-out  answer the held-out questions instead of dev and the probes: once, for the published
             number (experiment rule 4). Never tune on its result
@@ -45,11 +45,12 @@ from anthropic import Anthropic
 from mistralai.client import Mistral
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
-from answer.answer_shape import RulesAnswer
-from answer.build_answer_prompt import EXTRA_ANSWER_RULES, build_answer_rules
-from answer.generate_answer import MAX_ANSWER_TOKENS, generate_answer
-from answer.check_citations import find_citation_problems
-from answer.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
+from answer_flows.shared.answer_shape import RulesAnswer
+from answer_flows.single_call.answer_rules import EXTRA_ANSWER_RULES, build_answer_rules
+from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
+from answer_flows.single_call.generate_answer import generate_answer
+from evals.checks.check_citations import find_citation_problems
+from evals.checks.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome, should_refuse
 from app.settings import load_settings
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line
 from evals.golden_answer_chunks import load_chunks, load_questions

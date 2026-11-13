@@ -3,10 +3,10 @@
 import json
 from types import SimpleNamespace
 
-from agent.gather_then_write import gather_then_write
-from agent.rule_tools import RuleTools
-from answer.answer_shape import GatheredAnswer, WrittenAnswer
-from answer.build_answer_prompt import GATHER_RULES, WRITE_RULES
+from answer_flows.gather_then_write.gather_then_write import gather_then_write
+from answer_flows.shared.rule_tools import RuleTools
+from answer_flows.gather_then_write.answer_shape import GatheredAnswer, WrittenAnswer
+from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES, WRITE_RULES
 from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
 from tests.sample_data import full_items

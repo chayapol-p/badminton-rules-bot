@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from answer.answer_shape import Citation, RulesAnswer
-from answer.check_citations import find_citation_problem, find_citation_problems, normalise_text
+from answer_flows.shared.answer_shape import Citation, RulesAnswer
+from evals.checks.check_citations import find_citation_problem, find_citation_problems, normalise_text
 from evals.golden_answer_chunks import CHUNKS_FILE
 from tests.sample_data import SAMPLE_CHUNKS
 

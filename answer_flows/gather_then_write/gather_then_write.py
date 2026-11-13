@@ -1,9 +1,9 @@
 """
 Slice 5: answers one question in two calls with a code gate between them.
 
-1. Gather call: the same tool loop as slice 4 (agent/answer_with_tools.py run_tool_loop), with GATHER_RULES and
+1. Gather call: the same tool loop as slice 4 (answer_flows/shared/tool_loop.py run_tool_loop), with GATHER_RULES and
    the agent rules. It sends GatheredAnswer: the sentences that answer each part, and no answer text.
-2. Code checks each pick, drops the bad ones and records them (answer/assemble_written_answer.py).
+2. Code checks each pick, drops the bad ones and records them (answer_flows/gather_then_write/assemble_written_answer.py).
 3. Gate: when no part has a sentence left, code refuses and the write call never runs.
 4. Write call: no tools. It sees only the question and every part, each marked NO SOURCE or given with its
    picked sentences, and sends WrittenAnswer: one answer per answered part. It never sees the tool calls,
@@ -20,13 +20,14 @@ from mistralai.client import Mistral
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import ValidationError
 
-from agent.answer_with_tools import AgentReply, build_agent_prompt, run_tool_loop
-from agent.rule_tools import RuleTools
-from answer.answer_shape import GatheredAnswer, WrittenAnswer
-from answer.assemble_written_answer import (assemble_written_answer, build_refusal, check_gathered_picks,
-                                            format_parts_for_writer, is_refusal)
-from answer.build_answer_prompt import build_write_prompt
-from answer.generate_answer import MAX_ANSWER_TOKENS, split_reply_content
+from answer_flows.gather_then_write.answer_shape import GatheredAnswer, WrittenAnswer
+from answer_flows.gather_then_write.assemble_written_answer import (assemble_written_answer, build_refusal,
+                                                                    check_gathered_picks, format_parts_for_writer,
+                                                                    is_refusal)
+from answer_flows.gather_then_write.gather_and_write_rules import build_write_prompt
+from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS, split_reply_content
+from answer_flows.shared.rule_tools import RuleTools
+from answer_flows.shared.tool_loop import AgentReply, build_agent_prompt, run_tool_loop
 
 
 # ===== The write call =====

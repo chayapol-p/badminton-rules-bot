@@ -4,7 +4,7 @@ Tests the judge's prompt and its overall grade, without calling the API.
 
 from types import SimpleNamespace
 
-from answer.answer_shape import Citation, RulesAnswer
+from answer_flows.shared.answer_shape import Citation, RulesAnswer
 from evals.judge_answers import (JUDGE_RULES, JUDGE_VOTES, JudgeGrade, RubricLine, build_judge_prompt, combine_votes,
                                  grade_answer, judge_passed)
 from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS

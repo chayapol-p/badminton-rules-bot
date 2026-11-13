@@ -6,7 +6,7 @@ means made-up support. Both texts are normalised first (lower case, straight quo
 dashes, single spaces), so a curly apostrophe can't fail a true quote. Anything looser would let
 a paraphrase pass as a quote.
 
-Since Phase 2 the model cites sentence numbers and code copies each quote in (answer/assemble_answer.py),
+Since Phase 2 the model cites sentence numbers and code copies each quote in (answer_flows/single_call/assemble_answer.py),
 so a new answer's quote is always a real sentence. This check still fails the citations code couldn't
 fill (a clause not shown, a sentence number out of range), and it re-checks older run files.
 
@@ -17,7 +17,7 @@ Use:
 
 import re
 
-from answer.answer_shape import Citation, RulesAnswer
+from answer_flows.shared.answer_shape import Citation, RulesAnswer
 
 
 # Constants

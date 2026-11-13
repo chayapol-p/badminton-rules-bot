@@ -4,15 +4,8 @@ Tests the four refusal outcomes on real golden questions from the sample data.
 
 import json
 
-from answer.check_refusals import (
-    ANSWERED,
-    CATEGORIES_TO_REFUSE,
-    CORRECT_REFUSAL,
-    FALSE_REFUSAL,
-    MISSED_REFUSAL,
-    refusal_outcome,
-    should_refuse,
-)
+from evals.checks.check_refusals import (ANSWERED, CATEGORIES_TO_REFUSE, CORRECT_REFUSAL, FALSE_REFUSAL,
+                                         MISSED_REFUSAL, refusal_outcome, should_refuse)
 from evals.golden_answer_chunks import QUESTIONS_FILE
 from evals.probes import load_probes
 from tests.sample_data import SAMPLE_QUESTIONS

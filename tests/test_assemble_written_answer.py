@@ -1,10 +1,12 @@
 """Tests slice 5's code between and after the two calls: checking picks, the refusal gate, the write call's input and the answer."""
 
-from answer.answer_shape import GatheredAnswer, GatheredPart, PartAnswer, SentenceCitation, WrittenAnswer
-from answer.assemble_answer import NO_PARTS_ANSWER
-from answer.assemble_written_answer import (NO_SOURCE_MARK, assemble_written_answer, build_refusal,
-                                            check_gathered_picks, format_parts_for_writer, is_refusal)
-from answer.check_citations import find_citation_problems
+from answer_flows.gather_then_write.answer_shape import GatheredAnswer, GatheredPart, PartAnswer, WrittenAnswer
+from answer_flows.shared.answer_shape import SentenceCitation
+from answer_flows.shared.cite_sentences import NO_PARTS_ANSWER
+from answer_flows.gather_then_write.assemble_written_answer import (NO_SOURCE_MARK, assemble_written_answer,
+                                                                    build_refusal, check_gathered_picks,
+                                                                    format_parts_for_writer, is_refusal)
+from evals.checks.check_citations import find_citation_problems
 from evals.golden_answer_chunks import load_chunks
 
 
