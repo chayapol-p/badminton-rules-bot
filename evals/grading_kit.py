@@ -28,7 +28,7 @@ from evals.answer_run_files import ANSWER_RUNS_FOLDER, HUMAN_GRADES_FILE, read_l
 from evals.code_checks import find_code_failures
 from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.probes import load_probes
-from experiments.compare_answer_setups import IMAGE_ONLY_QUESTION_IDS
+from evals.score_answer_run import IMAGE_ONLY_QUESTION_IDS
 
 
 # Constants

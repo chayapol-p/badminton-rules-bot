@@ -12,8 +12,9 @@ from pydantic import ValidationError
 
 from answer_flows.shared.answer_shape import RulesAnswer
 from answer_flows.shared.read_model_reply import split_reply_content
+from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.rule_tools import RuleTools
-from answer_flows.shared.tool_loop import AgentReply, build_agent_prompt, run_tool_loop
+from answer_flows.shared.tool_loop import build_agent_prompt, run_tool_loop
 from answer_flows.single_call.answer_shape import ModelAnswer
 from answer_flows.single_call.assemble_answer import assemble_answer
 
@@ -34,7 +35,7 @@ def parse_final_reply(choice, shown_chunk_by_id: dict[str, dict]) -> tuple[Rules
 
 def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer_rules: str, question_text: str,
                       starting_items: list[dict], rule_tools: RuleTools,
-                      extra_agent_rule_names: list[str] | None = None) -> AgentReply:
+                      extra_agent_rule_names: list[str] | None = None) -> FlowReply:
     """Answers one question, calling tools until the model replies with no tool calls."""
     messages = build_agent_prompt(answer_rules, question_text, starting_items, extra_agent_rule_names)
     loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, ModelAnswer)
@@ -42,7 +43,7 @@ def answer_with_tools(client: Mistral, model: str, reasoning_effort: str, answer
     # The last reply is the answer, or a format error that still reports its tokens
     rules_answer, error_message, raw_reply, thinking = parse_final_reply(loop_result.choice,
                                                                          loop_result.shown_chunk_by_id)
-    return AgentReply(
+    return FlowReply(
         answer=rules_answer,
         is_format_error=rules_answer is None,
         error_message=error_message,

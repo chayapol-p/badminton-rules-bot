@@ -26,8 +26,9 @@ from answer_flows.gather_then_write.assemble_written_answer import (assemble_wri
                                                                     is_refusal)
 from answer_flows.gather_then_write.gather_and_write_rules import build_write_prompt
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS, split_reply_content
+from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.rule_tools import RuleTools
-from answer_flows.shared.tool_loop import AgentReply, build_agent_prompt, run_tool_loop
+from answer_flows.shared.tool_loop import build_agent_prompt, run_tool_loop
 
 
 # ===== The write call =====
@@ -49,7 +50,7 @@ def call_writer(client: Mistral, model: str, reasoning_effort: str, question_tex
 
 def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather_rules: str, question_text: str,
                       starting_items: list[dict], rule_tools: RuleTools,
-                      extra_agent_rule_names: list[str] | None = None) -> AgentReply:
+                      extra_agent_rule_names: list[str] | None = None) -> FlowReply:
     """Answers one question: the gather call picks sentences with the tools, code decides the refusal, the write call answers."""
 
     # Gather call: the tool loop, in the GatheredAnswer shape
@@ -57,7 +58,7 @@ def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather
     loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, GatheredAnswer)
     shown_chunk_by_id = loop_result.shown_chunk_by_id
     raw_reply, thinking = split_reply_content(loop_result.choice.message.content)
-    reply = AgentReply(
+    reply = FlowReply(
         answer=None,
         is_format_error=True,
         error_message=None,

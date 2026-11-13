@@ -29,8 +29,8 @@ from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line, read_lines
 from evals.code_checks import find_code_failures
 from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.probes import load_probes, load_unseen_questions
-from experiments.compare_answer_setups import (SECONDS_BETWEEN_QUESTIONS, check_and_grade, print_scores,
-                                               summarise_answer_run)
+from evals.score_answer_run import check_and_grade, print_scores, summarise_answer_run
+from experiments.run_answer_experiment import SECONDS_BETWEEN_QUESTIONS
 
 
 # ===== Re-scoring with the saved verdicts =====

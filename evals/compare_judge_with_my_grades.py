@@ -5,7 +5,7 @@ Grade before you open the run's -grades.jsonl file, so the judge's verdict can't
 
   Input:  evals/human_grades.jsonl, one line per answer you graded:
             {"run": "20261107T1200-top5", "id": "deuce-end", "passed": true, "reason": "Gives both the 2-point lead and the 30-point cap."}
-          evals/answer_runs/<run>-grades.jsonl, written by experiments.compare_answer_setups, or with
+          evals/answer_runs/<run>-grades.jsonl, written by experiments.run_answer_experiment, or with
           --rejudged, <run>-rejudged-grades.jsonl, written by experiments.rescore_answer_run --rejudge
   Output: printed: how many grades match, then each disagreement with both reasons
 

@@ -18,7 +18,7 @@ Run from the project root:
 from app.settings import load_settings
 from evals.golden_answer_chunks import expected_chunk_ids, load_chunks
 from evals.probes import load_unseen_questions
-from experiments.compare_answer_setups import build_clause_vector_search, build_retrieve_function
+from retrieval.retrieve_sources import build_clause_vector_search, build_retrieve_function
 from retrieval.expand_with_rule_links import load_rule_map
 
 

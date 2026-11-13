@@ -22,13 +22,12 @@ Use:
     loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, answer_shape)
 """
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from mistralai.client import Mistral
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import BaseModel
 
-from answer_flows.shared.answer_shape import RulesAnswer
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import TOOL_DEFINITIONS, RuleTools, ToolResult
 from answer_flows.single_call.answer_shape import ModelAnswer
@@ -75,29 +74,6 @@ EXTRA_AGENT_RULES = {
     "search-before-gaps": ("You can search, so answer rule 3 changes for you: when a part of the question has no source, "
                            "search for it first. Leave a part with no sentences only after a search for it finds nothing."),
 }
-
-
-# ===== One agent answer =====
-
-@dataclass
-class AgentReply:
-    """One answer, or a format error, plus every chunk the model saw, the tool calls it made and the tokens they used.
-    Slice 5 also records the gather call's bad picks and whether the write call ran."""
-
-    answer: RulesAnswer | None
-    is_format_error: bool
-    error_message: str | None
-    raw_reply: str
-    thinking: str
-    shown_chunks: list[dict]
-    tool_rounds: int
-    tool_calls: list[dict] = field(default_factory=list)
-    tools_turned_off: bool = False
-    bad_picks: list[dict] = field(default_factory=list)
-    write_called: bool = False
-    model_calls: int = 0
-    input_tokens: int = 0
-    output_tokens: int = 0
 
 
 # ===== The prompt =====
