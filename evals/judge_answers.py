@@ -104,13 +104,20 @@ def describe_expected_answer(question: dict) -> str:
     return f"None: this question has no answer in the sources. Why: {reason}"
 
 
-def describe_reply(rules_answer: RulesAnswer) -> str:
-    """Returns the bot's reply as a user sees it: refused or not, the answer, then each citation. The reasoning stays out."""
-    citation_lines = [f'- [{citation.chunk_id}] "{citation.quote}"' for citation in rules_answer.citations]
-    citations_text = "\n".join(citation_lines)
+def format_citation_lines(citations: list) -> str:
+    """Returns one line per citation, its chunk id and quote, or "(none)"."""
+    citation_lines = [f'- [{citation.chunk_id}] "{citation.quote}"' for citation in citations]
     if not citation_lines:
-        citations_text = "(none)"
-    return f"Refused: {rules_answer.refused}\nAnswer: {rules_answer.answer}\nCitations:\n{citations_text}"
+        return "(none)"
+    return "\n".join(citation_lines)
+
+
+def describe_reply(rules_answer: RulesAnswer) -> str:
+    """Returns the bot's reply as a user sees it: refused or not, the answer, its citations, then the related sentences
+    under their own heading, so the judge never reads context as the answer (record 0025). The reasoning stays out."""
+    return (f"Refused: {rules_answer.refused}\nAnswer: {rules_answer.answer}\n"
+            f"Citations (the answer's sources):\n{format_citation_lines(rules_answer.citations)}\n"
+            f"Related sentences (context only, not part of the answer):\n{format_citation_lines(rules_answer.related_citations)}")
 
 
 def build_judge_prompt(question: dict, rules_answer: RulesAnswer, retrieved_chunks: list[dict], code_warnings: list[str]) -> str:

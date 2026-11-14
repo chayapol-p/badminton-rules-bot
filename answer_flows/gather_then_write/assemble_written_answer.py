@@ -106,11 +106,11 @@ def build_related_lines(checked_answer: GatheredAnswer, shown_chunk_by_id: dict[
 
 def build_refusal(checked_answer: GatheredAnswer, shown_chunk_by_id: dict[str, dict]) -> RulesAnswer:
     """Returns the refusal code writes: what the sources don't say, then the related sentences, quoted."""
-    citations = []
-    add_citations(citations, checked_answer.related_sentences, shown_chunk_by_id)
+    related_citations = []
+    add_citations(related_citations, checked_answer.related_sentences, shown_chunk_by_id)
     answer_lines = build_not_covered_lines(checked_answer) + build_related_lines(checked_answer, shown_chunk_by_id)
     return RulesAnswer(reasoning=checked_answer.reasoning, refused=True, answer="\n".join(answer_lines),
-                       citations=citations)
+                       citations=[], related_citations=related_citations)
 
 
 # ===== The write call's input =====
@@ -191,9 +191,10 @@ def assemble_written_answer(checked_answer: GatheredAnswer, written_answer: Writ
         answer_lines.append(answer_by_part_number[part_number])
         add_citations(citations, checked_answer.parts[part_number - 1].sentences, shown_chunk_by_id)
 
-    # Then the lines code writes: what the sources don't say, and the related sentences, quoted
-    add_citations(citations, checked_answer.related_sentences, shown_chunk_by_id)
+    # Then the lines code writes: what the sources don't say, and the related sentences, quoted, in their own list
+    related_citations = []
+    add_citations(related_citations, checked_answer.related_sentences, shown_chunk_by_id)
     answer_lines += build_not_covered_lines(checked_answer) + build_related_lines(checked_answer, shown_chunk_by_id)
     rules_answer = RulesAnswer(reasoning=checked_answer.reasoning, refused=False, answer="\n".join(answer_lines),
-                               citations=citations)
+                               citations=citations, related_citations=related_citations)
     return rules_answer, None

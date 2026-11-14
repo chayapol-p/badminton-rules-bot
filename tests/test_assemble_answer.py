@@ -108,7 +108,8 @@ def test_no_answered_part_is_a_refusal_even_with_related_sentences():
     assert rules_answer.refused
     assert rules_answer.answer == ("The sources do not say how many coaches a side may have at an exhibition match.\n"
                                    "In match intervals, at most two coaches may join a side.")
-    assert rules_answer.citations[0].quote.startswith("In all these intervals")
+    assert rules_answer.citations == [], "a related sentence is never the answer's source (record 0025)"
+    assert rules_answer.related_citations[0].quote.startswith("In all these intervals")
 
 
 def test_an_answer_with_no_parts_is_a_refusal_that_says_so():

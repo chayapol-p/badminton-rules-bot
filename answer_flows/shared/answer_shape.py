@@ -41,6 +41,10 @@ class RulesAnswer(BaseModel):
     refused: bool = Field(description="True when the sources don't answer the question that was asked")
     answer: str = Field(description="The answer. When refusing, say what the sources do cover and what they don't.")
     citations: list[Citation] = Field(description="One citation per claim; empty only when no source applies")
+    # Related sentences are context, never the answer, so they get their own list: with one list the judge read
+    # them as the answer's sources and failed correct refusals (14 Nov baseline, record 0025). Empty by default,
+    # so run files from before still load
+    related_citations: list[Citation] = Field(default_factory=list, description="Sentences that bear on the question without answering it; context only")
 
 
 # ===== One sentence the model cites =====

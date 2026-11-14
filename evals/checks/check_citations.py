@@ -67,7 +67,8 @@ def find_citation_problems(rules_answer: RulesAnswer, retrieved_chunks: list[dic
     """Returns one problem per failed citation, with its quote and, for a mismatch, the clause text; plus one when an answer that isn't a refusal cites nothing."""
     chunk_by_id = {chunk["id"]: chunk for chunk in retrieved_chunks}
     problems = []
-    for citation in rules_answer.citations:
+    # Related sentences are quoted by code too, so their quotes are checked the same way
+    for citation in rules_answer.citations + rules_answer.related_citations:
         problem = find_citation_problem(citation, retrieved_chunks)
         if problem is None:
             continue
@@ -78,7 +79,7 @@ def find_citation_problems(rules_answer: RulesAnswer, retrieved_chunks: list[dic
             details["clause_text"] = chunk_by_id[citation.chunk_id]["text"]
         problems.append(details)
 
-    # An answer must rest on at least one source; a refusal may cite nothing
+    # An answer must rest on at least one source of its own (related sentences don't count); a refusal may cite nothing
     cites_nothing = not rules_answer.citations
     if cites_nothing and not rules_answer.refused:
         problems.append({"chunk_id": None, "problem": "no citation"})

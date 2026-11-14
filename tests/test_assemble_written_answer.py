@@ -88,7 +88,8 @@ def test_a_refusal_quotes_the_related_sentence_word_for_word():
         "The sources do not say the highest string tension allowed.",
         f'Related (Laws of Badminton 5.0 (2), Clause 4.2.2): "{STRINGED_AREA_SENTENCE}"',
     ]
-    assert refusal.citations[0].quote == STRINGED_AREA_SENTENCE
+    assert refusal.citations == [], "a related sentence is never the answer's source (record 0025)"
+    assert refusal.related_citations[0].quote == STRINGED_AREA_SENTENCE
     assert find_citation_problems(refusal, list(SHOWN_CHUNK_BY_ID.values())) == []
 
 
@@ -129,7 +130,8 @@ def test_the_answer_is_the_written_parts_then_the_gap_lines_then_related_quotes(
         "The sources do not say the highest string tension allowed.",
         f'Related (Laws of Badminton 5.0 (2), Clause 4.2.2): "{STRINGED_AREA_SENTENCE}"',
     ]
-    assert [citation.quote for citation in rules_answer.citations] == [POST_HEIGHT_SENTENCE, STRINGED_AREA_SENTENCE]
+    assert [citation.quote for citation in rules_answer.citations] == [POST_HEIGHT_SENTENCE]
+    assert [citation.quote for citation in rules_answer.related_citations] == [STRINGED_AREA_SENTENCE]
 
 
 def test_a_missing_answer_for_an_answered_part_is_a_format_error():

@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 from answer_flows.shared.answer_shape import Citation, RulesAnswer
 from evals.judge_answers import (JUDGE_RULES, JUDGE_VOTES, JudgeGrade, RubricLine, build_judge_prompt, combine_votes,
-                                 grade_answer, judge_passed)
+                                 describe_reply, grade_answer, judge_passed)
 from tests.sample_data import SAMPLE_CHUNKS, SAMPLE_QUESTIONS
 
 
@@ -55,7 +55,22 @@ def test_a_question_without_an_answer_shows_why_and_its_pass_rule():
     prompt = build_judge_prompt(SAMPLE_QUESTIONS[2], CEILING_REPLY, SAMPLE_CHUNKS, [])
     assert SAMPLE_QUESTIONS[2]["why_unanswerable"] in prompt
     assert SAMPLE_QUESTIONS[2]["pass_rule"] in prompt
-    assert "Citations:\n(none)" in prompt
+    assert "Citations (the answer's sources):\n(none)" in prompt
+
+
+def test_the_judge_sees_related_sentences_apart_from_the_answers_sources():
+    """14 Nov baseline: with one list, the judge read related laws as the answer and failed correct refusals (record 0025)."""
+    related = Citation(chunk_id="laws-1.4", quote="The posts shall be 1.55 metres in height")
+    reply = RulesAnswer(reasoning="", refused=True, answer="The sources do not say it.", citations=[],
+                        related_citations=[related])
+    reply_text = describe_reply(reply)
+    assert "Citations (the answer's sources):\n(none)" in reply_text
+    assert 'Related sentences (context only, not part of the answer):\n- [laws-1.4] "The posts shall be 1.55 metres in height"' in reply_text
+
+
+def test_a_run_file_from_before_the_split_still_loads():
+    old_line = {"reasoning": "", "refused": False, "answer": "1.55 m.", "citations": [{"chunk_id": "laws-1.4", "quote": "x"}]}
+    assert RulesAnswer.model_validate(old_line).related_citations == []
 
 
 def test_the_code_warnings_reach_the_judge_as_hints():

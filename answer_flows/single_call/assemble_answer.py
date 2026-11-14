@@ -43,15 +43,17 @@ def assemble_answer(model_answer: ModelAnswer, shown_chunk_by_id: dict[str, dict
     if not model_answer.parts:
         not_covered_lines.append(NO_PARTS_ANSWER)
 
-    # Related sentences come last, cited like the rest
+    # Related sentences come last, in their own list, so no check or judge reads them as the answer (record 0025)
     related_lines = []
+    related_citations = []
     if model_answer.related_sentences:
         related_lines.append(model_answer.related_note)
-        add_citations(citations, model_answer.related_sentences, shown_chunk_by_id)
+        add_citations(related_citations, model_answer.related_sentences, shown_chunk_by_id)
 
     return RulesAnswer(
         reasoning=model_answer.reasoning,
         refused=refused,
         answer="\n".join(answer_lines + not_covered_lines + related_lines),
         citations=citations,
+        related_citations=related_citations,
     )

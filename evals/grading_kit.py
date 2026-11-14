@@ -115,6 +115,11 @@ def format_answer_for_grading(answer_line: dict, question: dict, chunk_by_id: di
         blocks.append(textwrap.fill(f"clause: {chunk_by_id[citation['chunk_id']]['text']}", width=WRAP_WIDTH,
                                     initial_indent="      ", subsequent_indent="        "))
 
+    # Related sentences, context only (record 0025); old run files have none
+    related_citations = answer.get("related_citations", [])
+    if related_citations:
+        blocks.append("  Related (context only): " + ", ".join(citation["chunk_id"] for citation in related_citations))
+
     # The other clauses the bot was shown, by id: any fact in its answer must come from one of these
     cited_ids = {citation["chunk_id"] for citation in answer["citations"]}
     uncited_ids = [chunk_id for chunk_id in answer_line["retrieved_ids"] if chunk_id not in cited_ids]

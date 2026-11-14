@@ -17,7 +17,7 @@ Only what is specific to this repo:
 2. Fixed settings: temperature 0, a pinned model ID and a frozen corpus (the PDF hashes in `evals/golden_questions.json`).
 3. Every run appends one line to `evals/runs.jsonl`: settings, scores, cost and latency.
 4. Tune on the dev questions. Score the held-out questions once, for the published number. Never re-split.
-5. One dev question is about 4 points of recall. Call a win only at 2 or more questions apart.
+5. One dev question is about 4 points of recall. Call a win only at 2 or more questions apart. Phase 2 runs: 3 runs per flow, and a win only when the flows' ranges of scores don't overlap (record 0026).
 6. Every decision Job makes gets a record in `docs/decisions/` (MADR format; see its README): the options weighed, the decision and the runs behind it. Claude's suggestions get no record until Job picks one.
 7. When a run compares chunkings or search types, run every search type at matched word budgets in the same batch (add them to `experiments/run_all_search_setups.py`), so one batch settles the question.
 

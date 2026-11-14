@@ -46,6 +46,8 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0022](0022-setup-c-keeps-prompt-version-1-with-two-agent-rules.md) | Setup C keeps prompt version 1, with check-each-part and search-before-gaps | Superseded by 0024 |
 | [0023](0023-move-exact-work-from-prompt-rules-to-code.md) | Move the exact work from prompt rules to code, one change at a time | Proposed |
 | [0024](0024-every-prompt-as-task-steps-and-limits.md) | Every answer prompt as a task, numbered steps and limits with reasons | Accepted |
+| [0025](0025-related-sentences-get-their-own-list.md) | Related sentences get their own list, and the judge sees them as context | Accepted |
+| [0026](0026-call-a-win-with-3-runs-per-flow.md) | Call a win with 3 runs per flow and a gap bigger than the noise | Accepted |
 
 ## Template
 
