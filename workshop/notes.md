@@ -84,4 +84,13 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - Held-out, scored once (9 Nov, `20261109T0153-top5-held-out`): 7 of 10 answers (0.70), refusals 2 of 2, citations clean 1.0, 1 false refusal, $0.027 a question. Dev runs on the same setup: 18-22 of 22. Fails: phone-rings (left out the warning/fault steps of Law 16.7), shuttle-stuck-on-net (refused; the regular let rule 14.2.3.1 wasn't found), racket-parts (left out the throat). Not tuned on (experiment rule 4).
 - Judge strictness still varies on context facts (coaches-at-interval failed for the 60-second break length; foot-off-footrest for "the rally ends with a fault").
 
+## Phase 2 · measurement restarted (14 Nov; stage "phase2" in runs.jsonl, Phase 2 questions: 27 answerable, 14 should refuse; setup hybrid)
+- Baseline, slice 4 (loop-call-with-tools) run twice: 31/41 and 35/41 overall (answers 20/27 vs 23/27; refused 14/14 both; judge-passed refusals 11/14 vs 12/14); $1.63 and $1.75; tool rounds mean 1.15 and 1.39.
+- Noise floor: the two identical slice 4 runs differ on 10 of 41 questions (7 answerable, 3 should-refuse) and by 4 overall, so a win now needs more than 4 questions; the 2-question rule (experiment rule 5) is too tight for this set.
+- Slice 5 (gather-then-write, code gate): 37/41 overall (answers 23/27; refused 14/14; judge-passed refusals 14/14); 0 bad picks; 27 write calls (one per answered question); 3.07 model calls a question; $1.80. Overall it is 2 above slice 4's better run, inside the noise floor: no win called.
+- Missed refusals 0 and false refusals 0 in all three runs: the code refusal gate had nothing to fix on this set; the refusal change can't be read here.
+- The 3 judge-failed refusals in slice 4 were all about the related text, never the refusal itself: service-time-limit (both runs) failed because related laws sat in the one citation list, so the judge read them as the answer; banned-substances (run 1) failed because the model-written related note added an unsupported claim (Law 16.6.4 as a "catch-all"). Slice 5's code-quoted "Related (...)" lines passed all 14.
+- Grading gap: RulesAnswer has one citation list, so the judge can't tell an answer's sources from related sentences; a pass rule that allows related sentences only can fail a correct refusal.
+- Slice 5's 4 answer fails are all missing key facts: toss-choices (the loser's choice), shuttle-base-came-off (play since the last service doesn't count; failed in all 3 runs, 0 tool rounds each), shuttle-from-next-court (otherwise a let), black-card (match winner announced, disqualified from all events; failed in all 3 runs).
+
 ## Lab 7 · React chat UI
