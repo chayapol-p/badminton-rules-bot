@@ -27,6 +27,7 @@ model at temperature 0 and the judge (record 0014).
                   EXTRA_AGENT_RULES; empty since record 0024 made the two default ones search steps). Tool setups only
   --held-out      answer the held-out questions: once, for the published number (experiment rule 4)
   --unseen        answer the unseen questions: once per setup, read against each one's "needs" tag
+  --phase2        answer the Phase 2 questions (41 dev questions, 14 should refuse; slice 2)
   --label         a short name for the run, used in its file names
   --dry-run       answer only the first question, and don't log the run
 
@@ -41,6 +42,7 @@ Run from the project root:
     uv run python -m experiments.run_answer_experiment --setup plain-rag --dry-run
     uv run python -m experiments.run_answer_experiment --setup hybrid --unseen
     uv run python -m experiments.run_answer_experiment --setup hybrid --flow gather-then-write --dry-run
+    uv run python -m experiments.run_answer_experiment --setup hybrid --phase2 --dry-run
 """
 
 import argparse
@@ -68,7 +70,7 @@ from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line
 from evals.checks.check_refusals import should_refuse
 from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.log_eval_run import append_run
-from evals.probes import load_probes, load_unseen_questions
+from evals.probes import load_phase2_questions, load_probes, load_unseen_questions
 from evals.score_answer_run import (check_and_grade, print_scores, print_tool_use, summarise_answer_run,
                                     summarise_tool_use)
 from evals.token_costs import call_cost
@@ -94,10 +96,6 @@ REFUSAL_BY_FLOW = {
     "loop-call-with-tools": "code, from the parts",
     "gather-then-write": "code gate before the write call",
 }
-
-## The question sets a run can answer, by their command-line name
-QUESTION_SETS = ["dev", "held-out", "unseen"]
-
 
 # ===== The setups =====
 
@@ -152,6 +150,7 @@ def build_parser() -> argparse.ArgumentParser:
     question_sets = parser.add_mutually_exclusive_group()
     question_sets.add_argument("--held-out", action="store_true", help="answer the held-out questions, once")
     question_sets.add_argument("--unseen", action="store_true", help="answer the unseen questions, once per setup")
+    question_sets.add_argument("--phase2", action="store_true", help="answer the Phase 2 questions (slice 2)")
     parser.add_argument("--label", help="a short name for the run")
     parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     return parser
@@ -208,6 +207,8 @@ def parse_run_choices(command_line: list[str]) -> RunChoices:
         question_set = "held-out"
     if arguments.unseen:
         question_set = "unseen"
+    if arguments.phase2:
+        question_set = "phase2"
     label = arguments.label or build_label(arguments, flow, top_k, agent_rule_names, question_set)
     if arguments.dry_run:
         label = f"{label}-dry-run"
@@ -224,6 +225,8 @@ def load_question_set(question_set: str) -> tuple[list[dict], str]:
         return load_questions("held_out"), "held_out"
     if question_set == "unseen":
         return load_unseen_questions(), "unseen"
+    if question_set == "phase2":
+        return load_phase2_questions(), "phase2"
     return load_questions("dev") + load_probes(), "dev+probes"
 
 

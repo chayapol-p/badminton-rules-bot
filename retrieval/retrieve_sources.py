@@ -41,9 +41,11 @@ def build_clause_vector_search(chunks: list[dict], questions: list[dict], model:
     question_vector_by_id.update(load_embeddings("refusal_probes", model))
     question_vector_by_id.update(load_embeddings("false_premise_probes", model))
 
-    # The unseen questions (Stage 3) join once their vectors are saved, so older runs still work without them
-    if embeddings_file("unseen_questions").exists():
-        question_vector_by_id.update(load_embeddings("unseen_questions", model))
+    # The unseen questions (Stage 3) and the Phase 2 questions join once their vectors are saved, so a run on
+    # another set still works without them
+    for later_set_name in ["unseen_questions", "phase2_questions"]:
+        if embeddings_file(later_set_name).exists():
+            question_vector_by_id.update(load_embeddings(later_set_name, model))
     # Every question needs its vector, so a missing one stops the run before the first paid call
     question_vector_by_text = {}
     for question in questions:

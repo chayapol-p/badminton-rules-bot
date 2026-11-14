@@ -46,3 +46,14 @@ def test_a_flow_that_is_not_the_default_is_in_the_run_name():
 def test_a_choice_the_setup_has_no_use_for_stops_the_run(command_line):
     with pytest.raises(SystemExit):
         parse_run_choices(command_line)
+
+
+def test_the_phase2_set_is_its_own_question_set_and_in_the_run_name():
+    choices = parse_run_choices(["--setup", "hybrid", "--phase2", "--dry-run"])
+    assert choices.question_set == "phase2"
+    assert choices.label == "hybrid-phase2-dry-run"
+
+
+def test_one_run_answers_one_question_set():
+    with pytest.raises(SystemExit):
+        parse_run_choices(["--setup", "hybrid", "--phase2", "--unseen"])

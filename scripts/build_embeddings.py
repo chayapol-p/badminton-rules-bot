@@ -1,7 +1,7 @@
 """
 Embeds the chunks, the windows, the golden questions and the probes with mistral-embed, once, and saves them.
 
-Nine sets, each saved to data/embeddings/<name>.npz:
+Ten sets, each saved to data/embeddings/<name>.npz:
   clauses_search_text  each clause chunk's search_text (context header, then the clause)
   clauses_text         each clause chunk's text alone, for the context header comparison
   clauses_search_text_with_parents   the header, the parent clauses, then the clause
@@ -11,12 +11,13 @@ Nine sets, each saved to data/embeddings/<name>.npz:
   refusal_probes       each refusal probe (Stage 2), keyed by its id
   false_premise_probes each false-premise probe (Stage 2), keyed by its id
   unseen_questions     each unseen question (Stage 3), keyed by its id
+  phase2_questions     each Phase 2 question (slice 2), keyed by its id
 
 A set that is already saved with the same model and the same ids is skipped, so a rerun costs
 nothing; a set that gained or lost an id is embedded again.
 Pass --force to embed everything again.
 
-  Input:  data/rule_chunks.json, evals/golden_questions.json, evals/refusal_probes.json, evals/false_premise_probes.json, evals/unseen_questions.json, MISTRAL_API_KEY in .env
+  Input:  data/rule_chunks.json, evals/golden_questions.json, evals/refusal_probes.json, evals/false_premise_probes.json, evals/unseen_questions.json, evals/phase2_questions.json, MISTRAL_API_KEY in .env
   Output: data/embeddings/*.npz
 
 Run from the project root:
@@ -34,7 +35,7 @@ from tqdm import tqdm
 
 from app.settings import load_settings
 from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
-from evals.probes import load_false_premise_probes, load_refusal_probes, load_unseen_questions
+from evals.probes import load_false_premise_probes, load_phase2_questions, load_refusal_probes, load_unseen_questions
 from retrieval.stored_embeddings import embeddings_file, load_embeddings, save_embeddings
 from retrieval.section_groups import build_section_groups
 from retrieval.window_chunks import build_windows
@@ -87,6 +88,7 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
     probes = load_refusal_probes()
     false_premise_probes = load_false_premise_probes()
     unseen_questions = load_unseen_questions()
+    phase2_questions = load_phase2_questions()
 
     # Collect the ids, shared by the three clause sets
     chunk_ids = [chunk["id"] for chunk in chunks]
@@ -96,6 +98,7 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
     probe_ids = [probe["id"] for probe in probes]
     false_premise_ids = [probe["id"] for probe in false_premise_probes]
     unseen_ids = [question["id"] for question in unseen_questions]
+    phase2_ids = [question["id"] for question in phase2_questions]
 
     # Pair each set's ids with the text it embeds
     return {
@@ -108,6 +111,7 @@ def build_embedding_inputs_by_set() -> dict[str, tuple[list[str], list[str]]]:
         "refusal_probes": (probe_ids, [probe["question"] for probe in probes]),
         "false_premise_probes": (false_premise_ids, [probe["question"] for probe in false_premise_probes]),
         "unseen_questions": (unseen_ids, [question["question"] for question in unseen_questions]),
+        "phase2_questions": (phase2_ids, [question["question"] for question in phase2_questions]),
     }
 
 
