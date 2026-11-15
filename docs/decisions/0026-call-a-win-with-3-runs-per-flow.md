@@ -16,9 +16,13 @@ apart) was set on the golden dev set in Stage 1 and is too tight for this set.
 
 ## Decision
 Option 2: every flow under comparison runs 3 times on the same questions, and a win is called only when the
-gap between flows is bigger than the noise. Noise is read as the spread between runs of the same flow
-(Claude's reading of "bigger than the noise", for Job to confirm): a win when the flows' ranges of overall
-scores don't overlap.
+gap between flows is bigger than the noise. Noise is the spread between runs of the same flow, so a win
+needs the flows' ranges of overall scores not to overlap (Job confirmed this reading, 15 Nov). Example: 31, 33, 35
+against 36, 37, 38 is a win; 34, 37, 38 against 31, 33, 35 is not.
+
+## Evidence
+14 Nov repeat runs (hybrid, Phase 2 questions): slice 4 scored 36, 37, 36 and slice 5 scored 37, 38, 37. The
+ranges touch at 37, so no win.
 
 ## Consequences
 - A comparison of two flows costs about 6 runs (about $10.50 and 2 hours on hybrid with the Phase 2 questions).
