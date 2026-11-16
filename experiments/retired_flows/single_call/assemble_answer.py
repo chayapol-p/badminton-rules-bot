@@ -1,7 +1,7 @@
 """
 Builds the checked answer from the model's parts: the answer text, the quotes and the refusal are all decided by code.
 
-The model makes one decision per part of the question: which sentences answer it (answer_flows/single_call/answer_shape.py
+The model makes one decision per part of the question: which sentences answer it (experiments/retired_flows/single_call/answer_shape.py
 ModelAnswer). From those picks, code:
 
 - copies each cited sentence in as its quote, so a quote can never be misquoted or joined from pieces;
@@ -19,7 +19,7 @@ Use:
 
 from answer_flows.shared.answer_shape import RulesAnswer
 from answer_flows.shared.cite_sentences import NO_PARTS_ANSWER, add_citations
-from answer_flows.single_call.answer_shape import ModelAnswer
+from experiments.retired_flows.single_call.answer_shape import ModelAnswer
 
 
 # ===== The whole answer =====

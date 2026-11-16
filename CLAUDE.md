@@ -10,6 +10,7 @@ Only what is specific to this repo:
 
 - Written by hand here, because a reader must understand them to trust the results: rank fusion, the scorers, the citation check, the agent loop, the retry helper and the streaming endpoint. Everything else uses the installed packages (`mistralai`, `rank_bm25`, `numpy`, `httpx`, `pytest`, `fastapi`).
 - Job's exercise blanks are marked `# TODO (Stage N, Step M): …`.
+- In this repo, instead of deleting the code a change replaces (rule 15), a retired answer flow moves to `experiments/retired_flows/` and stays runnable, because it shows how the experiments were set up. Delete nothing that produced a logged result. Product code (`answer_flows/`, `app/`, `evals/`, `retrieval/`) never imports from `experiments/` (`tests/test_product_imports.py` checks it).
 
 ## Experiment rules
 

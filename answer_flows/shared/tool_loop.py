@@ -31,7 +31,6 @@ from pydantic import BaseModel
 from answer_flows.shared.prompt_sections import bullet_lines, wrap_section
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import TOOL_DEFINITIONS, RuleTools, ToolResult
-from answer_flows.single_call.answer_shape import ModelAnswer
 from retrieval.build_bundle import format_bundle, full_chunks, label_by_full_id
 
 
@@ -103,7 +102,7 @@ def build_agent_prompt(system_prompt: str, question_text: str, starting_items: l
 # ===== One model call =====
 
 def call_model(client: Mistral, model: str, reasoning_effort: str, messages: list, tools_allowed: bool,
-               answer_shape: type[BaseModel] = ModelAnswer):
+               answer_shape: type[BaseModel]):
     """Sends the conversation so far with the tools, at the fixed settings of every eval run, and returns the response."""
 
     # After the last round, the tools stay listed but the model may not call them

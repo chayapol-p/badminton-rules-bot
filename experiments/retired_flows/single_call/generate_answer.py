@@ -9,7 +9,7 @@ call sets both.
 
 Mistral Large 4 always thinks before it answers, and sends its reply as a list of chunks: thinking
 chunks, then text chunks with the answer (Mistral's reasoning docs: there is no plain-text mode).
-The answer text is parsed into ModelAnswer and assembled into RulesAnswer (answer_flows/single_call/assemble_answer.py); the thinking
+The answer text is parsed into ModelAnswer and assembled into RulesAnswer (experiments/retired_flows/single_call/assemble_answer.py); the thinking
 is kept as text for reading failures.
 
 The reply is parsed here, not inside the SDK, so a reply that doesn't fit the shape still reports
@@ -27,9 +27,9 @@ from pydantic import ValidationError
 
 from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS, split_reply_content
-from answer_flows.single_call.answer_rules import build_answer_prompt
-from answer_flows.single_call.answer_shape import ModelAnswer
-from answer_flows.single_call.assemble_answer import assemble_answer
+from experiments.retired_flows.single_call.answer_rules import build_answer_prompt
+from experiments.retired_flows.single_call.answer_shape import ModelAnswer
+from experiments.retired_flows.single_call.assemble_answer import assemble_answer
 from retrieval.build_bundle import format_bundle, full_chunks
 
 

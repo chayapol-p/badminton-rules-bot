@@ -1,8 +1,8 @@
 """
 The checked answer every flow returns, and the sentence citation every flow's model writes.
 
-Each flow's own model shapes live in its folder: answer_flows/single_call/answer_shape.py (ModelAnswer,
-used by setup A and slice 4) and answer_flows/gather_then_write/answer_shape.py (slice 5).
+Each flow's own model shapes live in its folder: answer_flows/gather_then_write/answer_shape.py (slice 5, the product
+flow) and, for the retired flows, experiments/retired_flows/single_call/answer_shape.py (ModelAnswer, setup A and slice 4).
 
 SentenceCitation  what every flow's model writes for one sentence: a chunk id and a sentence number.
 Citation          one claim's source in the checked answer: a chunk id and the quote code copied in.

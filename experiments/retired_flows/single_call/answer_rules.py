@@ -4,7 +4,7 @@ Builds the messages for one answer: the answer rules as the system message, the 
 The sources come as one text, built by retrieval/build_bundle.py: each source block starts with its
 chunk id in square brackets and its role label, then where the clause comes from, then the clause
 text as printed, one numbered sentence per line. The model's one decision per part of the question is
-which sentences answer it. Code builds the rest (answer_flows/single_call/assemble_answer.py): it copies each sentence in
+which sentences answer it. Code builds the rest (experiments/retired_flows/single_call/assemble_answer.py): it copies each sentence in
 as its quote, so answers quote the text as printed (data rule 4), writes a line for each part the
 sources don't answer, and refuses when no part is answered.
 

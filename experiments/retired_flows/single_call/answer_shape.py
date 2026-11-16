@@ -1,7 +1,7 @@
 """
 What the model writes in one call (setup A, and slice 4 with tools): its reasoning, each part with the sentences
 that answer it and that part's answer, then any related sentences. Code builds RulesAnswer from it
-(answer_flows/single_call/assemble_answer.py).
+(experiments/retired_flows/single_call/assemble_answer.py).
 """
 
 from pydantic import BaseModel, Field

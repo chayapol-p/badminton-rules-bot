@@ -2,9 +2,9 @@
 Tests the answer prompt: the rules, the extra rules under test, and the sources and question in their tags.
 """
 
-from answer_flows.single_call.answer_shape import ModelAnswer
+from experiments.retired_flows.single_call.answer_shape import ModelAnswer
 from answer_flows.shared.tool_loop import SEARCH_STEPS
-from answer_flows.single_call.answer_rules import (ANSWER_RULES, EXTRA_ANSWER_RULES, build_answer_prompt,
+from experiments.retired_flows.single_call.answer_rules import (ANSWER_RULES, EXTRA_ANSWER_RULES, build_answer_prompt,
                                                    build_answer_rules)
 
 

@@ -9,8 +9,8 @@ the flows that fit it:
   agentic     none                                     yes     loop-call-with-tools, gather-then-write
   hybrid      as plain-rag (record 0021)               yes     loop-call-with-tools, gather-then-write
 
-  single-call           one call picks the sentences per part and writes the answer (answer_flows/single_call)
-  loop-call-with-tools  the same, after a tool loop (slice 4, answer_flows/loop_call_with_tools)
+  single-call           one call picks the sentences per part and writes the answer (experiments/retired_flows/single_call)
+  loop-call-with-tools  the same, after a tool loop (slice 4, experiments/retired_flows/loop_call_with_tools)
   gather-then-write     a tool loop picks the sentences only, code refuses when no part has one, and a write
                         call with no tools answers (slice 5, answer_flows/gather_then_write)
 
@@ -21,7 +21,7 @@ model at temperature 0 and the judge (record 0014).
   --setup         plain-rag | agentic | hybrid
   --flow          one of the setup's flows (default: its first)
   --top-k         clauses the starting search hands on, before the rule links (default 5; not for agentic)
-  --rule          an extra answer limit to test, by name (answer_flows/single_call/answer_rules.py EXTRA_ANSWER_RULES);
+  --rule          an extra answer limit to test, by name (experiments/retired_flows/single_call/answer_rules.py EXTRA_ANSWER_RULES);
                   repeat for more than one. Not for gather-then-write, which has its own rules
   --agent-rule    an extra note to test in the tools section, by name (answer_flows/shared/tool_loop.py
                   EXTRA_AGENT_RULES; empty since record 0024 made the two default ones search steps). Tool setups only
@@ -46,6 +46,7 @@ Run from the project root:
 """
 
 import argparse
+import subprocess
 import sys
 import time
 from collections.abc import Callable
@@ -58,13 +59,10 @@ from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES
 from answer_flows.gather_then_write.gather_then_write import gather_then_write
-from answer_flows.loop_call_with_tools.answer_with_tools import answer_with_tools
 from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.shared.tool_loop import EXTRA_AGENT_RULES
-from answer_flows.single_call.answer_rules import EXTRA_ANSWER_RULES, build_answer_rules
-from answer_flows.single_call.generate_answer import generate_answer
 from app.settings import Settings, load_settings
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line
 from evals.checks.check_refusals import should_refuse
@@ -74,6 +72,9 @@ from evals.probes import load_phase2_questions, load_probes, load_unseen_questio
 from evals.score_answer_run import (check_and_grade, print_scores, print_tool_use, summarise_answer_run,
                                     summarise_tool_use)
 from evals.token_costs import call_cost
+from experiments.retired_flows.loop_call_with_tools.answer_with_tools import answer_with_tools
+from experiments.retired_flows.single_call.answer_rules import EXTRA_ANSWER_RULES, build_answer_rules
+from experiments.retired_flows.single_call.generate_answer import generate_answer
 from retrieval.expand_with_rule_links import load_rule_map
 from retrieval.retrieve_sources import (DEFAULT_TOP_K, build_clause_vector_search, build_live_vector_search,
                                         build_retrieve_function)
@@ -296,6 +297,21 @@ def grade_reply(question: dict, reply: FlowReply, chunks: list[dict], chunk_by_i
     return answer_line, grade_line
 
 
+# ===== The code's version, for runs.jsonl =====
+
+def read_code_version() -> dict:
+    """Returns the git commit the run's code is at, and whether tracked files had changes not yet committed."""
+
+    # Every run's settings record this, so a missing git stops the run before any paid call
+    commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True)
+    changed_files = subprocess.run(["git", "status", "--porcelain", "--untracked-files=no"],
+                                   capture_output=True, text=True, check=True)
+
+    # Untracked files (helper scripts in workshop/) don't change the code a run uses, so only tracked ones count
+    has_uncommitted_changes = changed_files.stdout.strip() != ""
+    return {"code_commit": commit.stdout.strip(), "code_has_uncommitted_changes": has_uncommitted_changes}
+
+
 # ===== The run's settings, for runs.jsonl =====
 
 def build_run_settings(run_name: str, choices: RunChoices, split_name: str, settings: Settings) -> dict:
@@ -321,6 +337,7 @@ def build_run_settings(run_name: str, choices: RunChoices, split_name: str, sett
         "reasoning_effort": settings.mistral_reasoning_effort,
         "judge_model": settings.claude_judge_model,
     })
+    run_settings.update(read_code_version())
     return run_settings
 
 

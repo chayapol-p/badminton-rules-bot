@@ -4,7 +4,7 @@ Tests the run script's command line: which flows each setup allows, the agent ru
 
 import pytest
 
-from experiments.run_answer_experiment import parse_run_choices
+from experiments.run_answer_experiment import parse_run_choices, read_code_version
 
 
 # ===== The defaults each setup gets =====
@@ -57,3 +57,11 @@ def test_the_phase2_set_is_its_own_question_set_and_in_the_run_name():
 def test_one_run_answers_one_question_set():
     with pytest.raises(SystemExit):
         parse_run_choices(["--setup", "hybrid", "--phase2", "--unseen"])
+
+
+def test_read_code_version_names_the_commit_and_any_changes():
+    """Each run records the commit its code is at, so a result links back to the code that produced it."""
+    code_version = read_code_version()
+    assert set(code_version) == {"code_commit", "code_has_uncommitted_changes"}
+    assert len(code_version["code_commit"]) >= 7
+    assert isinstance(code_version["code_has_uncommitted_changes"], bool)
