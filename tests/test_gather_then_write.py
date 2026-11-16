@@ -101,3 +101,10 @@ def test_a_write_reply_that_skips_an_answered_part_is_a_format_error():
     reply = run_flow(client)
     assert reply.is_format_error
     assert reply.error_message == "write call: no answer for parts [1]"
+
+
+def test_write_rules_answer_a_named_format_first():
+    """A question that names a format gets that format's rule first; the standard rule only to say it doesn't apply."""
+    assert "When the question names a format, answer from that format's rule first" in WRITE_RULES
+    assert "mention the standard rule only to say it doesn't apply there" in WRITE_RULES
+    assert "give the standard rule first, then name the format" in WRITE_RULES
