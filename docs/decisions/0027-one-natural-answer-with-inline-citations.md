@@ -45,6 +45,15 @@ Option 3, with these picks (Job, 16 Nov):
   of the 9 Phase 2 runs) and would only add noise. Consistency (the same verdict in all of a flow's 3 runs) has
   one value per flow, not per run, so it is reported beside the metric as a tiebreaker.
 
+- **Build picks (Job, 16 Nov, before the build):**
+  - The write call replies with a list of sentences, each with its text and inline [n] markers; a sentence that
+    says what the rules don't cover is flagged as a gap. Code joins the sentences into one answer. A gap sentence
+    must carry no marker, every other sentence at least one (no splitting of free text into sentences).
+  - The judge grades every answer that has text, including those a code check failed, so each scorecard line
+    measures only itself. A format error has no text, so every line fails.
+  - The wrong-clause check (cites none of the clauses that hold the golden answer) stays as its own gate line
+    with no weight, like citations valid.
+
 ## Evidence
 To come: the new flow's runs, 3 against slice 5 (record 0026).
 
