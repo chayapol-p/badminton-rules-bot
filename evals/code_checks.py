@@ -1,8 +1,8 @@
 """
 Runs every code check on one saved answer line, and returns the checks it failed and the warnings for the judge.
 
-The order of grading: code decides everything it can decide reliably, and the judge is only
-called on answers the code checks passed. Failures:
+The order of grading: code decides everything it can decide reliably, then the judge grades every
+answer that has text, also those a code check failed (record 0027). Failures:
   - format error: the reply didn't fit the answer shape
   - wrong refusal: a missed refusal or a false refusal
   - citation problem: a cited chunk the model never saw, or a quote not in its clause

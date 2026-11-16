@@ -22,12 +22,13 @@ CEILING_REPLY = RulesAnswer(reasoning="No source gives a ceiling height.", refus
                             answer="The sources give no ceiling height.", citations=[])
 
 
-def grade_with(key_facts: bool, only_from_sources: bool, follows_pass_rule: bool) -> JudgeGrade:
+def grade_with(key_facts: bool, only_from_sources: bool, follows_pass_rule: bool, readable: bool = True) -> JudgeGrade:
     """Returns a grade with the given pass or fail on each rubric line."""
     return JudgeGrade(
         key_facts=RubricLine(passed=key_facts, reason="sample reason"),
         only_from_sources=RubricLine(passed=only_from_sources, reason="sample reason"),
         follows_pass_rule=RubricLine(passed=follows_pass_rule, reason="sample reason"),
+        readable=RubricLine(passed=readable, reason="sample reason"),
     )
 
 
@@ -40,13 +41,18 @@ def test_the_answer_passes_only_when_every_rubric_line_passes():
     assert not judge_passed(grade_with(True, True, False))
 
 
+def test_readable_is_tracked_and_never_fails_an_answer():
+    """Record 0027: the readable line feeds the combined metric, not the pass."""
+    assert judge_passed(grade_with(True, True, True, readable=False))
+
+
 # ===== The prompt =====
 
 def test_the_prompt_holds_the_expected_answer_the_sources_and_the_reply():
     prompt = build_judge_prompt(SAMPLE_QUESTIONS[1], POSTS_REPLY, SAMPLE_CHUNKS, [])
     assert SAMPLE_QUESTIONS[1]["answer"] in prompt
     assert "[laws-1.4]" in prompt
-    assert '- [laws-1.4] "The posts shall be 1.55 metres in height"' in prompt
+    assert '[1] [laws-1.4] "The posts shall be 1.55 metres in height"' in prompt
     assert "<pass_rule>\nNone\n</pass_rule>" in prompt
     assert "Law 1.4 gives the posts' height" not in prompt, "the reasoning is the bot's notes, not shown to the user"
 
@@ -55,7 +61,7 @@ def test_a_question_without_an_answer_shows_why_and_its_pass_rule():
     prompt = build_judge_prompt(SAMPLE_QUESTIONS[2], CEILING_REPLY, SAMPLE_CHUNKS, [])
     assert SAMPLE_QUESTIONS[2]["why_unanswerable"] in prompt
     assert SAMPLE_QUESTIONS[2]["pass_rule"] in prompt
-    assert "Citations (the answer's sources):\n(none)" in prompt
+    assert "Citations (the answer's sources; marker [n] points to source n):\n(none)" in prompt
 
 
 def test_the_judge_sees_related_sentences_apart_from_the_answers_sources():
@@ -64,13 +70,28 @@ def test_the_judge_sees_related_sentences_apart_from_the_answers_sources():
     reply = RulesAnswer(reasoning="", refused=True, answer="The sources do not say it.", citations=[],
                         related_citations=[related])
     reply_text = describe_reply(reply)
-    assert "Citations (the answer's sources):\n(none)" in reply_text
+    assert "Citations (the answer's sources; marker [n] points to source n):\n(none)" in reply_text
     assert 'Related sentences (context only, not part of the answer):\n- [laws-1.4] "The posts shall be 1.55 metres in height"' in reply_text
 
 
 def test_a_run_file_from_before_the_split_still_loads():
     old_line = {"reasoning": "", "refused": False, "answer": "1.55 m.", "citations": [{"chunk_id": "laws-1.4", "quote": "x"}]}
     assert RulesAnswer.model_validate(old_line).related_citations == []
+
+
+def test_the_judge_sees_sources_numbered_as_the_markers_with_their_names():
+    """Record 0027: marker [n] lines up with source n, so the judge can check each marked claim against it."""
+    reply = RulesAnswer(reasoning="", refused=False, answer="Two clear [2], capped at 30 [1].", citations=[
+        Citation(chunk_id="laws-7.5", quote="the side scoring the 30th point shall win that game",
+                 source_name="Laws of Badminton 5.0 (2), Clause 7.5"),
+        Citation(chunk_id="laws-7.4", quote="the side which gains a 2 point lead first", source_name="")])
+    reply_text = describe_reply(reply)
+    assert '[1] [laws-7.5] Laws of Badminton 5.0 (2), Clause 7.5: "the side scoring the 30th point shall win that game"' in reply_text
+    assert '[2] [laws-7.4] "the side which gains a 2 point lead first"' in reply_text
+
+
+def test_the_grounded_line_checks_each_marked_claim_against_its_own_source():
+    assert "the source with that number in the reply's numbered citations must state the claim" in JUDGE_RULES
 
 
 def test_the_code_warnings_reach_the_judge_as_hints():

@@ -5,9 +5,12 @@ Why a judge from another model family: a judge tends to rate answers from its ow
 higher than a neutral grader would (self-preference bias), so Claude grades Mistral's answers.
 The judge isn't told which model wrote the answer.
 
-The judge only sees answers that passed the code checks (evals/code_checks.py), with their
-warnings as hints. It passes or fails three rubric lines, each with a one-sentence reason. Code,
-not the judge, decides the overall grade: every line must pass.
+Since record 0027 the judge sees every answer that has text, also those a code check failed
+(evals/code_checks.py), with the checks' warnings as hints, so each scorecard line measures only itself.
+It passes or fails four rubric lines, each with a one-sentence reason: key facts, only from sources
+(each [n] marked claim checked against source n), follows the pass rule, and readable. Code, not the
+judge, decides the overall grade: the first three lines must pass; readable is tracked and never fails
+an answer.
 
 The judge sees what a user sees: refused or not, the answer and its citations. The bot's reasoning
 field is its working notes, kept in the run log only: on 8 Nov leaving-court failed because its
@@ -34,12 +37,12 @@ from dataclasses import dataclass
 from anthropic import Anthropic
 from pydantic import BaseModel, Field
 
-from answer_flows.shared.answer_shape import RulesAnswer
+from answer_flows.shared.answer_shape import Citation, RulesAnswer
 from retrieval.build_bundle import format_source
 
 
 # Constants
-## Room for three short reasons
+## Room for four short reasons
 MAX_GRADE_TOKENS = 1024
 
 ## How many times each answer is graded; an odd number, so every rubric line has a majority
@@ -50,12 +53,13 @@ JUDGE_RULES = """You grade answers from a badminton rules bot. The bot may use o
 
 You get the question, the expected answer (or why the question has no answer in the sources), a pass rule when there is one, the sources the bot was shown, the bot's reply, and any notes from the code checks.
 
-Grade three lines, each pass or fail, with one sentence of reason:
+Grade four lines, each pass or fail, with one sentence of reason:
 1. key_facts. For a question with an expected answer: the reply states the expected answer's key facts; wording may differ. For a question with no answer: the reply does not give the missing fact (no number, date, name or ruling that the sources don't hold).
-2. only_from_sources. Every claim in the reply is in the sources or stated in the question: the reply may repeat what the user said, unless the sources contradict it. A true claim that is in neither still fails. What the bot says about itself (what it does, what it can't do) is not a rule claim, and saying who decides under a cited law is fine when that law says so. A number the sources don't hold passes only when it is worked out from them, such as an example score that follows a stated rule; a number from memory, such as a year or an amount, fails.
+2. only_from_sources. Every claim in the reply is in the sources or stated in the question: the reply may repeat what the user said, unless the sources contradict it. A true claim that is in neither still fails. What the bot says about itself (what it does, what it can't do) is not a rule claim, and saying who decides under a cited law is fine when that law says so. A number the sources don't hold passes only when it is worked out from them, such as an example score that follows a stated rule; a number from memory, such as a year or an amount, fails. When the reply marks a claim with numbers in square brackets, such as [2], the source with that number in the reply's numbered citations must state the claim; a claim whose number points to a source that doesn't state it fails, even when another source does.
 3. follows_pass_rule. The reply follows the pass rule. Pass when there is no pass rule.
+4. readable. The reply reads as one natural answer to the person who asked: it starts with what they need, joins its points into connected sentences, and has no repeated clauses, clause-by-clause lists or rule-book headers in its text. The [n] markers and the numbered citations don't count against it.
 
-Judge the content only. Length, tone and formatting don't matter."""
+Lines 1 to 3 judge the content only: length, tone and formatting don't matter there. Line 4 judges only how the reply reads."""
 
 
 # ===== The grade's shape =====
@@ -68,11 +72,12 @@ class RubricLine(BaseModel):
 
 
 class JudgeGrade(BaseModel):
-    """The judge's grade on the three rubric lines."""
+    """The judge's grade on the four rubric lines."""
 
     key_facts: RubricLine
     only_from_sources: RubricLine
     follows_pass_rule: RubricLine
+    readable: RubricLine
 
 
 @dataclass
@@ -87,7 +92,7 @@ class GradeReply:
 # ===== The overall grade =====
 
 def judge_passed(grade: JudgeGrade) -> bool:
-    """True when every rubric line passed."""
+    """True when the three content lines passed; readable is tracked, never failing an answer (record 0027)."""
     rubric_lines = [grade.key_facts, grade.only_from_sources, grade.follows_pass_rule]
     return all(line.passed for line in rubric_lines)
 
@@ -104,9 +109,25 @@ def describe_expected_answer(question: dict) -> str:
     return f"None: this question has no answer in the sources. Why: {reason}"
 
 
-def format_citation_lines(citations: list) -> str:
-    """Returns one line per citation, its chunk id and quote, or "(none)"."""
-    citation_lines = [f'- [{citation.chunk_id}] "{citation.quote}"' for citation in citations]
+def format_citation(citation: Citation) -> str:
+    """Returns one citation as the judge reads it: its chunk id, its source name when it has one, and its quote."""
+    source = f"[{citation.chunk_id}]"
+    if citation.source_name:
+        source = f"{source} {citation.source_name}:"
+    return f'{source} "{citation.quote}"'
+
+
+def format_numbered_citations(citations: list[Citation]) -> str:
+    """Returns the answer's sources numbered from 1, as the reply's [n] markers point to them, or "(none)"."""
+    citation_lines = [f"[{number}] {format_citation(citation)}" for number, citation in enumerate(citations, start=1)]
+    if not citation_lines:
+        return "(none)"
+    return "\n".join(citation_lines)
+
+
+def format_citation_lines(citations: list[Citation]) -> str:
+    """Returns one line per citation, or "(none)"."""
+    citation_lines = [f"- {format_citation(citation)}" for citation in citations]
     if not citation_lines:
         return "(none)"
     return "\n".join(citation_lines)
@@ -114,9 +135,10 @@ def format_citation_lines(citations: list) -> str:
 
 def describe_reply(rules_answer: RulesAnswer) -> str:
     """Returns the bot's reply as a user sees it: refused or not, the answer, its citations, then the related sentences
-    under their own heading, so the judge never reads context as the answer (record 0025). The reasoning stays out."""
+    under their own heading, so the judge never reads context as the answer (record 0025). The citations are numbered,
+    so marker [n] lines up with source n (record 0027). The reasoning stays out."""
     return (f"Refused: {rules_answer.refused}\nAnswer: {rules_answer.answer}\n"
-            f"Citations (the answer's sources):\n{format_citation_lines(rules_answer.citations)}\n"
+            f"Citations (the answer's sources; marker [n] points to source n):\n{format_numbered_citations(rules_answer.citations)}\n"
             f"Related sentences (context only, not part of the answer):\n{format_citation_lines(rules_answer.related_citations)}")
 
 
@@ -156,6 +178,7 @@ def combine_votes(grades: list[JudgeGrade]) -> JudgeGrade:
         key_facts=majority_line([grade.key_facts for grade in grades]),
         only_from_sources=majority_line([grade.only_from_sources for grade in grades]),
         follows_pass_rule=majority_line([grade.follows_pass_rule for grade in grades]),
+        readable=majority_line([grade.readable for grade in grades]),
     )
 
 

@@ -42,23 +42,21 @@ CODE_CHECK_NAMES = list(CODE_CHECK_PREFIXES)
 def check_and_grade(answer_line: dict, rules_answer: RulesAnswer, question: dict, retrieved_chunks: list[dict],
                     chunks: list[dict], chunk_by_id: dict[str, dict], anthropic_client: Anthropic,
                     judge_model: str) -> dict:
-    """Runs the code checks on one answer, then the judge when they pass; fills in the answer line's checks and judge cost, and returns the grade line."""
+    """Runs the code checks and the judge on one answer; fills in the answer line's checks and judge cost, and returns the grade line."""
 
-    # Code checks first: an answer they fail has failed, and isn't sent to the judge
+    # Code checks first; a failure fails the answer, but the judge still grades it (Job's pick, record 0027), so
+    # each scorecard line measures only itself: a citation slip doesn't also drag the judge's lines down
     answer_line["citation_problems"] = find_citation_problems(rules_answer, retrieved_chunks)
     answer_line["refusal_outcome"] = refusal_outcome(question, rules_answer.refused)
     failures, warnings = find_code_failures(answer_line, question, chunks, chunk_by_id)
     answer_line["code_failures"] = failures
     answer_line["code_warnings"] = warnings
-    answer_line["judge_cost"] = 0.0
-    if failures:
-        return {"id": question["id"], "passed": False, "judged": False, "grade": None}
 
     # Then the judge, for what only it can grade, with the code warnings to weigh
     grade_reply = grade_answer(anthropic_client, judge_model, question, rules_answer, retrieved_chunks, warnings)
     answer_line["judge_cost"] = call_cost(judge_model, grade_reply.input_tokens, grade_reply.output_tokens)
-    return {"id": question["id"], "passed": judge_passed(grade_reply.grade), "judged": True,
-            "grade": grade_reply.grade.model_dump()}
+    passed = not failures and judge_passed(grade_reply.grade)
+    return {"id": question["id"], "passed": passed, "judged": True, "grade": grade_reply.grade.model_dump()}
 
 
 # ===== Scoring a run =====
@@ -149,7 +147,8 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
         "false_premise_probes": len(false_premises),
         "code_failed": len(code_failed),
         "code_failures_by_check": code_failures_by_check,
-        "judge_calls": len(answer_lines) - len(code_failed),
+        # The answers the judge graded: since record 0027 every answer with text, before it only the code-clean ones
+        "judge_calls": sum(1 for line in answer_lines if line["judge_cost"] > 0),
         "false_refusals": len(false_refusals),
         "format_errors": len(answer_lines) - len(with_answer),
         "words_returned": round(mean(line["words_returned"] for line in answer_lines)),

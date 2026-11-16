@@ -20,9 +20,12 @@ REFUSED_OUTCOMES = {"correct refusal", "false refusal"}
 def answer_line(question_id: str, split: str, category: str, should_refuse: bool, refusal_outcome: str | None,
                 citation_problems: list[dict], code_failures: list[str]) -> dict:
     """Returns one answer line in the run's shape; a None outcome means the reply didn't fit the shape."""
+    # A reply with no text has nothing for the judge, so it costs no judge call
     answer = None
+    judge_cost = 0.0
     if refusal_outcome is not None:
         answer = {"answer": "sample", "citations": [], "refused": refusal_outcome in REFUSED_OUTCOMES}
+        judge_cost = 0.009
     return {
         "id": question_id,
         "split": split,
@@ -35,7 +38,7 @@ def answer_line(question_id: str, split: str, category: str, should_refuse: bool
         "refusal_outcome": refusal_outcome,
         "code_failures": code_failures,
         "answer_cost": 0.003,
-        "judge_cost": 0.009,
+        "judge_cost": judge_cost,
     }
 
 
@@ -92,12 +95,12 @@ def test_refusals_are_counted_both_ways_and_probes_apart():
     assert scores["no_answer_passed"] == 2
 
 
-def test_code_failures_are_counted_by_check_and_only_clean_answers_reach_the_judge():
+def test_code_failures_are_counted_by_check_and_every_answer_with_text_reaches_the_judge():
     scores = summarise_answer_run(ANSWER_LINES, PASSED_BY_ID)
     assert scores["code_failed"] == 5
     assert scores["code_failures_by_check"] == {"format error": 1, "wrong refusal": 3, "citation problem": 1,
                                                 "wrong clause": 0}
-    assert scores["judge_calls"] == 4
+    assert scores["judge_calls"] == 8
 
 
 def test_citations_are_scored_only_on_replies_that_fit_the_shape():
@@ -108,8 +111,7 @@ def test_citations_are_scored_only_on_replies_that_fit_the_shape():
 
 def test_cost_adds_the_answer_and_the_judge():
     scores = summarise_answer_run(ANSWER_LINES, PASSED_BY_ID)
-    assert scores["cost_per_question"] == 0.012
-    assert scores["total_cost"] == round(9 * 0.012, 3)
+    assert scores["total_cost"] == round(8 * 0.012 + 0.003, 3)
 
 
 def test_one_call_costs_its_tokens_at_the_model_price():
@@ -124,15 +126,18 @@ def answer_line_to_check(rules_answer) -> dict:
             "is_format_error": False, "answer": rules_answer.model_dump()}
 
 
-def test_an_answer_that_fails_the_code_checks_never_reaches_the_judge():
+def test_an_answer_that_fails_a_code_check_is_still_judged_and_still_fails():
+    """Record 0027 (Job's pick): every answer with text is judged, so each scorecard line measures only itself."""
     client = StubJudgeClient()
     refused_reply = POSTS_REPLY.model_copy(update={"refused": True})
     line = answer_line_to_check(refused_reply)
     grade_line = check_and_grade(line, refused_reply, SAMPLE_QUESTIONS[1], [SAMPLE_CHUNKS[2]], SAMPLE_CHUNKS,
                                  CHUNK_BY_ID, client, "claude-sonnet-5-5")
-    assert grade_line == {"id": "post-height", "passed": False, "judged": False, "grade": None}
     assert line["code_failures"] == ["false refusal"]
-    assert client.requests == []
+    assert grade_line["judged"]
+    assert grade_line["grade"]["key_facts"]["passed"], "the stub judge passes every line"
+    assert not grade_line["passed"]
+    assert len(client.requests) == JUDGE_VOTES
 
 
 def test_a_clean_answer_is_judged_and_its_cost_counted():
