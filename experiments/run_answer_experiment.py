@@ -6,13 +6,18 @@ the flows that fit it:
 
   setup       starting sources                       tools   flows (the first is the default)
   plain-rag   vector top k + rule links, all in full   no      single-call
-  agentic     none                                     yes     loop-call-with-tools, gather-then-write
-  hybrid      as plain-rag (record 0021)               yes     loop-call-with-tools, gather-then-write
+  agentic     none                                     yes     loop-call-with-tools, gather-then-write,
+                                                               gather-then-write-per-part
+  hybrid      as plain-rag (record 0021)               yes     loop-call-with-tools, gather-then-write,
+                                                               gather-then-write-per-part
 
   single-call           one call picks the sentences per part and writes the answer (experiments/retired_flows/single_call)
   loop-call-with-tools  the same, after a tool loop (slice 4, experiments/retired_flows/loop_call_with_tools)
   gather-then-write     a tool loop picks the sentences only, code refuses when no part has one, and a write
-                        call with no tools answers (slice 5, answer_flows/gather_then_write)
+                        call with no tools writes one natural answer with inline [n] markers (slice 5 with
+                        record 0027, answer_flows/gather_then_write)
+  gather-then-write-per-part  slice 5 before record 0027: the write call answers each part on its own line
+                        (experiments/retired_flows/gather_then_write_per_part)
 
 One run changes one thing (experiment rule 1). Fixed for every run: vector search on the clauses'
 search_text (record 0006), source blocks with the headings above each clause (record 0017), the answer
@@ -22,7 +27,7 @@ model at temperature 0 and the judge (record 0014).
   --flow          one of the setup's flows (default: its first)
   --top-k         clauses the starting search hands on, before the rule links (default 5; not for agentic)
   --rule          an extra answer limit to test, by name (experiments/retired_flows/single_call/answer_rules.py EXTRA_ANSWER_RULES);
-                  repeat for more than one. Not for gather-then-write, which has its own rules
+                  repeat for more than one. Not for the gather-then-write flows, which have their own rules
   --agent-rule    an extra note to test in the tools section, by name (answer_flows/shared/tool_loop.py
                   EXTRA_AGENT_RULES; empty since record 0024 made the two default ones search steps). Tool setups only
   --held-out      answer the held-out questions: once, for the published number (experiment rule 4)
@@ -74,6 +79,9 @@ from evals.scorecard import build_scorecard, print_scorecard, summarise_scorecar
 from evals.score_answer_run import (check_and_grade, print_scores, print_tool_use, summarise_answer_run,
                                     summarise_tool_use)
 from evals.token_costs import call_cost
+from experiments.retired_flows.gather_then_write_per_part.gather_and_write_rules import \
+    GATHER_RULES as PER_PART_GATHER_RULES
+from experiments.retired_flows.gather_then_write_per_part.gather_then_write import gather_then_write_per_part
 from experiments.retired_flows.loop_call_with_tools.answer_with_tools import answer_with_tools
 from experiments.retired_flows.single_call.answer_rules import EXTRA_ANSWER_RULES, build_answer_rules
 from experiments.retired_flows.single_call.generate_answer import generate_answer
@@ -91,13 +99,18 @@ SECONDS_BETWEEN_QUESTIONS = 1.0
 MISTRAL_RETRY = RetryConfig("backoff", BackoffStrategy(2_000, 60_000, 2.0, 300_000), retry_connection_errors=True)
 
 ## The answer flows that use tools, by their --flow name. Each takes the same arguments
-TOOL_FLOW_FUNCTIONS = {"loop-call-with-tools": answer_with_tools, "gather-then-write": gather_then_write}
+TOOL_FLOW_FUNCTIONS = {"loop-call-with-tools": answer_with_tools, "gather-then-write": gather_then_write,
+                       "gather-then-write-per-part": gather_then_write_per_part}
+
+## The gather-then-write flows' own gather prompts, by --flow name
+GATHER_RULES_BY_FLOW = {"gather-then-write": GATHER_RULES, "gather-then-write-per-part": PER_PART_GATHER_RULES}
 
 ## How each flow decides a refusal, as runs.jsonl records it
 REFUSAL_BY_FLOW = {
     "single-call": "code, from the parts",
     "loop-call-with-tools": "code, from the parts",
     "gather-then-write": "code gate before the write call",
+    "gather-then-write-per-part": "code gate before the write call",
 }
 
 # ===== The setups =====
@@ -113,8 +126,10 @@ class Setup:
 
 SETUPS = {
     "plain-rag": Setup(has_starting_sources=True, has_tools=False, flows=("single-call",)),
-    "agentic": Setup(has_starting_sources=False, has_tools=True, flows=("loop-call-with-tools", "gather-then-write")),
-    "hybrid": Setup(has_starting_sources=True, has_tools=True, flows=("loop-call-with-tools", "gather-then-write")),
+    "agentic": Setup(has_starting_sources=False, has_tools=True,
+                     flows=("loop-call-with-tools", "gather-then-write", "gather-then-write-per-part")),
+    "hybrid": Setup(has_starting_sources=True, has_tools=True,
+                    flows=("loop-call-with-tools", "gather-then-write", "gather-then-write-per-part")),
 }
 
 ## The stage every answer run logs since the measurement restarted with Phase 2 (record 0024)
@@ -167,8 +182,8 @@ def find_choice_problem(arguments: argparse.Namespace, setup: Setup, flow: str) 
         return f"--top-k: --setup {arguments.setup} has no starting sources"
     if arguments.agent_rule and not setup.has_tools:
         return f"--agent-rule: --setup {arguments.setup} has no tools"
-    if arguments.rule and flow == "gather-then-write":
-        return "--rule: gather-then-write has its own rules (answer_flows/gather_then_write/gather_and_write_rules.py)"
+    if arguments.rule and flow in GATHER_RULES_BY_FLOW:
+        return f"--rule: {flow} has its own rules"
     return None
 
 
@@ -373,10 +388,11 @@ def run_answer_experiment(choices: RunChoices) -> dict:
         live_search = build_live_vector_search(chunks, mistral_client, settings.mistral_embedding_model)
         rule_tools = RuleTools(chunks, live_search.search, rule_map)
 
-    # gather-then-write has its own prompt; the other flows use the answer prompt, with the search steps when they have tools
+    # The gather-then-write flows have their own gather prompts; the other flows use the answer prompt, with the
+    # search steps when they have tools
     answer_rules = build_answer_rules(choices.extra_rule_names, uses_tools=setup.has_tools)
-    if choices.flow == "gather-then-write":
-        answer_rules = GATHER_RULES
+    if choices.flow in GATHER_RULES_BY_FLOW:
+        answer_rules = GATHER_RULES_BY_FLOW[choices.flow]
 
     # Name the run first, so each answer can be saved the moment it's done
     run_name = f"{datetime.now(timezone.utc):%Y%m%dT%H%M}-{choices.label}"

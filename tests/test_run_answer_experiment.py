@@ -4,7 +4,7 @@ Tests the run script's command line: which flows each setup allows, the agent ru
 
 import pytest
 
-from experiments.run_answer_experiment import parse_run_choices, read_code_version
+from experiments.run_answer_experiment import GATHER_RULES_BY_FLOW, parse_run_choices, read_code_version
 
 
 # ===== The defaults each setup gets =====
@@ -65,3 +65,10 @@ def test_read_code_version_names_the_commit_and_any_changes():
     assert set(code_version) == {"code_commit", "code_has_uncommitted_changes"}
     assert len(code_version["code_commit"]) >= 7
     assert isinstance(code_version["code_has_uncommitted_changes"], bool)
+
+
+def test_the_retired_per_part_flow_runs_with_its_own_gather_prompt():
+    """Record 0027: the per-part slice 5 stays runnable, so 3 runs per flow can compare it with natural answers."""
+    choices = parse_run_choices(["--setup", "hybrid", "--flow", "gather-then-write-per-part", "--phase2"])
+    assert choices.label == "hybrid-gather-then-write-per-part-phase2"
+    assert GATHER_RULES_BY_FLOW["gather-then-write-per-part"] != GATHER_RULES_BY_FLOW["gather-then-write"]
