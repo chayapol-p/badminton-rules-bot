@@ -44,7 +44,7 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0020](0020-the-last-tool-round-carries-a-note-then-the-tools-turn-off.md) | The last tool round carries a note, then the tools turn off | Accepted |
 | [0021](0021-setup-c-goes-to-phase-2.md) | Setup C (RAG first, then tools) goes forward to Phase 2 | Accepted |
 | [0022](0022-setup-c-keeps-prompt-version-1-with-two-agent-rules.md) | Setup C keeps prompt version 1, with check-each-part and search-before-gaps | Superseded by 0024 |
-| [0023](0023-move-exact-work-from-prompt-rules-to-code.md) | Move the exact work from prompt rules to code, one change at a time | Proposed |
+| [0023](0023-move-exact-work-from-prompt-rules-to-code.md) | Move the exact work from prompt rules to code, one change at a time | Accepted (change 5 open) |
 | [0024](0024-every-prompt-as-task-steps-and-limits.md) | Every answer prompt as a task, numbered steps and limits with reasons | Accepted |
 | [0025](0025-related-sentences-get-their-own-list.md) | Related sentences get their own list, and the judge sees them as context | Accepted |
 | [0026](0026-call-a-win-with-3-runs-per-flow.md) | Call a win with 3 runs per flow and a gap bigger than the noise | Accepted |

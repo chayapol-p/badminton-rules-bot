@@ -1,6 +1,6 @@
 # 0023 · Move the exact work from prompt rules to code, one change at a time
 
-- **Status:** Proposed (Job, 11 Nov): adopted, each change to be tested on its own
+- **Status:** Accepted (Job, 16 Nov) for changes 1–4 and 6; change 5 is not built yet
 - **Date:** 2026-11-11
 - **Stage:** Phase 2 (productise)
 
@@ -28,8 +28,22 @@ decide to refuse, write, and copy quotes.
 Option 3, all six changes. Each is tested on its own (experiment rule 1).
 
 ## Evidence
-To come: one line per change in `workshop/notes.md`. This record moves to Accepted or Rejected per
-change once its run is read.
+From `workshop/notes.md` and the 9 Phase 2 runs in `evals/runs.jsonl` (stage "phase2", 14 Nov).
+Changes 2–4 were built before the first Phase 2 run, so they were measured together, not one by one.
+
+1. **Bigger question set:** `evals/phase2_questions.json`, 41 questions (27 answerable, 14 should refuse).
+   With it, two identical runs differ by 1 overall once related sentences have their own list (record 0025).
+2. **Gather call and write call (slice 5):** 37, 38 and 37 of 41, against slice 4's 36, 37 and 36. The
+   ranges touch at 37, so no win under record 0026; slice 5 costs 6% more. Chosen as the product flow
+   (Job, 14 Nov) on its design: it refused every should-refuse question in all 3 runs, and its related
+   text is quoted by code.
+3. **Code fills in each quote:** 0 citation problems in all 9 runs (369 answers). Before, about 1 answer in
+   30 misquoted.
+4. **Code decides the refusal:** 0 false refusals in all 9 runs; 1 missed refusal in 126 should-refuse
+   answers (slice 4, service-time-limit), none in slice 5.
+5. **Code checks with one fix-up turn:** not built.
+6. **A list item's own items:** setup A's retrieve on the unseen questions misses 9 → 6 needed clauses
+   (offline check, 12–13 Nov); no clause added to any dev question.
 
 ## Consequences
 - The earlier Phase 2 item "check quotes, then one fix-up turn listing the bad quotes" is replaced
