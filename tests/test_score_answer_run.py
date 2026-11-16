@@ -149,3 +149,12 @@ def test_a_clean_answer_is_judged_and_its_cost_counted():
     assert grade_line["passed"]
     assert line["judge_cost"] > 0
     assert len(client.requests) == JUDGE_VOTES
+
+
+def test_the_grade_line_carries_a_scorecard_that_agrees_with_the_pass():
+    client = StubJudgeClient()
+    for reply in [POSTS_REPLY, POSTS_REPLY.model_copy(update={"refused": True})]:
+        line = answer_line_to_check(reply)
+        grade_line = check_and_grade(line, reply, SAMPLE_QUESTIONS[1], [SAMPLE_CHUNKS[2]], SAMPLE_CHUNKS,
+                                     CHUNK_BY_ID, client, "claude-sonnet-5-5")
+        assert grade_line["scorecard"]["passed"] == grade_line["passed"]

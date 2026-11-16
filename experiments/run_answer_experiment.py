@@ -33,7 +33,8 @@ model at temperature 0 and the judge (record 0014).
 
 Writes, for each run (each line saved as soon as its question is done, so a crash keeps what was paid for):
   evals/answer_runs/<time>-<label>-answers.jsonl  per question: the sources, the answer, the tool use and the code checks
-  evals/answer_runs/<time>-<label>-grades.jsonl   per question: the judge's grade, or none when the code checks failed it
+  evals/answer_runs/<time>-<label>-grades.jsonl   per question: the judge's grade (none for a format error) and its
+                                                  scorecard, every line pass or fail (record 0027)
 Only a finished run adds its line to evals/runs.jsonl.
 
 Needs the saved question vectors (scripts.build_embeddings) and both API keys in .env.
@@ -69,6 +70,7 @@ from evals.checks.check_refusals import should_refuse
 from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.log_eval_run import append_run
 from evals.probes import load_phase2_questions, load_probes, load_unseen_questions
+from evals.scorecard import build_scorecard, print_scorecard, summarise_scorecards
 from evals.score_answer_run import (check_and_grade, print_scores, print_tool_use, summarise_answer_run,
                                     summarise_tool_use)
 from evals.token_costs import call_cost
@@ -292,7 +294,8 @@ def grade_reply(question: dict, reply: FlowReply, chunks: list[dict], chunk_by_i
     # A reply that didn't fit the shape can't be checked or graded: it counts as a fail, with its raw text kept
     if reply.is_format_error:
         answer_line["raw_reply"] = reply.raw_reply
-        return answer_line, {"id": question["id"], "passed": False, "judged": False, "grade": None}
+        return answer_line, {"id": question["id"], "passed": False, "judged": False, "grade": None,
+                             "scorecard": build_scorecard(answer_line, None)}
     answer_line["answer"] = reply.answer.model_dump()
     grade_line = check_and_grade(answer_line, reply.answer, question, reply.shown_chunks, chunks, chunk_by_id,
                                  anthropic_client, settings.claude_judge_model)
@@ -401,6 +404,8 @@ def run_answer_experiment(choices: RunChoices) -> dict:
     passed_by_id = {line["id"]: line["passed"] for line in grade_lines}
     scores = summarise_answer_run(answer_lines, passed_by_id)
     print_scores(scores, answer_lines, passed_by_id)
+    scores["scorecard"] = summarise_scorecards(grade_lines)
+    print_scorecard(scores["scorecard"])
     if setup.has_tools:
         scores["tool_use"] = summarise_tool_use(answer_lines)
         print_tool_use(scores["tool_use"])

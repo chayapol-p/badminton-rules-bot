@@ -19,6 +19,7 @@ from evals.checks.check_citations import find_citation_problems
 from evals.checks.check_refusals import CORRECT_REFUSAL, FALSE_REFUSAL, refusal_outcome
 from evals.code_checks import find_code_failures
 from evals.judge_answers import grade_answer, judge_passed
+from evals.scorecard import build_scorecard
 from evals.token_costs import call_cost
 
 
@@ -56,7 +57,9 @@ def check_and_grade(answer_line: dict, rules_answer: RulesAnswer, question: dict
     grade_reply = grade_answer(anthropic_client, judge_model, question, rules_answer, retrieved_chunks, warnings)
     answer_line["judge_cost"] = call_cost(judge_model, grade_reply.input_tokens, grade_reply.output_tokens)
     passed = not failures and judge_passed(grade_reply.grade)
-    return {"id": question["id"], "passed": passed, "judged": True, "grade": grade_reply.grade.model_dump()}
+    grade = grade_reply.grade.model_dump()
+    return {"id": question["id"], "passed": passed, "judged": True, "grade": grade,
+            "scorecard": build_scorecard(answer_line, grade)}
 
 
 # ===== Scoring a run =====

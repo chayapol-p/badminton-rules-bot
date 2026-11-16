@@ -29,6 +29,7 @@ from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line, read_lines
 from evals.code_checks import find_code_failures
 from evals.golden_answer_chunks import load_chunks, load_questions
 from evals.probes import load_probes, load_unseen_questions
+from evals.scorecard import build_scorecard
 from evals.score_answer_run import check_and_grade, print_scores, summarise_answer_run
 from experiments.run_answer_experiment import SECONDS_BETWEEN_QUESTIONS
 
@@ -69,7 +70,8 @@ def rejudge_answer_lines(answer_lines: list[dict], question_by_id: dict[str, dic
     for line in answer_lines:
         # A reply that didn't fit the shape stays a fail, with nothing to check or grade
         if line["is_format_error"]:
-            grade_line = {"id": line["id"], "passed": False, "judged": False, "grade": None}
+            grade_line = {"id": line["id"], "passed": False, "judged": False, "grade": None,
+                          "scorecard": build_scorecard(line, None)}
         else:
             print(f"judging {line['id']}")
             retrieved_chunks = [chunk_by_id[chunk_id] for chunk_id in line["retrieved_ids"]]
