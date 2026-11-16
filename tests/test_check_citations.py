@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from answer_flows.shared.answer_shape import Citation, RulesAnswer
-from evals.checks.check_citations import find_citation_problem, find_citation_problems, normalise_text
+from answer_flows.shared.answer_shape import AnswerSentence, Citation, RulesAnswer
+from evals.checks.check_citations import find_citation_problem, find_citation_problems, normalise_text, remove_markers
 from evals.golden_answer_chunks import CHUNKS_FILE
 from tests.sample_data import SAMPLE_CHUNKS
 
@@ -109,3 +109,43 @@ def test_service_height_sample_matches_the_real_file():
 def test_three_dots_match_the_ellipsis_character():
     """8 Nov: red-card quoted "..." where ITTO 5.17.4 prints "…"."""
     assert normalise_text("call: “… [name of player]") == normalise_text('call: "... [name of player]')
+
+
+# ===== The inline markers of a natural answer (record 0027) =====
+
+def natural_answer(*sentences: tuple[bool, str]) -> RulesAnswer:
+    """Returns an answer citing Laws 7.4 and 7.5 as [1] and [2], written as (is gap, text) sentences."""
+    answer_sentences = [AnswerSentence(is_gap=is_gap, text=text) for is_gap, text in sentences]
+    citations = [Citation(chunk_id="laws-7.4", quote=SAMPLE_CHUNKS[0]["text"]),
+                 Citation(chunk_id="laws-7.5", quote=SAMPLE_CHUNKS[1]["text"])]
+    return RulesAnswer(reasoning="", refused=False, answer=" ".join(text for _, text in sentences),
+                       citations=citations, answer_sentences=answer_sentences)
+
+
+def problem_names(rules_answer: RulesAnswer) -> list[str]:
+    """Returns only the names of the answer's citation problems."""
+    return [problem["problem"] for problem in find_citation_problems(rules_answer, RETRIEVED_CHUNKS)]
+
+
+def test_every_sentence_marked_and_a_gap_unmarked_passes():
+    rules_answer = natural_answer((False, "Win by two [1], capped at 30 [1][2]."), (True, "The rules don't say who serves first."))
+    assert problem_names(rules_answer) == []
+
+
+def test_an_answer_sentence_with_no_marker_fails_by_name():
+    assert problem_names(natural_answer((False, "Win by two [1]."), (False, "Then the game ends."))) == [
+        "sentence 2 has no marker"]
+
+
+def test_a_gap_sentence_with_a_marker_fails():
+    assert problem_names(natural_answer((True, "The rules don't say who serves first [2]."))) == [
+        "gap sentence 1 has a marker"]
+
+
+def test_a_marker_past_the_list_or_not_a_number_fails():
+    assert problem_names(natural_answer((False, "Win by two [3], see [laws-7.4]."))) == [
+        "marker [3] points to no source", "marker [laws-7.4] points to no source"]
+
+
+def test_marker_numbers_are_not_read_as_numbers_in_the_answer():
+    assert remove_markers("Capped at 30 [1][2].") == "Capped at 30 ."

@@ -18,7 +18,8 @@ from answer_flows.shared.answer_shape import RulesAnswer
 @dataclass
 class FlowReply:
     """One answer, or a format error, plus every chunk the model saw, the tool calls it made and the tokens they used.
-    Slice 5 also records the gather call's bad picks and whether the write call ran."""
+    Slice 5 also records the gather call's parts as it sent them, its bad picks, and the write call's raw reply
+    (record 0027: the parts show whether a miss is a wrong question split or a missed search)."""
 
     answer: RulesAnswer | None
     is_format_error: bool
@@ -29,8 +30,10 @@ class FlowReply:
     tool_rounds: int = 0
     tool_calls: list[dict] = field(default_factory=list)
     tools_turned_off: bool = False
+    gathered_parts: list[dict] = field(default_factory=list)
     bad_picks: list[dict] = field(default_factory=list)
     write_called: bool = False
+    write_reply: str | None = None
     model_calls: int = 0
     input_tokens: int = 0
     output_tokens: int = 0

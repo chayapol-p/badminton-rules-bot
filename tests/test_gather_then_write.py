@@ -32,7 +32,8 @@ REFUSAL_GATHER_REPLY = json.dumps({
     "parts": [{"asks": "the highest string tension allowed", "sentences": []}],
     "related_sentences": [],
 })
-WRITE_REPLY = json.dumps({"answers": [{"part_number": 1, "answer": "1.55 metres (Laws of Badminton 5.0 (2))."}]})
+WRITE_REPLY = json.dumps({"sentences": [{"is_gap": False, "text": "The posts are 1.55 m tall [1]."},
+                                         {"is_gap": True, "text": "The rules don't say the highest string tension."}]})
 
 
 class StubTwoCallClient:
@@ -72,12 +73,20 @@ def test_an_answered_part_runs_the_write_call_with_no_tools_and_only_the_parts()
     assert write_request["messages"][0]["content"] == WRITE_RULES
     write_input = write_request["messages"][1]["content"]
     assert "Part 2 · the highest string tension allowed\nNO SOURCE" in write_input
+    assert f"[1] {CHUNK_BY_ID['laws-1.4']['text']}" in write_input
     assert "Nothing gives a tension" not in write_input
 
     # Code builds the answer from both calls
-    assert reply.answer.answer.split("\n") == ["1.55 metres (Laws of Badminton 5.0 (2)).",
-                                               "The sources do not say the highest string tension allowed."]
+    assert reply.answer.answer == "The posts are 1.55 m tall [1]. The rules don't say the highest string tension."
     assert reply.answer.citations[0].quote == CHUNK_BY_ID["laws-1.4"]["text"]
+
+
+def test_the_reply_keeps_the_gathered_parts_and_the_raw_write_reply():
+    """Record 0027: every answer line saves the gather call's parts and the write call's raw reply."""
+    reply = run_flow(StubTwoCallClient(GATHER_REPLY))
+    assert reply.gathered_parts == json.loads(GATHER_REPLY)["parts"]
+    assert reply.write_reply == WRITE_REPLY
+    assert reply.raw_reply == GATHER_REPLY
 
 
 def test_no_answered_part_is_refused_by_code_with_no_write_call():
@@ -85,6 +94,8 @@ def test_no_answered_part_is_refused_by_code_with_no_write_call():
     reply = run_flow(client)
     assert reply.answer.refused
     assert not reply.write_called
+    assert reply.write_reply is None
+    assert reply.gathered_parts == json.loads(REFUSAL_GATHER_REPLY)["parts"]
     assert len(client.requests) == 1
 
 
@@ -96,11 +107,11 @@ def test_a_gather_reply_that_does_not_fit_the_shape_is_a_format_error_with_no_wr
     assert len(client.requests) == 1
 
 
-def test_a_write_reply_that_skips_an_answered_part_is_a_format_error():
-    client = StubTwoCallClient(GATHER_REPLY, write_reply=json.dumps({"answers": []}))
+def test_a_write_reply_with_no_sentence_is_a_format_error():
+    client = StubTwoCallClient(GATHER_REPLY, write_reply=json.dumps({"sentences": []}))
     reply = run_flow(client)
     assert reply.is_format_error
-    assert reply.error_message == "write call: no answer for parts [1]"
+    assert reply.error_message == "write call: no sentences"
 
 
 def test_write_rules_answer_a_named_format_first():

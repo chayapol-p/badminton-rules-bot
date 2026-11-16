@@ -275,8 +275,10 @@ def build_answer_line(question: dict, reply: FlowReply, answer_model: str) -> di
         "tool_calls": reply.tool_calls,
         "tools_turned_off": reply.tools_turned_off,
         "model_calls": reply.model_calls,
+        "gathered_parts": reply.gathered_parts,
         "bad_picks": reply.bad_picks,
         "write_called": reply.write_called,
+        "write_reply": reply.write_reply,
         "answer_cost": call_cost(answer_model, reply.input_tokens, reply.output_tokens),
         "judge_cost": 0.0,
     }

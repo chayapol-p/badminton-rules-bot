@@ -6,6 +6,8 @@ in full, or no such sentence) gets a note saying why, which the citation check t
 Use:
     problem = find_pick_problem(chunk_id, sentence_number, shown_chunk_by_id)
     add_citations(citations, sentence_citations, shown_chunk_by_id)
+    citation = build_named_citation(sentence_citation, shown_chunk_by_id)
+    source_name = name_source(chunk)
 """
 
 from answer_flows.shared.answer_shape import Citation, SentenceCitation
@@ -18,6 +20,11 @@ NO_PARTS_ANSWER = "The sources do not answer this question."
 
 
 # ===== One citation =====
+
+def name_source(chunk: dict) -> str:
+    """Returns the document, version and clause a chunk comes from, such as "Laws of Badminton 5.0 (2), Clause 1.4"."""
+    return f"{chunk['document_title']} {chunk['version']}, Clause {chunk['clause']}"
+
 
 def find_pick_problem(chunk_id: str, sentence_number: int, shown_chunk_by_id: dict[str, dict]) -> str | None:
     """Returns why a cited sentence can't be quoted ("not shown: …", "no sentence 4 in …"), or None when it can."""
@@ -40,6 +47,14 @@ def quote_for(chunk_id: str, sentence_number: int, shown_chunk_by_id: dict[str, 
     if problem is not None:
         return f"({problem})"
     return split_sentences(shown_chunk_by_id[chunk_id]["text"])[sentence_number - 1]
+
+
+def build_named_citation(sentence_citation: SentenceCitation, shown_chunk_by_id: dict[str, dict]) -> Citation:
+    """Returns one picked sentence as a citation with its quote copied in and the name of its source (record 0027).
+    Only for picks code already checked, so the chunk was shown."""
+    chunk = shown_chunk_by_id[sentence_citation.chunk_id]
+    quote = quote_for(sentence_citation.chunk_id, sentence_citation.sentence, shown_chunk_by_id)
+    return Citation(chunk_id=sentence_citation.chunk_id, quote=quote, source_name=name_source(chunk))
 
 
 def add_citations(citations: list[Citation], sentence_citations: list[SentenceCitation],

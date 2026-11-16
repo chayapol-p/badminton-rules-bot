@@ -1,11 +1,11 @@
 """
 Slice 5's two shapes: GatheredAnswer from the gather call (the sentences per part, no answer text) and
-WrittenAnswer from the write call (one answer per answered part).
+WrittenAnswer from the write call (one natural answer, sentence by sentence, with inline [n] markers; record 0027).
 """
 
 from pydantic import BaseModel, Field
 
-from answer_flows.shared.answer_shape import SentenceCitation
+from answer_flows.shared.answer_shape import AnswerSentence, SentenceCitation
 
 
 # ===== The gather call =====
@@ -27,14 +27,7 @@ class GatheredAnswer(BaseModel):
 
 # ===== The write call =====
 
-class PartAnswer(BaseModel):
-    """The write call's answer to one part, matched to it by the part's number."""
-
-    part_number: int = Field(description="The number of the part this answers, as given before it: 1 for 'Part 1'")
-    answer: str = Field(description="The answer to this part, from its sentences only")
-
-
 class WrittenAnswer(BaseModel):
-    """What the write call sends: one answer for each part that has sentences."""
+    """What the write call sends: one connected answer to the whole question, sentence by sentence."""
 
-    answers: list[PartAnswer] = Field(description="One answer for each part that has sentences, in part order; none for a part marked NO SOURCE")
+    sentences: list[AnswerSentence] = Field(description="The answer in reading order: what the user should do, or the direct answer, first; then the rest, joined into one reply")

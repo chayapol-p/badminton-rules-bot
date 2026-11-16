@@ -18,6 +18,7 @@ Use:
     failures, warnings = find_code_failures(answer_line, question, chunks, chunk_by_id)
 """
 
+from evals.checks.check_citations import remove_markers
 from evals.checks.check_numbers import find_ungrounded_numbers
 from evals.checks.check_refusals import ANSWERED, FALSE_REFUSAL, MISSED_REFUSAL
 from evals.check_against_golden import cites_expected_clause, find_missing_golden_numbers
@@ -48,13 +49,15 @@ def find_code_failures(answer_line: dict, question: dict, chunks: list[dict],
     failures = []
     warnings = []
     answer = answer_line["answer"]
+    # Inline markers ([1], [2]) are numbers of the source list, not numbers the answer states
+    answer_text = remove_markers(answer["answer"])
 
     # The checks every answer gets: the refusal and the citations fail, the numbers only warn
     if answer_line["refusal_outcome"] in WRONG_REFUSALS:
         failures.append(answer_line["refusal_outcome"])
     for problem in answer_line["citation_problems"]:
         failures.append(f"citation [{problem['chunk_id']}] {problem['problem']}")
-    ungrounded_numbers = find_ungrounded_numbers(answer["answer"], build_source_text(answer_line, chunk_by_id))
+    ungrounded_numbers = find_ungrounded_numbers(answer_text, build_source_text(answer_line, chunk_by_id))
     if ungrounded_numbers:
         warnings.append(f"numbers not in the sources: {', '.join(ungrounded_numbers)}")
 
@@ -63,7 +66,7 @@ def find_code_failures(answer_line: dict, question: dict, chunks: list[dict],
         cited_ids = {citation["chunk_id"] for citation in answer["citations"]}
         if not cites_expected_clause(cited_ids, question, chunks):
             failures.append("wrong clause: cites none of the clauses that hold the answer")
-        missing_numbers = find_missing_golden_numbers(answer["answer"], question["answer"])
+        missing_numbers = find_missing_golden_numbers(answer_text, question["answer"])
         if missing_numbers:
             warnings.append(f"golden answer numbers not in the reply: {', '.join(missing_numbers)}")
     return failures, warnings

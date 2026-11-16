@@ -6,9 +6,10 @@ Slice 5: answers one question in two calls with a code gate between them.
 2. Code checks each pick, drops the bad ones and records them (answer_flows/gather_then_write/assemble_written_answer.py).
 3. Gate: when no part has a sentence left, code refuses and the write call never runs.
 4. Write call: no tools. It sees only the question and every part, each marked NO SOURCE or given with its
-   picked sentences, and sends WrittenAnswer: one answer per answered part. It never sees the tool calls,
-   the unpicked results or the gather call's reasoning.
-5. Code builds the answer from both calls.
+   picked sentences numbered [1]…[n], and sends WrittenAnswer: one natural answer, sentence by sentence, with
+   inline [n] markers and its gaps flagged (record 0027). It never sees the tool calls, the unpicked results
+   or the gather call's reasoning.
+5. Code builds the answer from both calls, with the numbered source list.
 
 The signature matches answer_with_tools, so a run picks either one with --flow.
 
@@ -80,6 +81,9 @@ def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather
         reply.error_message = f"gather call, finish reason {loop_result.choice.finish_reason}: {error}"
         return reply
 
+    # Keep the parts as the gather call sent them, before code drops any bad pick
+    reply.gathered_parts = [part.model_dump() for part in gathered_answer.parts]
+
     # Code checks the picks; the gate refuses when no part has a sentence left, with no write call
     checked_answer, reply.bad_picks = check_gathered_picks(gathered_answer, shown_chunk_by_id)
     if is_refusal(checked_answer):
@@ -96,12 +100,12 @@ def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather
     reply.input_tokens += response.usage.prompt_tokens
     reply.output_tokens += response.usage.completion_tokens
 
-    # Keep both calls' replies and thinking, so a failure can be read in the run file
+    # Keep the write call's raw reply and both calls' thinking, so a failure can be read in the run file
     write_raw_reply, write_thinking = split_reply_content(write_choice.message.content)
-    reply.raw_reply = f"gather: {raw_reply}\nwrite: {write_raw_reply}"
+    reply.write_reply = write_raw_reply
     reply.thinking = f"gather: {thinking}\nwrite: {write_thinking}"
 
-    # A write reply that doesn't fit the shape, or doesn't answer the answered parts one to one, is a format error
+    # A write reply that doesn't fit the shape, or has no sentence, is a format error; the markers are checked later
     try:
         written_answer = WrittenAnswer.model_validate_json(write_raw_reply)
     except ValidationError as error:

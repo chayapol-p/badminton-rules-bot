@@ -1,7 +1,7 @@
 """Tests slice 5's code between and after the two calls: checking picks, the refusal gate, the write call's input and the answer."""
 
-from answer_flows.gather_then_write.answer_shape import GatheredAnswer, GatheredPart, PartAnswer, WrittenAnswer
-from answer_flows.shared.answer_shape import SentenceCitation
+from answer_flows.gather_then_write.answer_shape import GatheredAnswer, GatheredPart, WrittenAnswer
+from answer_flows.shared.answer_shape import AnswerSentence, SentenceCitation
 from answer_flows.shared.cite_sentences import NO_PARTS_ANSWER
 from answer_flows.gather_then_write.assemble_written_answer import (NO_SOURCE_MARK, assemble_written_answer,
                                                                     build_refusal, check_gathered_picks,
@@ -29,9 +29,9 @@ def gathered(parts: list[GatheredPart], related: list[tuple[str, int]] = ()) -> 
     return GatheredAnswer(reasoning="", parts=parts, related_sentences=picks(*related))
 
 
-def written(*answers: tuple[int, str]) -> WrittenAnswer:
-    """Returns the write call's answers, as (part number, answer) pairs."""
-    return WrittenAnswer(answers=[PartAnswer(part_number=number, answer=text) for number, text in answers])
+def written(*sentences: tuple[bool, str]) -> WrittenAnswer:
+    """Returns the write call's sentences, as (is gap, text) pairs."""
+    return WrittenAnswer(sentences=[AnswerSentence(is_gap=is_gap, text=text) for is_gap, text in sentences])
 
 
 ## Two parts: the post height is answered, the string tension is not
@@ -99,7 +99,7 @@ def test_the_writer_sees_every_part_with_no_source_marked():
     parts_text = format_parts_for_writer(TWO_PARTS, SHOWN_CHUNK_BY_ID, LABEL_BY_ID)
     part_blocks = parts_text.split("\n\n")
     assert part_blocks[0].startswith("Part 1 · how tall the posts are\n[laws-1.4] RULE · Laws of Badminton")
-    assert part_blocks[0].endswith(f"(1) {POST_HEIGHT_SENTENCE}")
+    assert part_blocks[0].endswith(f"[1] {POST_HEIGHT_SENTENCE}")
     assert part_blocks[1] == f"Part 2 · the highest string tension allowed\n{NO_SOURCE_MARK}"
 
 
@@ -107,7 +107,7 @@ def test_a_picked_sentence_keeps_its_subject_from_the_under_line():
     answer = gathered([GatheredPart(asks="the largest stringed area", sentences=picks(("laws-4.2.2", 1)))])
     parts_text = format_parts_for_writer(answer, SHOWN_CHUNK_BY_ID, LABEL_BY_ID)
     assert "[laws-4.2.2] LIST ITEM · " in parts_text
-    assert "Under: 4.2 The stringed area:\n(1) shall not exceed 280 mm" in parts_text
+    assert "Under: 4.2 The stringed area:\n[1] shall not exceed 280 mm" in parts_text
     assert "However, the strings" not in parts_text, "only the picked sentence goes to the writer, not sentence 2"
 
 
@@ -118,38 +118,42 @@ def test_the_writer_never_sees_the_reasoning_or_the_related_sentences():
     assert "laws-4.2.2" not in parts_text
 
 
+def test_picked_sentences_are_numbered_once_in_part_order():
+    """Record 0027: the writer sees each picked sentence as [n]; a sentence two parts pick keeps one number."""
+    answer = gathered([GatheredPart(asks="the largest stringed area", sentences=picks(("laws-4.2.2", 1))),
+                       GatheredPart(asks="how tall the posts are", sentences=picks(("laws-1.4", 1), ("laws-4.2.2", 1)))])
+    parts_text = format_parts_for_writer(answer, SHOWN_CHUNK_BY_ID, LABEL_BY_ID)
+    assert f"[1] {STRINGED_AREA_SENTENCE}" in parts_text
+    assert f"[2] {POST_HEIGHT_SENTENCE}" in parts_text
+    assert parts_text.count(f"[1] {STRINGED_AREA_SENTENCE}") == 2, "part 2 shows the shared sentence with its first number"
+
+
 # ===== The whole answer =====
 
-def test_the_answer_is_the_written_parts_then_the_gap_lines_then_related_quotes():
+def test_the_answer_is_one_paragraph_with_a_numbered_source_list_and_related_in_their_own_list():
     answer = gathered(TWO_PARTS.parts, related=[("laws-4.2.2", 1)])
-    rules_answer, error_message = assemble_written_answer(answer, written((1, "1.55 metres.")), SHOWN_CHUNK_BY_ID)
+    rules_answer, error_message = assemble_written_answer(
+        answer, written((False, "The posts are 1.55 m tall [1]."), (True, "The rules don't say the highest string tension.")),
+        SHOWN_CHUNK_BY_ID)
     assert error_message is None
     assert not rules_answer.refused
-    assert rules_answer.answer.split("\n") == [
-        "1.55 metres.",
-        "The sources do not say the highest string tension allowed.",
-        f'Related (Laws of Badminton 5.0 (2), Clause 4.2.2): "{STRINGED_AREA_SENTENCE}"',
-    ]
-    assert [citation.quote for citation in rules_answer.citations] == [POST_HEIGHT_SENTENCE]
+    assert rules_answer.answer == "The posts are 1.55 m tall [1]. The rules don't say the highest string tension."
+    assert [(citation.quote, citation.source_name) for citation in rules_answer.citations] == [
+        (POST_HEIGHT_SENTENCE, "Laws of Badminton 5.0 (2), Clause 1.4")]
     assert [citation.quote for citation in rules_answer.related_citations] == [STRINGED_AREA_SENTENCE]
+    assert "Related" not in rules_answer.answer, "related rules stay out of the answer text (record 0027)"
+    assert [sentence.is_gap for sentence in rules_answer.answer_sentences] == [False, True]
+    assert find_citation_problems(rules_answer, list(SHOWN_CHUNK_BY_ID.values())) == []
 
 
-def test_a_missing_answer_for_an_answered_part_is_a_format_error():
+def test_marker_n_is_the_nth_source_even_when_two_sentences_share_a_clause():
+    answer = gathered([GatheredPart(asks="the stringed area and the strings", sentences=picks(("laws-4.2.2", 2), ("laws-4.2.2", 1)))])
+    rules_answer, _ = assemble_written_answer(answer, written((False, "Some area [2], some strings [1].")), SHOWN_CHUNK_BY_ID)
+    assert rules_answer.citations[1].quote == STRINGED_AREA_SENTENCE
+    assert rules_answer.citations[0].quote.startswith("However, the strings")
+
+
+def test_a_write_reply_with_no_sentence_is_a_format_error():
     rules_answer, error_message = assemble_written_answer(TWO_PARTS, written(), SHOWN_CHUNK_BY_ID)
     assert rules_answer is None
-    assert error_message == "write call: no answer for parts [1]"
-
-
-def test_an_answer_for_a_no_source_part_is_a_format_error():
-    """The writer must not answer a NO SOURCE part: that answer would have no sentence behind it."""
-    rules_answer, error_message = assemble_written_answer(TWO_PARTS, written((1, "1.55 metres."), (2, "About 30 lbs.")),
-                                                          SHOWN_CHUNK_BY_ID)
-    assert rules_answer is None
-    assert error_message == "write call: answers for parts with no source or no such part [2]"
-
-
-def test_two_answers_for_one_part_is_a_format_error():
-    rules_answer, error_message = assemble_written_answer(TWO_PARTS, written((1, "1.55 m."), (1, "1.55 metres.")),
-                                                          SHOWN_CHUNK_BY_ID)
-    assert rules_answer is None
-    assert error_message == "write call: more than one answer for parts [1]"
+    assert error_message == "write call: no sentences"

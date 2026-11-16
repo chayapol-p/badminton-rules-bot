@@ -5,7 +5,9 @@ Each flow's own model shapes live in its folder: answer_flows/gather_then_write/
 flow) and, for the retired flows, experiments/retired_flows/single_call/answer_shape.py (ModelAnswer, setup A and slice 4).
 
 SentenceCitation  what every flow's model writes for one sentence: a chunk id and a sentence number.
-Citation          one claim's source in the checked answer: a chunk id and the quote code copied in.
+AnswerSentence    one sentence of a natural answer, with inline [n] markers, or a gap with none (record 0027).
+Citation          one claim's source in the checked answer: a chunk id, the quote code copied in and the
+                  source's name (document, version, clause), which the answer text itself leaves out.
 RulesAnswer       what every check, the judge and the run files read, built by code: the answer text,
                   each citation with its sentence copied in as the quote, and the refusal, which code sets
                   when no part has a sentence that answers it.
@@ -30,6 +32,18 @@ class Citation(BaseModel):
 
     chunk_id: str = Field(description="The id in square brackets at the top of the source, such as laws-7.4")
     quote: str = Field(description="The exact words from that source that support the claim, copied unchanged")
+    # Empty by default, so run files from before still load
+    source_name: str = Field(default="", description="The document, version and clause, such as 'Laws of Badminton 5.0 (2), Clause 1.4'")
+
+
+# ===== One sentence of a natural answer =====
+
+class AnswerSentence(BaseModel):
+    """One sentence of the answer: its text with inline [n] markers, or a gap that says what the rules don't cover."""
+
+    # The flag comes first, so the model decides whether a sentence is a gap before writing it
+    is_gap: bool = Field(description="True only for a sentence that says what the rules don't cover, such as a part marked NO SOURCE; a gap sentence carries no marker")
+    text: str = Field(description="One sentence, with the numbers of the sentences it rests on in square brackets right after each claim, such as [1] or [2][3]; no number in a gap sentence")
 
 
 # ===== The whole answer =====
@@ -45,6 +59,9 @@ class RulesAnswer(BaseModel):
     # them as the answer's sources and failed correct refusals (14 Nov baseline, record 0025). Empty by default,
     # so run files from before still load
     related_citations: list[Citation] = Field(default_factory=list, description="Sentences that bear on the question without answering it; context only")
+    # A natural answer (record 0027) keeps its sentences, so the marker check can re-run from a run file: marker [n]
+    # points to citations[n - 1]. Empty for refusals, the retired flows and run files from before
+    answer_sentences: list[AnswerSentence] = Field(default_factory=list, description="The answer sentence by sentence, when the model wrote it with inline markers")
 
 
 # ===== One sentence the model cites =====

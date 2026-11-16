@@ -11,9 +11,12 @@ The flow (answer_flows/gather_then_write/gather_then_write.py runs it):
    what the sources don't say, and quotes the related sentences word for word (Job's pick, 13 Nov:
    code-quoted, not a model-written note).
 4. Otherwise the write call (no tools) gets a clean input: the question and every part, an unanswered part
-   marked NO SOURCE, an answered part with its sentences under their label and Under: line.
-5. Code builds the answer: each answered part's written answer, then a line per NO SOURCE part, then
-   the related sentences, quoted. Every quote is copied by code, as in slice 4.
+   marked NO SOURCE, an answered part with its sentences under their label and Under: line. Every picked
+   sentence is numbered [1]…[n] once, in part order (record 0027).
+5. Code builds the answer: the write call's sentences joined into one paragraph with their [n] markers, the
+   numbered source list (marker [n] is citations[n - 1]) and the related sentences in their own list. Every
+   quote is copied by code, as in slice 4. The model writes the gaps itself; the citation check
+   (evals/checks/check_citations.py) checks every marker.
 
 Use:
     checked_answer, bad_picks = check_gathered_picks(gathered_answer, shown_chunk_by_id)
@@ -24,11 +27,10 @@ Use:
         rules_answer, error_message = assemble_written_answer(checked_answer, written_answer, shown_chunk_by_id)
 """
 
-from collections import Counter
-
 from answer_flows.gather_then_write.answer_shape import GatheredAnswer, GatheredPart, WrittenAnswer
-from answer_flows.shared.answer_shape import RulesAnswer, SentenceCitation
-from answer_flows.shared.cite_sentences import NO_PARTS_ANSWER, add_citations, find_pick_problem, quote_for
+from answer_flows.shared.answer_shape import Citation, RulesAnswer, SentenceCitation
+from answer_flows.shared.cite_sentences import (NO_PARTS_ANSWER, add_citations, build_named_citation, find_pick_problem,
+                                                name_source, quote_for)
 from retrieval.build_bundle import first_line, parent_headings, split_sentences
 
 
@@ -95,8 +97,7 @@ def build_related_lines(checked_answer: GatheredAnswer, shown_chunk_by_id: dict[
     """Returns one line per related sentence, quoted word for word by code, with the document and clause it comes from."""
     lines = []
     for sentence_citation in checked_answer.related_sentences:
-        chunk = shown_chunk_by_id[sentence_citation.chunk_id]
-        source_name = f"{chunk['document_title']} {chunk['version']}, Clause {chunk['clause']}"
+        source_name = name_source(shown_chunk_by_id[sentence_citation.chunk_id])
         quote = quote_for(sentence_citation.chunk_id, sentence_citation.sentence, shown_chunk_by_id)
         lines.append(f"Related ({source_name}): \"{quote}\"")
     return lines
@@ -113,11 +114,24 @@ def build_refusal(checked_answer: GatheredAnswer, shown_chunk_by_id: dict[str, d
                        citations=[], related_citations=related_citations)
 
 
+# ===== Numbering the picked sentences =====
+
+def number_picked_sentences(checked_answer: GatheredAnswer) -> dict[tuple[str, int], int]:
+    """Returns each picked sentence's marker number, from 1, in part order; a sentence two parts pick keeps one number."""
+    number_by_pick = {}
+    for part in checked_answer.parts:
+        for sentence_citation in part.sentences:
+            pick = (sentence_citation.chunk_id, sentence_citation.sentence)
+            if pick not in number_by_pick:
+                number_by_pick[pick] = len(number_by_pick) + 1
+    return number_by_pick
+
+
 # ===== The write call's input =====
 
 def format_picked_sentences(sentence_citations: list[SentenceCitation], shown_chunk_by_id: dict[str, dict],
-                            label_by_id: dict[str, str]) -> str:
-    """Returns one part's sentences, grouped by clause: the clause's first line, its Under: line, then each sentence."""
+                            label_by_id: dict[str, str], number_by_pick: dict[tuple[str, int], int]) -> str:
+    """Returns one part's sentences, grouped by clause: the clause's first line, its Under: line, then each sentence with its [n]."""
     blocks = []
     sentences_by_chunk_id = {}
     for sentence_citation in sentence_citations:
@@ -132,69 +146,57 @@ def format_picked_sentences(sentence_citations: list[SentenceCitation], shown_ch
             block_lines.append(f"Under: {headings}")
         sentences = split_sentences(chunk["text"])
         for sentence_number in sentence_numbers:
-            block_lines.append(f"({sentence_number}) {sentences[sentence_number - 1]}")
+            marker_number = number_by_pick[(chunk_id, sentence_number)]
+            block_lines.append(f"[{marker_number}] {sentences[sentence_number - 1]}")
         blocks.append("\n".join(block_lines))
     return "\n\n".join(blocks)
 
 
 def format_parts_for_writer(checked_answer: GatheredAnswer, shown_chunk_by_id: dict[str, dict],
                             label_by_id: dict[str, str]) -> str:
-    """Returns every part as the write call reads it: numbered, then its sentences or NO SOURCE."""
+    """Returns every part as the write call reads it: numbered, then its numbered sentences or NO SOURCE."""
+    number_by_pick = number_picked_sentences(checked_answer)
     part_blocks = []
     for part_number, part in enumerate(checked_answer.parts, start=1):
         part_text = NO_SOURCE_MARK
         if part.sentences:
-            part_text = format_picked_sentences(part.sentences, shown_chunk_by_id, label_by_id)
+            part_text = format_picked_sentences(part.sentences, shown_chunk_by_id, label_by_id, number_by_pick)
         part_blocks.append(f"Part {part_number} · {part.asks}\n{part_text}")
     return "\n\n".join(part_blocks)
 
 
 # ===== The whole answer =====
 
-def find_written_answer_problem(answered_part_numbers: list[int], written_answer: WrittenAnswer) -> str | None:
-    """Returns why the written answers don't match the answered parts one to one, or None when they do."""
-    written_part_numbers = [part_answer.part_number for part_answer in written_answer.answers]
-    missing = [number for number in answered_part_numbers if number not in written_part_numbers]
-    not_answerable = [number for number in written_part_numbers if number not in answered_part_numbers]
-    answer_count_by_part_number = Counter(written_part_numbers)
-    repeated = sorted(number for number, answer_count in answer_count_by_part_number.items() if answer_count > 1)
-    problems = []
-    if missing:
-        problems.append(f"no answer for parts {missing}")
-    if not_answerable:
-        problems.append(f"answers for parts with no source or no such part {not_answerable}")
-    if repeated:
-        problems.append(f"more than one answer for parts {repeated}")
-    if problems:
-        return "write call: " + "; ".join(problems)
-    return None
+def build_source_list(checked_answer: GatheredAnswer, shown_chunk_by_id: dict[str, dict]) -> list[Citation]:
+    """Returns the numbered source list: citation n - 1 is the sentence the writer saw as [n], quoted by code."""
+
+    # One citation per number, never merged, so the list's positions always match the markers
+    citations = []
+    for chunk_id, sentence_number in number_picked_sentences(checked_answer):
+        sentence_citation = SentenceCitation(chunk_id=chunk_id, sentence=sentence_number)
+        citations.append(build_named_citation(sentence_citation, shown_chunk_by_id))
+    return citations
 
 
 def assemble_written_answer(checked_answer: GatheredAnswer, written_answer: WrittenAnswer,
                             shown_chunk_by_id: dict[str, dict]) -> tuple[RulesAnswer | None, str | None]:
-    """Returns the checked answer built from both calls, or None and the reason when the written answers don't match the parts."""
-    answered_part_numbers = []
-    for part_number, part in enumerate(checked_answer.parts, start=1):
-        if part.sentences:
-            answered_part_numbers.append(part_number)
+    """Returns the answer built from both calls with its numbered source list, or None and the reason when the write call wrote no sentence."""
 
-    # Every answered part needs exactly one written answer, and a NO SOURCE part none: anything else is a format error
-    problem = find_written_answer_problem(answered_part_numbers, written_answer)
-    if problem is not None:
-        return None, problem
+    # A reply with no sentence has nothing to show or check: a format error
+    if not written_answer.sentences:
+        return None, "write call: no sentences"
 
-    # Answered parts in part order, each with its sentences cited and quoted by code
-    answer_by_part_number = {part_answer.part_number: part_answer.answer for part_answer in written_answer.answers}
-    answer_lines = []
-    citations = []
-    for part_number in answered_part_numbers:
-        answer_lines.append(answer_by_part_number[part_number])
-        add_citations(citations, checked_answer.parts[part_number - 1].sentences, shown_chunk_by_id)
+    # One paragraph for the user; the sentences are kept too, so the marker check can re-run from the run file
+    answer_text = " ".join(sentence.text for sentence in written_answer.sentences)
 
-    # Then the lines code writes: what the sources don't say, and the related sentences, quoted, in their own list
+    # The numbered sources, then the related sentences in their own list, every quote copied by code
+    citations = build_source_list(checked_answer, shown_chunk_by_id)
     related_citations = []
-    add_citations(related_citations, checked_answer.related_sentences, shown_chunk_by_id)
-    answer_lines += build_not_covered_lines(checked_answer) + build_related_lines(checked_answer, shown_chunk_by_id)
-    rules_answer = RulesAnswer(reasoning=checked_answer.reasoning, refused=False, answer="\n".join(answer_lines),
-                               citations=citations, related_citations=related_citations)
+    for sentence_citation in checked_answer.related_sentences:
+        related_citation = build_named_citation(sentence_citation, shown_chunk_by_id)
+        if related_citation not in related_citations:
+            related_citations.append(related_citation)
+    rules_answer = RulesAnswer(reasoning=checked_answer.reasoning, refused=False, answer=answer_text,
+                               citations=citations, related_citations=related_citations,
+                               answer_sentences=written_answer.sentences)
     return rules_answer, None
