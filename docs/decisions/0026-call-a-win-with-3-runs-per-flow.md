@@ -27,3 +27,8 @@ ranges touch at 37, so no win.
 ## Consequences
 - A comparison of two flows costs about 6 runs (about $10.50 and 2 hours on hybrid with the Phase 2 questions).
 - Experiment rule 5 in CLAUDE.md points here for the Phase 2 runs.
+
+## Update (Job, 16 Nov): which score the ranges use
+Once record 0027's scorecard is built, the ranges compared are those of the combined metric (correct 30,
+grounded 35, behaviour 10, refusal right 10, readable 15), not the overall pass count. Consistency across a
+flow's 3 runs is the tiebreaker when the ranges touch. Runs before the scorecard keep their overall pass counts.

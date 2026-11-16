@@ -28,7 +28,8 @@ Option 3, with these picks (Job, 16 Nov):
   marks every claim with [n]. The "Under Laws … version" phrase leaves the answer; the source list carries it.
   The format-first limit stays.
 - **Gaps:** the model writes what the rules don't say inside the answer (no fixed code line).
-- **Code** checks that every [n] points to a picked sentence (a bad one is logged by name), builds the numbered
+- **Code** checks that every [n] points to a picked sentence and that every answer sentence carries at least one
+  marker (a bad one is logged by name), builds the numbered
   source list with quotes copied word for word, and keeps related rules in their own list. The refusal gate
   stays where it is.
 - **Logging:** every answer line saves the gather call's parts and the raw write reply.
@@ -38,8 +39,11 @@ Option 3, with these picks (Job, 16 Nov):
   answer.
 - **Scorecard:** every judge line and code check stays pass or fail, and each is logged per answer and reported
   per run as a share of answers. An answer passes only when every gate line passes (correct, grounded,
-  behaviour, citations valid, refusal right). The tracked lines (readable, and consistent across a flow's runs)
-  count toward one combined metric for comparing experiments; its weights are still to be picked.
+  behaviour, citations valid, refusal right). One combined metric compares experiments: a weighted sum of each
+  line's share of answers, with correct 30, grounded 35, behaviour 10, refusal right 10 and readable 15.
+  Citations valid stays in the gate with no weight, because it is almost always 100% (0 problems in 369 answers
+  of the 9 Phase 2 runs) and would only add noise. Consistency (the same verdict in all of a flow's 3 runs) has
+  one value per flow, not per run, so it is reported beside the metric as a tiebreaker.
 
 ## Evidence
 To come: the new flow's runs, 3 against slice 5 (record 0026).
@@ -47,4 +51,4 @@ To come: the new flow's runs, 3 against slice 5 (record 0026).
 ## Consequences
 - Option 3 trusts the model more inside the answer, so the grounded line and record 0023's change 5 (a
   grounding check with one fix-up turn) matter more.
-- The combined metric changes how a win is called: record 0026 will need an update once the weights are picked.
+- A win is now called on the combined metric's ranges (record 0026, updated 16 Nov).
