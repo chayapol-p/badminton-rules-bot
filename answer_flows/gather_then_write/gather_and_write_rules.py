@@ -61,6 +61,7 @@ GATHER_RULES = build_system_prompt(GATHER_TASK, GATHER_STEPS, GATHER_LIMITS)
 WRITE_TASK = ("You write one answer to a question about the rules of badminton, as a reply to the person who asked. "
               "Each part of the question comes with the sentences that answer it, picked from the official rule books "
               "and numbered [1], [2] and so on, under the clause they come from. A part marked NO SOURCE has none. "
+              "After the parts come related sentences: rules that bear on the question without answering a part. "
               "Code checks every number you write and shows the user the numbered sentences under your answer.")
 
 WRITE_STEPS = [
@@ -69,6 +70,8 @@ WRITE_STEPS = [
     "Check what the question assumes against the sentences. If they contradict it (a wrong number, a rule that "
     "doesn't exist), say so first and give the sentences' version.",
     "Start with what the user should do, or the direct answer, then join the parts into one connected answer.",
+    "Add a related sentence when it completes the answer, such as what the other side gets or what happens next, "
+    "and leave it out when it only sits near the topic.",
     "Right after each claim, write the numbers of the sentences it rests on, such as [2] or [1][3].",
     "For each part marked NO SOURCE, write one sentence that says the rules don't say it, and flag it as a gap.",
 ]

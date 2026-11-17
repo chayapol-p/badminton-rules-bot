@@ -114,6 +114,10 @@ def test_a_write_reply_with_no_sentence_is_a_format_error():
     assert reply.error_message == "write call: no sentences"
 
 
+def test_write_rules_ask_for_a_related_sentence_only_when_it_completes_the_answer():
+    assert "Add a related sentence when it completes the answer" in WRITE_RULES
+
+
 def test_write_rules_answer_a_named_format_first():
     """A question that names a format gets that format's rule first; the standard rule only to say it doesn't apply."""
     assert "When the question names a format, answer from that format's rule first" in WRITE_RULES

@@ -25,6 +25,7 @@ Use:
 import re
 
 from answer_flows.shared.answer_shape import Citation, RulesAnswer
+from answer_flows.shared.inline_markers import MARKER_PATTERN
 
 
 # Constants
@@ -34,9 +35,6 @@ TYPOGRAPHIC_REPLACEMENTS = {"‘": "'", "’": "'", "“": '"', "”": '"', "–
 
 ## Any run of spaces, tabs and line breaks
 WHITESPACE_PATTERN = re.compile(r"\s+")
-
-## An inline marker as the model writes it: anything in square brackets, so a bad one ("[laws-1.4]") is caught too
-MARKER_PATTERN = re.compile(r"\[([^\[\]]*)\]")
 
 
 # ===== Normalising text before comparing =====

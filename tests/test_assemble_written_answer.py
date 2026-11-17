@@ -3,7 +3,8 @@
 from answer_flows.gather_then_write.answer_shape import GatheredAnswer, GatheredPart, WrittenAnswer
 from answer_flows.shared.answer_shape import AnswerSentence, SentenceCitation
 from answer_flows.shared.cite_sentences import NO_PARTS_ANSWER
-from answer_flows.gather_then_write.assemble_written_answer import (NO_SOURCE_MARK, assemble_written_answer,
+from answer_flows.gather_then_write.assemble_written_answer import (NO_SOURCE_MARK, RELATED_HEADING,
+                                                                    assemble_written_answer,
                                                                     build_refusal, check_gathered_picks,
                                                                     format_parts_for_writer, is_refusal)
 from evals.checks.check_citations import find_citation_problems
@@ -111,11 +112,21 @@ def test_a_picked_sentence_keeps_its_subject_from_the_under_line():
     assert "However, the strings" not in parts_text, "only the picked sentence goes to the writer, not sentence 2"
 
 
-def test_the_writer_never_sees_the_reasoning_or_the_related_sentences():
+def test_the_writer_sees_related_sentences_numbered_after_the_parts_but_never_the_reasoning():
+    """17 Nov: a key fact the gather call filed as related (toss-choices, Law 6.2) never reached the writer."""
     answer = GatheredAnswer(reasoning="SECRET REASONING", parts=TWO_PARTS.parts, related_sentences=picks(("laws-4.2.2", 1)))
-    parts_text = format_parts_for_writer(answer, SHOWN_CHUNK_BY_ID, LABEL_BY_ID)
-    assert "SECRET REASONING" not in parts_text
-    assert "laws-4.2.2" not in parts_text
+    writer_input = format_parts_for_writer(answer, SHOWN_CHUNK_BY_ID, LABEL_BY_ID)
+    assert "SECRET REASONING" not in writer_input
+    related_block = writer_input.split("\n\n")[-1]
+    assert related_block.startswith(RELATED_HEADING)
+    assert related_block.endswith(f"[2] {STRINGED_AREA_SENTENCE}")
+
+
+def test_a_related_sentence_a_part_already_picked_is_not_shown_twice():
+    answer = gathered(TWO_PARTS.parts, related=[("laws-1.4", 1)])
+    writer_input = format_parts_for_writer(answer, SHOWN_CHUNK_BY_ID, LABEL_BY_ID)
+    assert RELATED_HEADING not in writer_input
+    assert writer_input.count(POST_HEIGHT_SENTENCE) == 1
 
 
 def test_picked_sentences_are_numbered_once_in_part_order():
@@ -157,3 +168,22 @@ def test_a_write_reply_with_no_sentence_is_a_format_error():
     rules_answer, error_message = assemble_written_answer(TWO_PARTS, written(), SHOWN_CHUNK_BY_ID)
     assert rules_answer is None
     assert error_message == "write call: no sentences"
+
+
+def test_a_cited_related_sentence_joins_the_sources_and_an_uncited_one_stays_related():
+    """The writer saw [1] Law 1.4 (part), [2] Law 4.2.2 (1) and [3] Law 4.2.2 (2) (related); it cited [1] and [3]."""
+    answer = gathered(TWO_PARTS.parts, related=[("laws-4.2.2", 1), ("laws-4.2.2", 2)])
+    rules_answer, _ = assemble_written_answer(answer, written((False, "Posts are 1.55 m [1]; strings may run on [3].")),
+                                              SHOWN_CHUNK_BY_ID)
+    assert rules_answer.answer == "Posts are 1.55 m [1]; strings may run on [2]."
+    assert [citation.chunk_id for citation in rules_answer.citations] == ["laws-1.4", "laws-4.2.2"]
+    assert rules_answer.citations[1].quote.startswith("However, the strings")
+    assert [citation.quote for citation in rules_answer.related_citations] == [STRINGED_AREA_SENTENCE]
+    assert find_citation_problems(rules_answer, list(SHOWN_CHUNK_BY_ID.values())) == []
+
+
+def test_a_marker_past_the_writers_list_stays_past_the_source_list():
+    answer = gathered(TWO_PARTS.parts, related=[("laws-4.2.2", 1)])
+    rules_answer, _ = assemble_written_answer(answer, written((False, "Posts are 1.55 m [1][9].")), SHOWN_CHUNK_BY_ID)
+    problems = find_citation_problems(rules_answer, list(SHOWN_CHUNK_BY_ID.values()))
+    assert [problem["problem"] for problem in problems] == ["marker [9] points to no source"]
