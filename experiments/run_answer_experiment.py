@@ -135,9 +135,9 @@ class Setup:
 SETUPS = {
     "plain-rag": Setup(has_starting_sources=True, has_tools=False, flows=("single-call",)),
     "agentic": Setup(has_starting_sources=False, has_tools=True,
-                     flows=("loop-call-with-tools", "gather-then-write", "gather-then-write-per-part")),
+                     flows=("gather-then-write", "loop-call-with-tools", "gather-then-write-per-part")),
     "hybrid": Setup(has_starting_sources=True, has_tools=True,
-                    flows=("loop-call-with-tools", "gather-then-write", "gather-then-write-per-part")),
+                    flows=("gather-then-write", "loop-call-with-tools", "gather-then-write-per-part")),
 }
 
 ## The stage every answer run logs since the measurement restarted with Phase 2 (record 0024)
