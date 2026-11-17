@@ -3,7 +3,8 @@
 // stream's "answer" event arrives, whole (record 0028); then the steps fold into one line (record 0033).
 // Slice 3: each [n] opens a popover with its source and a link to the PDF page (record 0034).
 // Slice 4: a failed answer shows an error instead of waiting for good (record 0035).
-// Refusals (slice 5) and the empty-question message (slice 6) come later.
+// Slice 5: a refusal shows the bot's own words, labelled "Not covered by the rules", with no sources.
+// The empty-question message (slice 6) comes later.
 
 import * as Popover from "@radix-ui/react-popover";
 import { EventSourceParserStream } from "eventsource-parser/stream";
@@ -269,8 +270,22 @@ function AnswerText({ text, citations }: { text: string; citations: Citation[] }
   );
 }
 
-// The answer text, then the numbered sources, each with the same PDF link as its marker
+// A refusal: the bot's own words under a label, with no sources, because nothing in the rules answers it
+// (criterion 4). Its text keeps its line breaks, so a "Related" line shows on its own line
+function RefusalAnswer({ rulesAnswer }: { rulesAnswer: RulesAnswer }) {
+  return (
+    <section className="answer" aria-label="Answer">
+      <p className="refusal-label">Not covered by the rules</p>
+      <p className="answer-text refusal-text">{rulesAnswer.answer}</p>
+    </section>
+  );
+}
+
+// The answer text, then the numbered sources, each with the same PDF link as its marker; a refusal has neither
 function AnswerWithSources({ rulesAnswer }: { rulesAnswer: RulesAnswer }) {
+  if (rulesAnswer.refused) {
+    return <RefusalAnswer rulesAnswer={rulesAnswer} />;
+  }
   const answerText = rulesAnswer.answer_sentences.map((sentence) => sentence.text).join(" ");
 
   return (

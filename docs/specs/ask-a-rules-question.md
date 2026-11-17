@@ -55,7 +55,9 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 4. Connect the real bot, and show an error when it fails (criterion 5; Job checks it by hand with Job's own key)
    - After this slice the user can: ask any question and get the real bot's answer, steps and citations; a failed answer shows "Couldn't write a checked answer. Please try again." instead of waiting for good
    - In scope: the `RULES_BOT` setting (stub when unset), the bot loaded once at startup, the "error" event, the error message on the page, Playwright on its own stub servers
-5. Refusals
+5. Refusals (criterion 4, with the stub)
+   - After this slice the user can: ask a question the rule books don't answer and see the bot's own words, labelled "Not covered by the rules", with no source list
+   - In scope: the page's refusal view; the stub refuses one fixed question ("What force, in newtons, should the net cord be stretched to?") with a real refusal copied from the 17 Nov run
 6. Error message for an empty question
 
 ## Changes after building

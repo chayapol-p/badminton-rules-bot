@@ -1,0 +1,14 @@
+{
+  "reasoning": "The question has one part: the force, in newtons, to which the net cord should be stretched. The given sources (laws-1.6 to laws-1.10) cover net mesh, depth, width, tape, cord placement, and net height, but none gives any numeric force. Searches for 'net cord cable stretched force newtons tension', 'net posts tension gauge pull force required', 'firmly ... newton N force value', and 'technical officials equipment check net tension' returned only laws-1.9, which says the cord 'shall be stretched firmly' with no newton value, plus unrelated racket/shuttle/official clauses. No sentence in the Laws of Badminton or the Instructions to Technical Officials states a force in newtons for the net cord, so this part has no answering sentences. The nearest rule is laws-1.9 (1), which gives only the qualitative requirement 'stretched firmly', so it goes in related_sentences.",
+  "refused": true,
+  "answer": "The sources do not say the force in newtons to which the net cord should be stretched.\nRelated (Laws of Badminton 5.0 (2), Clause 1.9): \"The cord or cable shall be stretched firmly, flush with the top of the posts.\"",
+  "citations": [],
+  "related_citations": [
+    {
+      "chunk_id": "laws-1.9",
+      "quote": "The cord or cable shall be stretched firmly, flush with the top of the posts.",
+      "source_name": ""
+    }
+  ],
+  "answer_sentences": []
+}
