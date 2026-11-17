@@ -129,3 +129,94 @@ test("after the answer, no step is marked as in progress", async () => {
     expect(step).not.toHaveAttribute("aria-current");
   }
 });
+
+
+// ===== A long wait (record 0036) =====
+
+// Sends six steps, as a real question with several searches does
+function sendSixSteps(chat: ReturnType<typeof startControlledChat>) {
+  chat.sendProgress("finding_rules", "Searching the rule books");
+  chat.sendProgress("found_rules", "Found 5 rules to check");
+  chat.sendProgress("checking_rules", "Checking which rules answer your question");
+  chat.sendProgress("searching", "Searching the rules: \"shuttle definition\"");
+  chat.sendProgress("checking_rules", "Checking what the search found");
+  chat.sendProgress("searching", "Searching the rules: \"Law 8 start of play rally shuttle shall be in play service\"");
+}
+
+test("with six steps, only the newest four show, and the first two fold into one line", async () => {
+  const chat = startControlledChat();
+  await askQuestion();
+
+  sendSixSteps(chat);
+
+  const steps = await screen.findByRole("status");
+  expect(await within(steps).findByText("2 earlier steps")).toBeVisible();
+  expect(within(steps).getByText("Searching the rule books")).not.toBeVisible();
+  expect(within(steps).getByText("Found 5 rules to check")).not.toBeVisible();
+  expect(within(steps).getByText("Checking which rules answer your question")).toBeVisible();
+  expect(within(steps).getByText("Searching the rules: \"Law 8 start of play rally shuttle shall be in play service\"")).toBeVisible();
+});
+
+test("clicking the earlier-steps line shows all six steps", async () => {
+  const chat = startControlledChat();
+  await askQuestion();
+  sendSixSteps(chat);
+
+  await userEvent.click(await screen.findByText("2 earlier steps"));
+
+  expect(screen.getByText("Searching the rule books")).toBeVisible();
+  expect(screen.getByText("Found 5 rules to check")).toBeVisible();
+});
+
+test("with four steps or fewer, there is no earlier-steps line", async () => {
+  const chat = startControlledChat();
+  await askQuestion();
+
+  chat.sendProgress("finding_rules", "Searching the rule books");
+  chat.sendProgress("found_rules", "Found 5 rules to check");
+  chat.sendProgress("checking_rules", "Checking which rules answer your question");
+  chat.sendProgress("writing", "Writing the answer");
+
+  const steps = await screen.findByRole("status");
+  await within(steps).findByText("Writing the answer");
+  expect(within(steps).queryByText(/earlier step/)).not.toBeInTheDocument();
+});
+
+test("still-writing ticks still replace each other, so they never push steps into the fold", async () => {
+  const chat = startControlledChat();
+  await askQuestion();
+
+  chat.sendProgress("finding_rules", "Searching the rule books");
+  chat.sendProgress("found_rules", "Found 5 rules to check");
+  chat.sendProgress("writing", "Writing the answer");
+  chat.sendProgress("still_writing", "Still writing the answer · 5 s");
+  chat.sendProgress("still_writing", "Still writing the answer · 10 s");
+  chat.sendProgress("still_writing", "Still writing the answer · 15 s");
+
+  const steps = await screen.findByRole("status");
+  expect(await within(steps).findByText("Still writing the answer · 15 s")).toBeVisible();
+  expect(within(steps).queryByText(/earlier step/)).not.toBeInTheDocument();
+});
+
+test("the step in progress is always visible, as the last of the four", async () => {
+  const chat = startControlledChat();
+  await askQuestion();
+
+  sendSixSteps(chat);
+
+  const steps = await screen.findByRole("status");
+  const runningMessage = await within(steps).findByText("Searching the rules: \"Law 8 start of play rally shuttle shall be in play service\"");
+  expect(runningMessage).toBeVisible();
+  expect(runningMessage.closest("li")).toHaveAttribute("aria-current", "step");
+});
+
+test("each step line keeps its full words in a hover title, for when the row cuts it short", async () => {
+  const chat = startControlledChat();
+  await askQuestion();
+
+  sendSixSteps(chat);
+
+  const steps = await screen.findByRole("status");
+  const longMessage = "Searching the rules: \"Law 8 start of play rally shuttle shall be in play service\"";
+  expect(await within(steps).findByText(longMessage)).toHaveAttribute("title", longMessage);
+});

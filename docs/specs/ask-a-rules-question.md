@@ -64,3 +64,4 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 - 17 Nov, slice 1: the page reads the stream with eventsource-parser, not a hand-written reader (record 0032).
 - 17 Nov, slice 2 (Job, after trying it): the stub holds each step 1.5 s, not 0.3 s, so each step can be read; the step in progress shows a spinner and a shimmer, the steps before it a tick, each new step slides in, and a "Working · N s" timer counts up, so the wait looks alive (a reduced-motion setting gets a still dot and no movement).
 - 17 Nov, before slice 4 (Job): criterion 5, the error for a failed answer, moves from slice 6 into slice 4, so the live check never hangs; slice 6 keeps the empty-question check (record 0035).
+- 17 Nov, slice 2 (Job, after the live check: one real question sent 12 steps): while waiting, only the newest 4 steps show; older ones fold into "▸ N earlier steps", and each step is cut to one row with the full words on hover (record 0036).

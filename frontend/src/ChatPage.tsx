@@ -15,6 +15,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 // What the page shows when the answer never comes: the request failed, or the stream ended without an answer
 const FAILED_ANSWER_MESSAGE = "Couldn't write a checked answer. Please try again.";
 
+// How many of the newest steps show while waiting; older ones fold into one line (record 0036)
+const VISIBLE_STEP_COUNT = 4;
+
 
 // ===== The answer, as /chat sends it =====
 
@@ -104,24 +107,52 @@ function addStep(steps: ProgressUpdate[], update: ProgressUpdate): ProgressUpdat
 
 // The steps so far, each with a tick when done; while the bot works, the newest step has a spinner instead.
 // The tick and the spinner are hidden from screen readers, so the status region reads only the messages
-function StepList({ steps, isWorking }: { steps: ProgressUpdate[]; isWorking: boolean }) {
+// firstStepNumber is the first step's place in the whole list, so a step keeps its key when older steps fold away.
+// Each line is cut to one row; the title holds the full words for hover (record 0036)
+function StepList({ steps, isWorking, firstStepNumber = 0 }: { steps: ProgressUpdate[]; isWorking: boolean; firstStepNumber?: number }) {
   const runningStepNumber = isWorking ? steps.length - 1 : -1;
 
   return (
     <ol className="steps">
-      {/* The position is the key, because steps only ever add to the end or replace the last one */}
+      {/* The place in the whole list is the key, because steps only ever add to the end or replace the last one */}
       {steps.map((step, i) => {
         const isRunning = i === runningStepNumber;
         return (
-          <li key={i} className={isRunning ? "step step-running" : "step"} aria-current={isRunning ? "step" : undefined}>
+          <li key={firstStepNumber + i} className={isRunning ? "step step-running" : "step"} aria-current={isRunning ? "step" : undefined}>
             {isRunning
               ? <span className="step-marker step-spinner" aria-hidden="true" />
               : <span className="step-marker" aria-hidden="true">✓</span>}
-            <span className="step-message">{step.message}</span>
+            <span className="step-message" title={step.message}>{step.message}</span>
           </li>
         );
       })}
     </ol>
+  );
+}
+
+// The line older steps fold into while waiting, e.g. "2 earlier steps"
+function describeEarlierSteps(stepCount: number): string {
+  const stepWord = stepCount === 1 ? "step" : "steps";
+  return `${stepCount} earlier ${stepWord}`;
+}
+
+// The steps while waiting: the newest few, with the step in progress last, and older ones folded into one closed
+// line that opens on a click, so the list keeps one height however many steps come (record 0036)
+function WaitingSteps({ steps }: { steps: ProgressUpdate[] }) {
+  const earlierStepCount = Math.max(steps.length - VISIBLE_STEP_COUNT, 0);
+  const earlierSteps = steps.slice(0, earlierStepCount);
+  const newestSteps = steps.slice(earlierStepCount);
+
+  return (
+    <>
+      {earlierStepCount > 0 && (
+        <details className="earlier-steps">
+          <summary>{describeEarlierSteps(earlierStepCount)}</summary>
+          <StepList steps={earlierSteps} isWorking={false} />
+        </details>
+      )}
+      <StepList steps={newestSteps} isWorking={true} firstStepNumber={earlierStepCount} />
+    </>
   );
 }
 
@@ -192,8 +223,8 @@ export function ChatPage() {
       {isWaiting && (
         <div className="progress">
           <p className="progress-timer" aria-hidden="true">Working · {secondsTaken} s</p>
-          <section role="status" aria-label="Progress">
-            <StepList steps={steps} isWorking={true} />
+          <section className="waiting-steps" role="status" aria-label="Progress">
+            <WaitingSteps steps={steps} />
           </section>
         </div>
       )}

@@ -136,23 +136,90 @@ h1 {
   display: grid;
   gap: 8px;
 }
+
+/* The folded older steps and the newest steps: one grid with the same gap as inside each list, so every step row
+   sits the same distance from the next, across the fold too */
+.waiting-steps {
+  display: grid;
+  gap: 6px;
+}
 .progress-timer {
   margin: 0;
   font-size: 0.85rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+/* A grid column grows to fit its widest row unless it may shrink (minmax(0, 1fr)); without it, the one-row cut
+   never cut, and long search lines ran past the page */
 .steps {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
 .step {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Each step is one row: long search words end in "…", and the hover title holds the rest (record 0036) */
+.step-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The older steps folded into one line while waiting */
+.earlier-steps .steps {
+  margin: 6px 0 0;
+}
+
+/* Both folds ("N earlier steps" and "Checked N steps") slide open and shut, and their arrow turns. Browsers without
+   ::details-content open them at once, as before */
+.earlier-steps,
+.progress-summary {
+  interpolate-size: allow-keywords;
+}
+.earlier-steps::details-content,
+.progress-summary::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 200ms ease-out, content-visibility 200ms ease-out allow-discrete;
+}
+.earlier-steps[open]::details-content,
+.progress-summary[open]::details-content {
+  block-size: auto;
+}
+.earlier-steps summary,
+.progress-summary summary {
+  list-style: none;
+  cursor: pointer;
+  width: fit-content;
+}
+.earlier-steps summary::-webkit-details-marker,
+.progress-summary summary::-webkit-details-marker {
+  display: none;
+}
+.earlier-steps summary::before,
+.progress-summary summary::before {
+  content: "▸";
+  display: inline-block;
+  width: 14px;
+  margin-right: 10px;
+  text-align: center;
+  transition: transform 200ms ease-out;
+}
+.earlier-steps[open] > summary::before,
+.progress-summary[open] > summary::before {
+  transform: rotate(90deg);
+}
+.earlier-steps summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .progress .step {
   animation: step-arrives 200ms ease-out;
@@ -165,10 +232,6 @@ h1 {
   place-items: center;
   font-size: 0.8rem;
   color: var(--accent);
-}
-.progress-summary summary {
-  cursor: pointer;
-  width: fit-content;
 }
 .progress-summary summary:focus-visible {
   outline: 2px solid var(--accent);
@@ -212,6 +275,12 @@ h1 {
   .step-spinner,
   .step-running .step-message {
     animation: none;
+  }
+  .earlier-steps::details-content,
+  .progress-summary::details-content,
+  .earlier-steps summary::before,
+  .progress-summary summary::before {
+    transition: none;
   }
   .step-spinner {
     border: none;

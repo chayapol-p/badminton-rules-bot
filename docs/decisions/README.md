@@ -57,6 +57,7 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0033](0033-progress-steps-show-as-a-list-that-folds-after-the-answer.md) | Progress steps show as a list that folds into one line after the answer | Accepted |
 | [0034](0034-citation-popovers-use-radix-popover.md) | Citation popovers use Radix Popover; the early quotes wait | Accepted |
 | [0035](0035-the-real-bot-is-switched-on-in-env-and-tests-never-reach-it.md) | The real bot is switched on in .env, tests never reach it, and a failed answer shows an error | Accepted |
+| [0036](0036-while-waiting-show-the-newest-4-steps-and-fold-the-rest.md) | While waiting, show the newest 4 steps and fold the rest; each step is one row | Accepted |
 
 ## Template
 
