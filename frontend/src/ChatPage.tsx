@@ -1,19 +1,23 @@
 // The chat page: a question box, then the answer with its [n] markers and a numbered source list.
 // Slices 1 and 2 of docs/specs/ask-a-rules-question.md: the steps show as they arrive, and the answer shows once the
 // stream's "answer" event arrives, whole (record 0028); then the steps fold into one line (record 0033).
-// Clickable markers with PDF links (slice 3), refusals (slice 5) and error messages (slice 6) come later.
+// Slice 3: each [n] opens a popover with its source and a link to the PDF page (record 0034).
+// Refusals (slice 5) and error messages (slice 6) come later.
 
+import * as Popover from "@radix-ui/react-popover";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 
 
 // ===== The answer, as /chat sends it =====
 
-// The fields of RulesAnswer (answer_flows/shared/answer_shape.py) that the page shows
+// The fields of RulesAnswer (answer_flows/shared/answer_shape.py) that the page shows; the server adds pdf_link
+// to each citation (app/pdf_links.py)
 interface Citation {
   chunk_id: string;
   quote: string;
   source_name: string;
+  pdf_link: string;
 }
 
 interface AnswerSentence {
@@ -188,13 +192,67 @@ export function ChatPage() {
 }
 
 
-// The answer text, then the numbered sources: marker [n] in the text is citations[n - 1]
+// ===== The answer =====
+
+// Returns the page number a PDF link opens at, e.g. 37 for "/rule-books/bwf-itto-2025-v7.0.pdf#page=37"
+function readPdfPage(pdfLink: string): string {
+  return pdfLink.split("#page=")[1];
+}
+
+// The link that opens a source's rule book at its page, in a new tab so the answer stays open
+function PdfPageLink({ citation }: { citation: Citation }) {
+  return (
+    <a className="pdf-link" href={citation.pdf_link} target="_blank" rel="noopener noreferrer">
+      Open PDF at page {readPdfPage(citation.pdf_link)}
+    </a>
+  );
+}
+
+// One [n] marker: a button that opens a popover with the quote, the source name and the PDF link (record 0034).
+// Radix closes it on Escape or a click outside, and puts focus back on the marker
+function CitationMarker({ sourceNumber, citation }: { sourceNumber: number; citation: Citation }) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger className="citation-marker" aria-label={`Source ${sourceNumber}`}>
+        [{sourceNumber}]
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content className="citation-popover" side="bottom" align="start" sideOffset={6} collisionPadding={16}>
+          <q className="source-quote">{citation.quote}</q>
+          <span className="source-name">{citation.source_name}</span>
+          <PdfPageLink citation={citation} />
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+// The answer text with each [n] turned into its marker: marker [n] is citations[n - 1]
+function AnswerText({ text, citations }: { text: string; citations: Citation[] }) {
+  // Splitting on the marker pattern keeps the captured numbers: text parts sit at even positions, numbers at odd ones
+  const parts = text.split(/\[(\d+)\]/);
+
+  return (
+    <p className="answer-text">
+      {parts.map((part, i) => {
+        const isMarkerNumber = i % 2 === 1;
+        if (!isMarkerNumber) {
+          return part;
+        }
+        const sourceNumber = Number(part);
+        return <CitationMarker key={i} sourceNumber={sourceNumber} citation={citations[sourceNumber - 1]} />;
+      })}
+    </p>
+  );
+}
+
+// The answer text, then the numbered sources, each with the same PDF link as its marker
 function AnswerWithSources({ rulesAnswer }: { rulesAnswer: RulesAnswer }) {
   const answerText = rulesAnswer.answer_sentences.map((sentence) => sentence.text).join(" ");
 
   return (
     <section className="answer" aria-label="Answer">
-      <p className="answer-text">{answerText}</p>
+      <AnswerText text={answerText} citations={rulesAnswer.citations} />
       <h2 id="sources-heading">Sources</h2>
       <ol className="sources" aria-labelledby="sources-heading">
         {/* The position is the key, because the list never reorders and a clause can be cited twice */}
@@ -203,6 +261,7 @@ function AnswerWithSources({ rulesAnswer }: { rulesAnswer: RulesAnswer }) {
             <span className="source-number">[{i + 1}]</span>
             <q className="source-quote">{citation.quote}</q>
             <span className="source-name">{citation.source_name}</span>
+            <PdfPageLink citation={citation} />
           </li>
         ))}
       </ol>

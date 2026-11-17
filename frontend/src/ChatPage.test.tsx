@@ -4,7 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 
-import samplePostsAnswer from "../../app/sample_posts_answer.json";
+import { SAMPLE_CHAT_ANSWER } from "./sampleChatAnswer";
 import { ChatPage } from "./ChatPage";
 
 
@@ -14,7 +14,7 @@ const QUESTION = "How tall are the posts?";
 
 // Answer every fetch with a /chat stream that holds the sample answer as one "answer" event
 function stubChatWithSampleAnswer() {
-  const body = `event: answer\ndata: ${JSON.stringify(samplePostsAnswer)}\n\n`;
+  const body = `event: answer\ndata: ${JSON.stringify(SAMPLE_CHAT_ANSWER)}\n\n`;
   const fetchStub = vi.fn(async () => new Response(body, { headers: { "Content-Type": "text/event-stream" } }));
   vi.stubGlobal("fetch", fetchStub);
   return fetchStub;
@@ -22,7 +22,7 @@ function stubChatWithSampleAnswer() {
 
 // Answer every fetch with a /chat stream that sends the sample answer event in two pieces, cut in the middle of its data
 function stubChatWithAnswerSplitMidEvent() {
-  const eventText = `event: answer\ndata: ${JSON.stringify(samplePostsAnswer)}\n\n`;
+  const eventText = `event: answer\ndata: ${JSON.stringify(SAMPLE_CHAT_ANSWER)}\n\n`;
   const middle = Math.floor(eventText.length / 2);
   const encoder = new TextEncoder();
   const body = new ReadableStream<Uint8Array>({

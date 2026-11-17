@@ -11,6 +11,7 @@
 - Front end lives in `frontend/` (the official FastAPI full-stack template's layout).
 - Streaming: FastAPI's built-in server-sent events; the page reads them with `fetch` and `eventsource-parser` (records 0031, 0032). Front-end stack: Vite, React and TypeScript, no router or data library yet (record 0030).
 - Progress: the steps show as a list while waiting, then fold into one "Checked N steps in N s" line after the answer; a "still writing" step replaces the one before it (record 0033).
+- Popovers: each [n] opens a Radix Popover; the quoted sources the flow sends early wait for a later slice (record 0034).
 - Runs locally on Job's Mac. Tested with pytest (API), Vitest (page) and one Playwright test of the full path.
 
 ## Criteria
@@ -31,6 +32,7 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 
 ## Out of scope
 - Follow-up questions and chat history; phone layout; deployment; sign-in; streaming the answer word by word.
+- The quoted sources the flow sends early ("sources_picked") shown while waiting (backlog, record 0034).
 
 ## Open questions
 - Does Safari's built-in PDF viewer honour `#page=`? (Unchecked; check in the slice 3 demo.)
@@ -45,7 +47,9 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 2. Progress updates while waiting (criterion 2, with the stub)
    - After this slice the user can: ask and watch the steps arrive; the answer area stays empty until the answer comes, then the steps fold into one line
    - In scope: progress events from a worker thread through a thread-safe queue, the stub sends 4 updates 0.3 s apart, the step list with fold, still-writing replace, 3 pytest + 4 Vitest + 1 Playwright tests
-3. Clickable [n] popovers with PDF links
+3. Clickable [n] popovers with PDF links (criterion 3, with the stub)
+   - After this slice the user can: click [n] to see the quote, the source name and a link that opens the PDF at its page; Escape or a click outside closes it
+   - In scope: `pdf_link` on each citation in the answer event, FastAPI serves `data/bwf` at `/rule-books`, a Radix popover on each [n], the same link in the source list
 4. Connect the real bot (Job checks it by hand with Job's own key)
 5. Refusals
 6. Error messages for a bad answer and an empty question

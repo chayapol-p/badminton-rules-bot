@@ -5,7 +5,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 
-import samplePostsAnswer from "../../app/sample_posts_answer.json";
+import { SAMPLE_CHAT_ANSWER } from "./sampleChatAnswer";
 import { ChatPage } from "./ChatPage";
 
 
@@ -28,7 +28,7 @@ function startControlledChat() {
   }
   // Sends the sample answer and ends the stream
   function sendAnswer() {
-    sendEvent("answer", samplePostsAnswer);
+    sendEvent("answer", SAMPLE_CHAT_ANSWER);
     streamController.close();
   }
   return { sendProgress, sendAnswer };

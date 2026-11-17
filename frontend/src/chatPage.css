@@ -115,7 +115,7 @@ h1 {
   column-gap: 8px;
 }
 .source-number {
-  grid-row: span 2;
+  grid-row: span 3;
   color: var(--accent);
   font-weight: 600;
 }
@@ -222,4 +222,45 @@ h1 {
     background: none;
     -webkit-text-fill-color: currentColor;
   }
+}
+
+/* Citation markers and their popovers (slice 3) */
+.citation-marker {
+  font: inherit;
+  padding: 0 2px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+.citation-marker:hover,
+.citation-marker[data-state="open"] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.citation-marker:focus-visible,
+.pdf-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.citation-popover {
+  display: grid;
+  gap: 8px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 16px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--text) 14%, transparent);
+}
+.pdf-link {
+  width: fit-content;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
 }

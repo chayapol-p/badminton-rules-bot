@@ -2,7 +2,7 @@
 POST /chat: takes one rules question and streams the answer back as server-sent events (record 0031).
 
 The stream holds a "progress" event for each ProgressUpdate the bot sends (slice 2 of
-docs/specs/ask-a-rules-question.md, record 0028), then one "answer" event with the whole RulesAnswer as JSON.
+docs/specs/ask-a-rules-question.md, record 0028), then one "answer" event with the whole RulesAnswer as JSON, each citation with its PDF link (slice 3).
 Slice 6 adds "error" events.
 
 The app answers only through the bot's answer(question, report_progress=...) method (CLAUDE.md, "The app").
@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from answer_flows.shared.answer_shape import RulesAnswer
 from answer_flows.shared.progress_updates import ProgressUpdate
+from app.pdf_links import add_pdf_links
 from app.stub_rules_bot import StubRulesBot
 
 
@@ -74,5 +75,6 @@ def stream_chat_answer(chat_request: ChatRequest, rules_bot: StubRulesBot = Depe
         elif isinstance(item, Exception):
             raise item
         else:
-            yield ServerSentEvent(data=item, event="answer")
+            # Each citation gets the link that opens its PDF at the clause's page (slice 3, record 0034)
+            yield ServerSentEvent(data=add_pdf_links(item), event="answer")
             return
