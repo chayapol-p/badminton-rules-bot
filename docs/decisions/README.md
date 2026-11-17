@@ -48,7 +48,7 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0024](0024-every-prompt-as-task-steps-and-limits.md) | Every answer prompt as a task, numbered steps and limits with reasons | Accepted |
 | [0025](0025-related-sentences-get-their-own-list.md) | Related sentences get their own list, and the judge sees them as context | Accepted |
 | [0026](0026-call-a-win-with-3-runs-per-flow.md) | Call a win with 3 runs per flow and a gap bigger than the noise | Accepted |
-| [0027](0027-one-natural-answer-with-inline-citations.md) | One natural answer with inline citations, and a scorecard per run | Proposed |
+| [0027](0027-one-natural-answer-with-inline-citations.md) | One natural answer with inline citations, and a scorecard per run | Accepted |
 
 ## Template
 

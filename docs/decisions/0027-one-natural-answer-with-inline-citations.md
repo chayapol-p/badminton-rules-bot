@@ -1,6 +1,6 @@
 # 0027 · One natural answer with inline citations, and a scorecard per run
 
-- **Status:** Proposed (Job, 16 Nov): the direction is picked; the build and its runs come later
+- **Status:** Accepted (Job, 17 Nov): natural answers won under record 0026 (see Evidence)
 - **Date:** 2026-11-16
 - **Stage:** Phase 2 (productise)
 
