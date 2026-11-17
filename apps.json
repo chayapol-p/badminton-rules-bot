@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "modules": [
+    {
+      "type": "app",
+      "name": "api",
+      "path": ".",
+      "routes": [{ "path": "/" }],
+      "port": 3000,
+      "serve": "server",
+      "runtime": "python",
+      "build": {
+        "context": ".",
+        "dockerfile": "deploy/docker/Dockerfile.api",
+        "target": "api"
+      },
+      "dev": {
+        "startCommand": "uv run uvicorn app.main:app --host \"$HOST\" --port \"$PORT\""
+      },
+      "deploy": {
+        "startCommand": "uv run --frozen --no-dev --no-sync uvicorn app.main:app --host \"$HOST\" --port \"$PORT\" --proxy-headers --timeout-graceful-shutdown 20"
+      }
+    }
+  ]
+}

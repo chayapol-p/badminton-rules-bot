@@ -1,0 +1,19 @@
+# Keep the deploy build context small and free of secrets. Deploys clone the git
+# repo (so .env is already absent); this also guards `mistral deploy --from-disk`.
+.git
+**/.venv
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/node_modules
+**/.mistral/cache
+.env
+.env.*
+!.env.example
+# Not needed at runtime in the image: the app serves only app/
+data
+docs
+evals
+experiments
+workshop
+tests
