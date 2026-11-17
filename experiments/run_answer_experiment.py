@@ -68,10 +68,10 @@ from functools import partial
 from anthropic import Anthropic
 from mistralai.client import Mistral
 from mistralai.client.errors import SDKError
-from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES
 from answer_flows.gather_then_write.gather_then_write import gather_then_write
+from answer_flows.shared.mistral_client import build_mistral_client
 from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import RuleTools
@@ -100,10 +100,6 @@ from retrieval.retrieve_sources import (DEFAULT_TOP_K, build_clause_vector_searc
 # Constants
 ## Pause between questions, to stay under the APIs' requests-per-second limits
 SECONDS_BETWEEN_QUESTIONS = 1.0
-
-## The SDK's own retry on a rate limit (429) or a server error: wait 2 s, doubling up to 60 s, for at
-## most 5 minutes. Top 15 hit Mistral's rate limit on 8 Nov and lost the run at question 15
-MISTRAL_RETRY = RetryConfig("backoff", BackoffStrategy(2_000, 60_000, 2.0, 300_000), retry_connection_errors=True)
 
 ## The SDK retries only 429, 500, 502, 503 and 504. On 17 Nov a Cloudflare 520 from Mistral ("retry after 60 s")
 ## stopped a whole run at one question, so any other server error retries the question here
@@ -431,7 +427,7 @@ def run_answer_experiment(choices: RunChoices) -> dict:
     # A dry run asks one question, to meet any API error that only the live server raises, for a few cents
     if choices.is_dry_run:
         questions = questions[:1]
-    mistral_client = Mistral(api_key=settings.mistral_api_key.get_secret_value(), retry_config=MISTRAL_RETRY)
+    mistral_client = build_mistral_client(settings)
     anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
 
     # The starting sources and the tools, for the setups that have them
