@@ -63,9 +63,11 @@ from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import partial
 
 from anthropic import Anthropic
 from mistralai.client import Mistral
+from mistralai.client.errors import SDKError
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
 from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES
@@ -102,6 +104,11 @@ SECONDS_BETWEEN_QUESTIONS = 1.0
 ## The SDK's own retry on a rate limit (429) or a server error: wait 2 s, doubling up to 60 s, for at
 ## most 5 minutes. Top 15 hit Mistral's rate limit on 8 Nov and lost the run at question 15
 MISTRAL_RETRY = RetryConfig("backoff", BackoffStrategy(2_000, 60_000, 2.0, 300_000), retry_connection_errors=True)
+
+## The SDK retries only 429, 500, 502, 503 and 504. On 17 Nov a Cloudflare 520 from Mistral ("retry after 60 s")
+## stopped a whole run at one question, so any other server error retries the question here
+QUESTION_ATTEMPTS = 3
+SECONDS_BEFORE_QUESTION_RETRY = 60
 
 ## The answer flows that use tools, by their --flow name. Each takes the same arguments
 TOOL_FLOW_FUNCTIONS = {"loop-call-with-tools": answer_with_tools, "gather-then-write": gather_then_write,
@@ -350,6 +357,21 @@ def answer_and_grade(question: dict, choices: RunChoices, retrieve: Callable[[st
     return answer_line, grade_line
 
 
+def run_with_retries(answer_one_question: Callable[[], tuple[dict, dict]], question_id: str) -> tuple[dict, dict]:
+    """Runs one question's answer and grade, trying again after a Mistral server error; stops the run when it keeps failing."""
+    for attempt_number in range(1, QUESTION_ATTEMPTS + 1):
+        try:
+            return answer_one_question()
+        except SDKError as error:
+            # A client error (bad key, bad request) breaks every question, so it stops the run at once
+            is_server_error = error.status_code >= 500
+            if not is_server_error or attempt_number == QUESTION_ATTEMPTS:
+                raise
+            print(f"   {question_id}: Mistral server error {error.status_code}, retrying in "
+                  f"{SECONDS_BEFORE_QUESTION_RETRY} s (attempt {attempt_number} of {QUESTION_ATTEMPTS})", flush=True)
+            time.sleep(SECONDS_BEFORE_QUESTION_RETRY)
+
+
 # ===== The code's version, for runs.jsonl =====
 
 def read_code_version() -> dict:
@@ -445,9 +467,9 @@ def run_answer_experiment(choices: RunChoices) -> dict:
     with ThreadPoolExecutor(max_workers=choices.parallel) as executor:
         futures: list[Future] = []
         for question in questions:
-            futures.append(executor.submit(answer_and_grade, question, choices, retrieve, build_rule_tools,
-                                           answer_rules, mistral_client, anthropic_client, chunks, chunk_by_id,
-                                           settings))
+            answer_one_question = partial(answer_and_grade, question, choices, retrieve, build_rule_tools, answer_rules,
+                                          mistral_client, anthropic_client, chunks, chunk_by_id, settings)
+            futures.append(executor.submit(run_with_retries, answer_one_question, question["id"]))
 
         # A question that raises stops the run, as before: the questions not started yet are cancelled
         try:

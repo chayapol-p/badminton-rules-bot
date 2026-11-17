@@ -1,10 +1,15 @@
 """
-Tests the run script's command line: which flows each setup allows, the agent rules and top k a run gets, and its name.
+Tests the run script's command line (which flows each setup allows, the agent rules and top k a run gets, its name)
+and its retry of a question after a Mistral server error.
 """
 
+import httpx
 import pytest
+from mistralai.client.errors import SDKError
 
-from experiments.run_answer_experiment import GATHER_RULES_BY_FLOW, parse_run_choices, read_code_version
+from experiments import run_answer_experiment
+from experiments.run_answer_experiment import (GATHER_RULES_BY_FLOW, parse_run_choices, read_code_version,
+                                              run_with_retries)
 
 
 # ===== The defaults each setup gets =====
@@ -82,3 +87,39 @@ def test_parallel_defaults_to_one_question_at_a_time():
 def test_parallel_below_one_stops_the_run():
     with pytest.raises(SystemExit):
         parse_run_choices(["--setup", "hybrid", "--parallel", "0"])
+
+
+# ===== Retrying a question after a Mistral server error =====
+
+def mistral_error(status_code: int) -> SDKError:
+    """Returns the SDK's error for a response with this status code."""
+    return SDKError("API error occurred", httpx.Response(status_code, request=httpx.Request("POST", "https://api.mistral.ai")))
+
+
+def test_a_server_error_retries_the_question(monkeypatch):
+    """17 Nov: a Cloudflare 520 stopped a whole run at one question; the SDK retries only 429 and 500-504."""
+    monkeypatch.setattr(run_answer_experiment, "SECONDS_BEFORE_QUESTION_RETRY", 0)
+    replies = [mistral_error(520), ({"id": "q1"}, {"id": "q1"})]
+
+    def stub_answer_one_question():
+        """Stub: fails once with a 520, then answers."""
+        reply = replies.pop(0)
+        if isinstance(reply, SDKError):
+            raise reply
+        return reply
+
+    assert run_with_retries(stub_answer_one_question, "q1") == ({"id": "q1"}, {"id": "q1"})
+
+
+def test_a_client_error_stops_the_run_at_once(monkeypatch):
+    monkeypatch.setattr(run_answer_experiment, "SECONDS_BEFORE_QUESTION_RETRY", 0)
+    attempts = []
+
+    def stub_answer_one_question():
+        """Stub: always fails with a 401, as a bad key would."""
+        attempts.append(1)
+        raise mistral_error(401)
+
+    with pytest.raises(SDKError):
+        run_with_retries(stub_answer_one_question, "q1")
+    assert len(attempts) == 1
