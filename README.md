@@ -6,7 +6,7 @@ A good umpire knows which page to open, reads the rules that page points to, and
 
 It's also how we learn RAG, one lab at a time. We measured every choice before we kept it.
 
-> **Status:** the bot answers end to end. We're building the web chat now (Lab 7).
+> **Status:** the chat app works end to end with the real bot. Next is a fast, polite reply to questions that aren't about the rules (Lab 7).
 
 **[Ask it a question](#ask-it-a-question)** · **[What we tested](#what-we-tested)** · **[How it works](#how-it-works)** · **[Setup](#setup)** · **[References](#references)**
 
@@ -84,7 +84,9 @@ The first change to pass that test was one natural answer with inline citations,
 
 We scored the 12 locked questions once, and 7 of 10 answers passed. Diagrams reach the bot only as their captions. Three questions fail in every flow, the black card question among them, because search never finds the clause that holds the missing fact.
 
-Next is the web chat. If you try the bot and it gets a rule wrong, please send us the question.
+In a live test, the bot took 77 s to refuse "test". So the next step is a fast, polite reply to questions that aren't about the rules, and we wrote 23 off-topic test questions before any code ([the plan](docs/specs/refuse-off-topic-questions-fast.md)).
+
+If you try the bot and it gets a rule wrong, please send us the question.
 
 ---
 
@@ -107,7 +109,7 @@ flowchart LR
 3. **Embed** (`scripts/build_embeddings.py`): embeds every clause and question once, and saves the vectors as `.npz` files, so eval runs call no embedding API.
 4. **Search** (`retrieval/`): an exact vector search with NumPy, then the clauses the rule map links to the top 5.
 5. **Answer** (`answer_flows/`): a tool loop gathers the sentences that answer each part. Code refuses when none do. Then a write call writes one answer with `[n]` citations. The app calls it through `load_rules_bot()` in `answer_flows/rules_bot.py`.
-6. **Serve and chat:** FastAPI in `app/` has `/health` and `POST /chat`, which streams the answer as server-sent events. Until slice 4 of [the spec](docs/specs/ask-a-rules-question.md), `/chat` answers from a stub bot, so it costs nothing to call. The React chat page lives in `frontend/` (Vite, React and TypeScript).
+6. **Serve and chat:** FastAPI in `app/` streams each answer from `POST /chat` as server-sent events, and serves the rule-book PDFs at `/rule-books/` for the citation links. The React page in `frontend/` shows the bot's newest 4 steps while it works. Each `[n]` opens its quote and a link to the PDF page, and a refusal is labelled as not covered by the rules. `/chat` answers from a free stub bot until you set `RULES_BOT=real` in `.env` ([record 0035](docs/decisions/0035-the-real-bot-is-switched-on-in-env-and-tests-never-reach-it.md)). The spec for the app is [`docs/specs/ask-a-rules-question.md`](docs/specs/ask-a-rules-question.md).
 
 <details>
 <summary><b>Traps in the rule books, and how we fixed them</b></summary>
@@ -170,7 +172,16 @@ uv run uvicorn app.main:app --reload   # FastAPI on http://127.0.0.1:8000 (try /
 cd frontend && npm install && npm run dev   # the chat page on http://localhost:5173
 ```
 
-The page talks only to Vite on port 5173, and Vite passes `/chat` on to FastAPI on port 8000.
+The page talks only to Vite on port 5173, and Vite passes `/chat` and `/rule-books` on to FastAPI on port 8000. The PDF links work once the rule books are in `data/bwf/`.
+
+The app starts with a stub bot, which gives a fixed answer for free. For real answers, set `RULES_BOT=real` in `.env`. Each question then calls Mistral, for about $0.04.
+
+```bash
+cd frontend && npm test          # the page tests
+cd frontend && npm run test:e2e  # the browser tests, on their own stub servers (ports 8001 and 5174)
+```
+
+No test calls a paid API.
 
 ---
 
@@ -184,7 +195,7 @@ The page talks only to Vite on port 5173, and Vite passes `/chat` on to FastAPI 
 | Vector search | Mistral Embed, vectors saved as `.npz` files, exact search with NumPy |
 | Rule map | `data/rule_links.json`, built from the rule books |
 | Answer models | Mistral (answers), Claude (the judge and the comparison) |
-| Chat UI | React, TypeScript and Vite *(in progress)* |
+| Chat UI | React, TypeScript and Vite, with Radix Popover for the citations and eventsource-parser for the stream |
 
 ---
 
