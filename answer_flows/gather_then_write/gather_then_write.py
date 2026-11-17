@@ -17,6 +17,8 @@ Use:
     reply = gather_then_write(client, model, reasoning_effort, GATHER_RULES, question_text, starting_items, rule_tools)
 """
 
+from functools import partial
+
 from mistralai.client import Mistral
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import ValidationError
@@ -29,8 +31,9 @@ from answer_flows.gather_then_write.assemble_written_answer import (assemble_wri
 from answer_flows.gather_then_write.gather_and_write_rules import build_write_prompt
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS, split_reply_content
 from answer_flows.shared.flow_reply import FlowReply
-from answer_flows.shared.progress_updates import (ReportProgress, describe_sources_picked, describe_writing,
-                                                  ignore_progress)
+from answer_flows.shared.progress_updates import (ReportProgress, call_with_still_writing_updates,
+                                                  describe_question_parts, describe_sources_picked,
+                                                  describe_writing, ignore_progress)
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.shared.tool_loop import build_agent_prompt, run_tool_loop
 
@@ -92,6 +95,7 @@ def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather
 
     # Code checks the picks; the gate refuses when no part has a sentence left, with no write call
     checked_answer, reply.bad_picks = check_gathered_picks(gathered_answer, shown_chunk_by_id)
+    report_progress(describe_question_parts([part.asks for part in checked_answer.parts]))
     if is_refusal(checked_answer):
         reply.answer = build_refusal(checked_answer, shown_chunk_by_id)
         reply.is_format_error = False
@@ -104,7 +108,9 @@ def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather
 
     # Write call: only the question and the parts, with no tools
     parts_text = format_parts_for_writer(checked_answer, shown_chunk_by_id, loop_result.label_by_id)
-    response = call_writer(client, model, reasoning_effort, question_text, parts_text)
+    # The write call is the longest wait, so "still writing" updates come every few seconds until it ends
+    write_the_answer = partial(call_writer, client, model, reasoning_effort, question_text, parts_text)
+    response = call_with_still_writing_updates(write_the_answer, report_progress)
     write_choice = response.choices[0]
     reply.write_called = True
     reply.model_calls += 1

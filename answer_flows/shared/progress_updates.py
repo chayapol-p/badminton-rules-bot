@@ -12,8 +12,11 @@ Steps, in the order they come:
     checking_rules  before each gather call: the model checks which rules answer the question
     searching       each search the model asks for, with its words
     reading         each clause the model asks to read
+    question_parts  at the code gate: what the question asks, part by part (also before a refusal)
     sources_picked  the sentences code kept, with their quotes (not sent when the question is refused)
     writing         before the write call
+    still_writing   every few seconds while the write call runs, with the seconds so far (Job, 17 Nov: the write
+                    call can take 15-100 s, and a static line for that long reads as stuck)
 
 Use:
     report_progress(ProgressUpdate(step=FINDING_RULES, message="Searching the rule books"))
@@ -21,7 +24,10 @@ Use:
 """
 
 import json
+import threading
+import time
 from collections.abc import Callable
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -36,8 +42,16 @@ FOUND_RULES = "found_rules"
 CHECKING_RULES = "checking_rules"
 SEARCHING = "searching"
 READING = "reading"
+QUESTION_PARTS = "question_parts"
 SOURCES_PICKED = "sources_picked"
 WRITING = "writing"
+STILL_WRITING = "still_writing"
+
+## Seconds between the "still writing" updates
+SECONDS_BETWEEN_WRITING_UPDATES = 5
+
+## Whatever the call that runs during the ticks returns
+CallResult = TypeVar("CallResult")
 
 
 # ===== One update =====
@@ -100,6 +114,14 @@ def describe_tool_call(tool_name: str, arguments: str | dict, chunk_by_id: dict[
     return ProgressUpdate(step=READING, message="Reading a clause")
 
 
+def describe_question_parts(parts_asked: list[str]) -> ProgressUpdate:
+    """Returns the update at the code gate: what the question asks, part by part."""
+    if len(parts_asked) == 1:
+        return ProgressUpdate(step=QUESTION_PARTS, message=f"Your question asks about {parts_asked[0]}")
+    return ProgressUpdate(step=QUESTION_PARTS,
+                          message=f"Your question has {len(parts_asked)} parts: {' · '.join(parts_asked)}")
+
+
 def describe_sources_picked(sources: list[Citation]) -> ProgressUpdate:
     """Returns the update after code checks the picks: the sentences the answer will rest on, with their quotes."""
     # One sentence "answers", several "answer"
@@ -112,3 +134,34 @@ def describe_sources_picked(sources: list[Citation]) -> ProgressUpdate:
 def describe_writing() -> ProgressUpdate:
     """Returns the update before the write call."""
     return ProgressUpdate(step=WRITING, message="Writing the answer")
+
+
+def describe_still_writing(seconds_so_far: int) -> ProgressUpdate:
+    """Returns one "still writing" update, with the seconds since the write call started."""
+    return ProgressUpdate(step=STILL_WRITING, message=f"Still writing the answer · {seconds_so_far} s")
+
+
+# ===== Updates while a long call runs =====
+
+def call_with_still_writing_updates(make_call: Callable[[], CallResult], report_progress: ReportProgress,
+                                    seconds_between_updates: float = SECONDS_BETWEEN_WRITING_UPDATES) -> CallResult:
+    """Runs make_call and returns its result, sending a "still writing" update every few seconds until it ends.
+    The updates come from a second thread, so the app's report_progress must accept calls from another thread."""
+    call_finished = threading.Event()
+    started = time.monotonic()
+
+    def send_updates_until_finished() -> None:
+        """Sends one update each time the wait passes with the call still running."""
+        # A while loop, because the number of updates depends on how long the call takes; wait() returns
+        # True the moment the call ends, which stops the loop
+        while not call_finished.wait(seconds_between_updates):
+            report_progress(describe_still_writing(round(time.monotonic() - started)))
+
+    # Start the updates, run the call, and stop the updates whether the call returns or raises
+    update_thread = threading.Thread(target=send_updates_until_finished, daemon=True)
+    update_thread.start()
+    try:
+        return make_call()
+    finally:
+        call_finished.set()
+        update_thread.join()

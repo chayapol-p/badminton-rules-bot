@@ -30,11 +30,16 @@ Options 1 and 4 (Job, 17 Nov). The product flow sends progress updates as it wor
 rules found, each check, each search with its words, each clause read, the picked sentences with their quotes,
 then "writing the answer". The answer shows once it passes the checks. The model calls stay as they are.
 
+Added the same day (Job, 17 Nov): Job accepts the current speed, and the silent write stretch is closed with more
+updates only: what the question asks, part by part, at the code gate, and "still writing the answer · N s" every
+5 s while the write call runs.
+
 ## Consequences
 - `answer_flows/shared/progress_updates.py` holds the update shape and its lines; `RulesBot.answer`,
   `gather_then_write` and `run_tool_loop` take a `report_progress` function. Eval runs leave it at
   `ignore_progress`, so runs and their results don't change.
-- The write call needs no streaming.
+- The write call needs no streaming. The "still writing" updates come from a second thread while the write call
+  runs (`call_with_still_writing_updates`), so the app's `report_progress` must accept calls from another thread.
 - The early source list is the start of the final numbered list: the picked sentences keep their numbers
   [1]…[k], and the final list adds after them only the related sentences the answer cites. So the app can
   number the sources as soon as they arrive.

@@ -36,7 +36,7 @@ The web app is built spec-first, one thin slice at a time, with the `co-writing-
 - **Stack (Job's pick, 14 Nov):** FastAPI back end in `app/`, React front end.
 - **Vision and spec:** Job writes the vision in `docs/vision.md`. The one-screen spec lives in `docs/specs/`, next to the code. Detail only the next slice.
 - **The only way in:** the app answers through `load_rules_bot()` and `RulesBot.answer(question, report_progress=...)` in `answer_flows/rules_bot.py`. It never calls the flow's inner functions and never imports from `experiments/`.
-- **The wait (record 0028):** an answer takes 9–104 s. While it works, the flow sends `ProgressUpdate`s (`answer_flows/shared/progress_updates.py`): the steps in plain words, then the quoted sources early. Show the answer only once it arrives whole. An `AnswerFormatError` is shown as an error, never as an empty answer.
+- **The wait (record 0028):** an answer takes 9–104 s. While it works, the flow sends `ProgressUpdate`s (`answer_flows/shared/progress_updates.py`): the steps in plain words, then the quoted sources early, then "still writing · N s" every 5 s during the write call. Those last updates come from a second thread, so `report_progress` must be safe to call from another thread. Show the answer only once it arrives whole. An `AnswerFormatError` is shown as an error, never as an empty answer.
 - **The answer (record 0027):** `answer_sentences` holds the answer with `[n]` markers; marker `[n]` is `citations[n - 1]` (its quote and source name).
 - **Tests never call a paid API:** app tests use a stub bot that returns a fixed, correctly shaped answer. A live check calls Mistral once, by hand, on Job's Mac.
 

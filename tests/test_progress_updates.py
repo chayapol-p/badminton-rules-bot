@@ -1,7 +1,14 @@
-"""Tests the progress lines the flow builds, for every form a tool call's arguments arrive in."""
+"""Tests the progress lines the flow builds, for every form a tool call's arguments arrive in, and the "still writing"
+updates sent while a long call runs."""
+
+import time
+
+import pytest
 
 from answer_flows.shared.answer_shape import Citation
-from answer_flows.shared.progress_updates import (READING, SEARCHING, describe_checking, describe_found_rules,
+from answer_flows.shared.progress_updates import (READING, SEARCHING, STILL_WRITING, ProgressUpdate,
+                                                  call_with_still_writing_updates, describe_checking,
+                                                  describe_found_rules, describe_question_parts,
                                                   describe_sources_picked, describe_tool_call)
 from evals.golden_answer_chunks import load_chunks
 
@@ -51,3 +58,54 @@ def test_one_picked_sentence_reads_as_singular():
     source = Citation(chunk_id="laws-1.4", quote="The posts shall be 1.55 m in height.", source_name=LAW_1_4_NAME)
     assert describe_sources_picked([source]).message == "Found 1 sentence that answers it"
     assert describe_sources_picked([source, source]).message == "Found 2 sentences that answer it"
+
+
+
+def test_the_question_parts_read_as_one_line():
+    assert describe_question_parts(["the net height in the middle"]).message == (
+        "Your question asks about the net height in the middle")
+    assert describe_question_parts(["the net height in the middle", "the net height at the sides"]).message == (
+        "Your question has 2 parts: the net height in the middle · the net height at the sides")
+
+
+# ===== Updates while a long call runs =====
+
+## Short waits, so the tests run in a fraction of a second
+SECONDS_BETWEEN_TEST_UPDATES = 0.05
+
+
+def test_a_slow_call_sends_still_writing_updates_and_returns_its_result():
+    updates: list[ProgressUpdate] = []
+
+    def slow_call() -> str:
+        """Stub: takes about four update waits, then returns a fixed result."""
+        time.sleep(SECONDS_BETWEEN_TEST_UPDATES * 4.5)
+        return "the reply"
+
+    result = call_with_still_writing_updates(slow_call, updates.append, SECONDS_BETWEEN_TEST_UPDATES)
+    assert result == "the reply"
+    assert len(updates) >= 2
+    assert all(update.step == STILL_WRITING for update in updates)
+    assert updates[0].message.startswith("Still writing the answer · ")
+
+
+def test_a_fast_call_sends_no_update_and_none_come_after_it_ends():
+    updates: list[ProgressUpdate] = []
+    call_with_still_writing_updates(lambda: "the reply", updates.append, SECONDS_BETWEEN_TEST_UPDATES)
+    time.sleep(SECONDS_BETWEEN_TEST_UPDATES * 3)
+    assert updates == []
+
+
+def test_a_call_that_raises_stops_the_updates_and_passes_the_error_on():
+    updates: list[ProgressUpdate] = []
+
+    def failing_call() -> str:
+        """Stub: waits two update waits, then fails as a server error would."""
+        time.sleep(SECONDS_BETWEEN_TEST_UPDATES * 2.5)
+        raise RuntimeError("server error")
+
+    with pytest.raises(RuntimeError, match="server error"):
+        call_with_still_writing_updates(failing_call, updates.append, SECONDS_BETWEEN_TEST_UPDATES)
+    count_when_it_failed = len(updates)
+    time.sleep(SECONDS_BETWEEN_TEST_UPDATES * 3)
+    assert len(updates) == count_when_it_failed
