@@ -57,35 +57,44 @@ def print_results(heading: str, results: list[dict], wanted_ids: set[str]) -> No
         print(f"   {mark}{rank:2}. {chunk['id']:30} {preview}")
 
 
-def print_coverage(label: str, results: list[dict], wanted_ids: set[str]) -> None:
+def print_coverage(label: str, result_ids: set[str], wanted_ids: set[str]) -> None:
     """Prints which answer clauses a result list found, and which it missed."""
-    result_ids = {chunk["id"] for chunk in results}
-    found = sorted(wanted_ids & result_ids)
-    missed = sorted(wanted_ids - result_ids)
-    print(f"  {label}: found {len(found)} of {len(wanted_ids)}; missed {missed or 'none'}")
+    found_ids = sorted(wanted_ids.intersection(result_ids))
+    missed_ids = sorted(wanted_ids.difference(result_ids))
+
+    # Say "none" rather than print an empty list
+    missed_text = str(missed_ids) if missed_ids else "none"
+    print(f"  {label}: found {len(found_ids)} of {len(wanted_ids)}; missed {missed_text}")
 
 
 # ===== Running =====
 
 def main() -> None:
     """Prints the vector top 10 and setup A's sources for every unseen question."""
+
+    # Build the vector search, and setup A's retrieve step on top of it
     chunks = load_chunks()
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
     questions = load_unseen_questions()
-    vector_search = build_clause_vector_search(chunks, questions, load_settings().mistral_embedding_model)
+    embedding_model = load_settings().mistral_embedding_model
+    vector_search = build_clause_vector_search(chunks, questions, embedding_model)
     retrieve_for_setup_a = build_retrieve_function(vector_search.search, SETUP_A_TOP_K, chunk_by_id, load_rule_map())
 
     for question in questions:
         wanted_ids = answer_chunk_ids(question, chunks)
-        vector_results = vector_search.search(question["question"], RESULTS_PER_SEARCH)
-        setup_a_sources = retrieve_for_setup_a(question["question"])
 
+        # Search, and collect the ids each list holds; setup A's bundle wraps each clause as {"chunk", "label", ...}
+        vector_results = vector_search.search(question["question"], RESULTS_PER_SEARCH)
+        vector_top_k_ids = {chunk["id"] for chunk in vector_results[:SETUP_A_TOP_K]}
+        setup_a_ids = {item["chunk"]["id"] for item in retrieve_for_setup_a(question["question"])}
+
+        # Print the question, then what each list found
         print(f"\n{question['id']} · needs {question['needs']} · {question['difficulty']}")
         print(f"  question: {question['question']}")
         print(f"  why this tag: {question['why_this_tag']}")
-        print_results("vector top 10", vector_results, wanted_ids)
-        print_coverage("vector top 5 ", vector_results[:SETUP_A_TOP_K], wanted_ids)
-        print_coverage("setup A sends", setup_a_sources, wanted_ids)
+        print_results(f"vector top {RESULTS_PER_SEARCH}", vector_results, wanted_ids)
+        print_coverage(f"vector top {SETUP_A_TOP_K} ", vector_top_k_ids, wanted_ids)
+        print_coverage("setup A sends", setup_a_ids, wanted_ids)
 
 
 if __name__ == "__main__":

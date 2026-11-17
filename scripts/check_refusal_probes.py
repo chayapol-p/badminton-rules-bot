@@ -26,6 +26,9 @@ RESULTS_PER_SEARCH = 10
 ## Characters of each clause to print
 PREVIEW_CHARACTERS = 110
 
+## The chunk field keyword search reads: the context header, then the clause (Data rule 4)
+KEYWORD_SEARCH_FIELD = "search_text"
+
 
 # ===== Printing one search's results =====
 
@@ -41,11 +44,15 @@ def print_results(search_name: str, results: list[dict]) -> None:
 
 def main() -> None:
     """Prints both searches' top results for every probe."""
+
+    # Build both searches over the clause chunks
     chunks = load_chunks()
     probes = load_refusal_probes()
-    keyword_search = KeywordSearch(chunks, "search_text")
-    vector_search = build_clause_vector_search(chunks, probes, load_settings().mistral_embedding_model)
+    embedding_model = load_settings().mistral_embedding_model
+    keyword_search = KeywordSearch(chunks, KEYWORD_SEARCH_FIELD)
+    vector_search = build_clause_vector_search(chunks, probes, embedding_model)
 
+    # Print each probe with what both searches find for it
     for probe in probes:
         print(f"\n{probe['id']} ({probe['kind']}): {probe['question']}")
         print(f"  why no answer: {probe['why_unanswerable']}")

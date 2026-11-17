@@ -35,9 +35,7 @@ PROJECT_FOLDER = Path(__file__).resolve().parent.parent
 PDF_FOLDER = PROJECT_FOLDER / "data" / "bwf"
 CHUNKS_FILE = PROJECT_FOLDER / "data" / "rule_chunks.json"
 
-
-# ===== The three documents and their versions =====
-
+## The three documents and their versions
 DOCUMENTS = [
     {
         "document": "laws",
@@ -62,9 +60,7 @@ DOCUMENTS = [
     },
 ]
 
-
-# ===== Patterns that recognise each kind of line =====
-
+## Patterns that recognise each kind of line
 # A clause number on its own, such as "9.1.6." or "16.2" (the final dot is optional)
 CLAUSE_NUMBER_ONLY = re.compile(r"^(\d+(?:\.\d+)+)\.?$")
 
@@ -77,6 +73,14 @@ CLAUSE_NUMBER_WITH_TEXT_FINAL_DOT = re.compile(r"^(\d+(?:\.\d+)+)\.\s+(\S.*)$")
 # A real start has a final dot or two or more spaces; a wrapped reference ("16.7 applied") has neither
 CLAUSE_NUMBER_WITH_TEXT_ITTO = re.compile(r"^(\d+(?:\.\d+)+)(?:\.\s+|\s{2,})(\S.*)$")
 
+# Each document marks a clause start differently. Wrapped lines in the ITTO can start
+# with a reference such as "16.7 applied", so the ITTO needs a final dot or a wide gap
+CLAUSE_NUMBER_WITH_TEXT_BY_DOCUMENT = {
+    "alt": CLAUSE_NUMBER_WITH_TEXT_ANY_DOT,
+    "laws": CLAUSE_NUMBER_WITH_TEXT_FINAL_DOT,
+    "itto": CLAUSE_NUMBER_WITH_TEXT_ITTO,
+}
+
 # A Law or section heading, such as "9. SERVICE" or "5. INSTRUCTIONS TO UMPIRES"
 SECTION_HEADING = re.compile(r"^(\d+)\.\s+([A-Z][A-Z ,&’'()/–-]+)$")
 
@@ -86,7 +90,8 @@ DIAGRAM_TITLE = re.compile(r"^DIAGRAM ([A-Z])$")
 # The running header and footer on every page
 PAGE_FURNITURE = re.compile(r"^(BWF Statutes, Section|Page \d+ of \d+)")
 
-# In the Alternative Laws, the line that opens each format, and the format's name.
+## The Alternative Laws formats
+# The line that opens each format, and the format's name.
 # Each format (a scoring system, or the alternative service rule) repeats clause numbers
 ALTERNATIVE_FORMAT_MARKERS = {
     "In case of 1 above": "one-game-21",
@@ -95,7 +100,7 @@ ALTERNATIVE_FORMAT_MARKERS = {
     "ALTERNATIVE SERVICE LAWS": "alternative-service",
 }
 
-# Readable names for the Alternative Laws formats, for the search text and the prompt labels
+# Readable names for the formats, for the search text and the prompt labels
 ALTERNATIVE_FORMAT_NAMES = {
     "one-game-21": "one game to 21",
     "best-of-3-games-21": "best of 3 games to 21",
@@ -103,9 +108,11 @@ ALTERNATIVE_FORMAT_NAMES = {
     "alternative-service": "alternative service law",
 }
 
+## Search text
 # A parent clause in the search text keeps only its first words, so a long parent can't drown the clause
 PARENT_WORD_LIMIT = 15
 
+## PDF layout
 # A small picture at the left margin is a hidden two-level clause number in the Laws
 NUMBER_PICTURE_MAX_WIDTH = 25
 NUMBER_PICTURE_MAX_HEIGHT = 15
@@ -113,36 +120,51 @@ NUMBER_PICTURE_MAX_HEIGHT = 15
 # PyMuPDF stores a span's font styles as bits in one number; this bit means italic
 ITALIC_FONT_FLAG = 2
 
+# A line this short is a joining word such as "or", which sits between clauses in plain type
+JOINING_WORD_MAX_LENGTH = 3
+
 
 # ===== Reading a PDF into simple line records =====
 
-def is_italic_span(span):
+def is_italic_span(span: dict) -> bool:
     """True when PyMuPDF marks the span's font as italic. Bit flags have no word form, so the & stays here."""
     return (span["flags"] & ITALIC_FONT_FLAG) != 0
 
 
-def read_lines(pdf_path):
+def is_number_picture(block: dict) -> bool:
+    """True for a picture block small enough to be a hidden clause number."""
+    left, top, right, bottom = block["bbox"]
+    if right - left >= NUMBER_PICTURE_MAX_WIDTH:
+        return False
+    return bottom - top < NUMBER_PICTURE_MAX_HEIGHT
+
+
+def has_visible_text(span: dict) -> bool:
+    """True for a span with more than white space."""
+    return bool(span["text"].strip())
+
+
+def read_lines(pdf_path: Path) -> list[dict]:
     """Returns every text line and small picture in reading order, as dictionaries."""
     lines = []
-    for page_index, page in enumerate(pymupdf.open(pdf_path)):
+    for page_number, page in enumerate(pymupdf.open(pdf_path), start=1):
         for block in page.get_text("dict")["blocks"]:
-            left, top, right, bottom = block["bbox"]
 
             # A picture block: keep it only if it is small enough to be a clause number
-            if block["type"] != 0:
-                is_number_picture = (right - left) < NUMBER_PICTURE_MAX_WIDTH and (bottom - top) < NUMBER_PICTURE_MAX_HEIGHT
-                if is_number_picture:
-                    lines.append({"kind": "number_picture", "page": page_index + 1})
+            is_text_block = block["type"] == 0
+            if not is_text_block:
+                if is_number_picture(block):
+                    lines.append({"kind": "number_picture", "page": page_number})
                 continue
 
             # A text block: one record per line, with its first span kept separately
             for line in block["lines"]:
-                spans = [span for span in line["spans"] if span["text"].strip()]
+                spans = [span for span in line["spans"] if has_visible_text(span)]
                 if not spans:
                     continue
                 lines.append({
                     "kind": "text",
-                    "page": page_index + 1,
+                    "page": page_number,
                     "text": " ".join(span["text"].strip() for span in spans),
                     "first_span": spans[0]["text"].strip(),
                     "is_italic": all(is_italic_span(span) for span in spans),
@@ -152,7 +174,7 @@ def read_lines(pdf_path):
 
 # ===== Turning lines into clause chunks =====
 
-def format_opened_by(text):
+def find_format_opened_by(text: str) -> str | None:
     """Returns the Alternative Laws format this line opens, or None for any other line."""
     for marker, format_name in ALTERNATIVE_FORMAT_MARKERS.items():
         if text.startswith(marker):
@@ -160,7 +182,7 @@ def format_opened_by(text):
     return None
 
 
-def build_chunks(document_info, lines):
+def build_chunks(document_info: dict, lines: list[dict]) -> list[dict]:
     """Groups the lines of one document into one chunk per clause."""
     chunks = []
     current_chunk = None
@@ -168,16 +190,25 @@ def build_chunks(document_info, lines):
     current_section_number = None
     hidden_number_count = 0
     current_format = None
+    clause_number_with_text = CLAUSE_NUMBER_WITH_TEXT_BY_DOCUMENT[document_info["document"]]
 
-    def start_chunk(clause, page, is_italic=None):
+    def start_chunk(clause: str, page: int, is_italic: bool | None = None) -> None:
+        """Opens a new chunk under the current heading and format; is_italic is the font of its number line."""
         nonlocal current_chunk
+
+        # A chunk opened by a heading, a diagram or a hidden number has no font flag yet
+        if is_italic is None:
+            italic_flags = []
+        else:
+            italic_flags = [is_italic]
+
         current_chunk = {
             "clause": clause,
             "heading": current_heading,
             "alternative_format": current_format,
             "page": page,
             "lines": [],
-            "italic_flags": [] if is_italic is None else [is_italic],
+            "italic_flags": italic_flags,
         }
         chunks.append(current_chunk)
 
@@ -190,12 +221,13 @@ def build_chunks(document_info, lines):
                 start_chunk(f"{current_section_number}.{hidden_number_count}", line["page"])
             continue
 
+        # The running header and footer belong to no clause
         text = line["text"]
         if PAGE_FURNITURE.match(text):
             continue
 
         # The Alternative Laws: a marker line opens a new format, with its own short intro chunk
-        opened_format = format_opened_by(text)
+        opened_format = find_format_opened_by(text)
         if opened_format:
             current_format = opened_format
 
@@ -224,7 +256,7 @@ def build_chunks(document_info, lines):
             current_chunk["lines"].append(text)
             continue
 
-        # A clause number, either alone in its span or (Alternative Laws only) followed by text
+        # A clause number alone in its first span, perhaps with text after it in later spans
         number_match = CLAUSE_NUMBER_ONLY.match(line["first_span"])
         if number_match:
             start_chunk(number_match.group(1), line["page"], line["is_italic"])
@@ -232,14 +264,9 @@ def build_chunks(document_info, lines):
             if remaining_text:
                 current_chunk["lines"].append(remaining_text)
             continue
-        # Each document marks a clause start differently. Wrapped lines in the ITTO can start
-        # with a reference such as "16.7 applied", so the ITTO needs a final dot or a wide gap
-        if document_info["document"] == "alt":
-            number_with_text_match = CLAUSE_NUMBER_WITH_TEXT_ANY_DOT.match(text)
-        elif document_info["document"] == "laws":
-            number_with_text_match = CLAUSE_NUMBER_WITH_TEXT_FINAL_DOT.match(text)
-        else:
-            number_with_text_match = CLAUSE_NUMBER_WITH_TEXT_ITTO.match(text)
+
+        # A clause number and its text in one span, with the document's own pattern
+        number_with_text_match = clause_number_with_text.match(text)
         if number_with_text_match:
             start_chunk(number_with_text_match.group(1), line["page"], line["is_italic"])
             current_chunk["lines"].append(number_with_text_match.group(2))
@@ -251,7 +278,7 @@ def build_chunks(document_info, lines):
         current_chunk["lines"].append(text)
 
         # Joining words such as "or" sit between clauses in plain type, so they don't count
-        is_joining_word = len(text) <= 3
+        is_joining_word = len(text) <= JOINING_WORD_MAX_LENGTH
         if not is_joining_word:
             current_chunk["italic_flags"].append(line["is_italic"])
 
@@ -260,8 +287,21 @@ def build_chunks(document_info, lines):
 
 # ===== Shaping the final records =====
 
-def to_records(document_info, chunks):
-    """Adds document details, joins the lines, and drops empty chunks."""
+def is_para_only_chunk(document_info: dict, chunk: dict) -> bool:
+    """True for a Laws clause printed wholly in italics, the Laws' mark for a Para Badminton clause."""
+
+    # Only the Laws follow the italics rule
+    if document_info["document"] != "laws":
+        return False
+
+    # A heading or diagram title has no font flags, and all([]) is True, so it needs at least one flag
+    if not chunk["italic_flags"]:
+        return False
+    return all(chunk["italic_flags"])
+
+
+def build_clause_records(document_info: dict, chunks: list[dict]) -> list[dict]:
+    """Returns one record per chunk, with the document details and the joined text; empty chunks are dropped."""
     records = []
     for chunk in chunks:
         text = " ".join(chunk["lines"]).strip()
@@ -274,11 +314,6 @@ def to_records(document_info, chunks):
         else:
             clause_id = chunk["clause"]
 
-        # Para Badminton clauses are printed in italics, but only the Laws follow that rule.
-        # A heading or diagram title has no font flags, and all([]) is True, so it needs at least one flag
-        has_font_flags = bool(chunk["italic_flags"])
-        is_para_only = document_info["document"] == "laws" and has_font_flags and all(chunk["italic_flags"])
-
         records.append({
             "id": f"{document_info['document']}-{clause_id}",
             "document": document_info["document"],
@@ -288,25 +323,39 @@ def to_records(document_info, chunks):
             "clause": chunk["clause"],
             "alternative_format": chunk["alternative_format"],
             "heading": chunk["heading"],
-            "para_only": is_para_only,
+            "para_only": is_para_only_chunk(document_info, chunk),
             "page": chunk["page"],
             "text": text,
         })
     return records
 
 
-def fill_headings_from_laws(alternative_records, law_records):
+def fill_headings_from_laws(alternative_records: list[dict], law_records: list[dict]) -> None:
     """Gives a numbered Alternative Laws clause with no heading the heading of the Law it changes."""
-    law_heading_by_number = {record["clause"]: record["heading"] for record in law_records if record["clause"].isdigit()}
+
+    # Each Law's heading, by its one-level number ("9" -> "9. SERVICE")
+    law_heading_by_number = {}
+    for record in law_records:
+        if record["clause"].isdigit():
+            law_heading_by_number[record["clause"]] = record["heading"]
+
+    # Fill only the gaps, and only under a numbered Law
     for record in alternative_records:
+        if record["heading"] is not None:
+            continue
         section_number = record["clause"].split(".")[0]
-        if record["heading"] is None and section_number.isdigit():
+        if section_number.isdigit():
             record["heading"] = law_heading_by_number.get(section_number)
 
 
 # ===== Adding the context header that search reads =====
 
-def context_header(record):
+def is_numbered_clause(record: dict) -> bool:
+    """True for a real clause number, not a label such as "Diagram A", "intro" or "Introduction"."""
+    return record["clause"][0].isdigit()
+
+
+def build_context_header(record: dict) -> str:
     """Returns the context a clause needs to be found: document, format, para flag, heading, number."""
     parts = [record["document_title"]]
     if record["alternative_format"]:
@@ -317,19 +366,18 @@ def context_header(record):
         parts.append(record["heading"])
 
     # Only real clause numbers, so labels such as "Diagram A" or "intro" don't turn into "Clause intro"
-    is_numbered_clause = record["clause"][0].isdigit()
-    if is_numbered_clause:
+    if is_numbered_clause(record):
         parts.append(f"Clause {record['clause']}")
     return " · ".join(parts)
 
 
-def add_search_text(records):
+def add_search_text(records: list[dict]) -> None:
     """Gives every record a search_text: its context header, a new line, then its clause text."""
     for record in records:
-        record["search_text"] = f"{context_header(record)}\n{record['text']}"
+        record["search_text"] = f"{build_context_header(record)}\n{record['text']}"
 
 
-def parent_clause_numbers(clause):
+def list_parent_clause_numbers(clause: str) -> list[str]:
     """Returns the numbered parents below the Law heading, outermost first: "2.2.6" gives ["2.2"]."""
     parts = clause.split(".")
     parents = []
@@ -338,7 +386,7 @@ def parent_clause_numbers(clause):
     return parents
 
 
-def find_parent_record(record, parent_clause, record_by_place):
+def find_parent_record(record: dict, parent_clause: str, record_by_place: dict[tuple, dict]) -> dict | None:
     """Returns the parent clause's record from the same document and format, or the Law it changes."""
     same_place = (record["document"], record["alternative_format"], parent_clause)
     if same_place in record_by_place:
@@ -350,13 +398,12 @@ def find_parent_record(record, parent_clause, record_by_place):
     return None
 
 
-def parents_line(record, record_by_place):
+def build_parents_line(record: dict, record_by_place: dict[tuple, dict]) -> str:
     """Returns the parent clauses as one line ("2.2 Feathered Shuttle"), each cut to its first words."""
-    is_numbered_clause = record["clause"][0].isdigit()
-    if not is_numbered_clause:
+    if not is_numbered_clause(record):
         return ""
     parent_texts = []
-    for parent_clause in parent_clause_numbers(record["clause"]):
+    for parent_clause in list_parent_clause_numbers(record["clause"]):
         parent = find_parent_record(record, parent_clause, record_by_place)
         if parent is None:
             continue
@@ -365,16 +412,19 @@ def parents_line(record, record_by_place):
     return " · ".join(parent_texts)
 
 
-def add_search_text_with_parents(records):
+def add_search_text_with_parents(records: list[dict]) -> None:
     """Gives every record a search_text_with_parents: the header, the parent clauses, then the clause text."""
+
+    # Index the records by where they sit: document, format and clause number
     record_by_place = {}
     for record in records:
         record_by_place[(record["document"], record["alternative_format"], record["clause"])] = record
 
+    # A clause with no parents keeps the plain search text
     for record in records:
-        parents = parents_line(record, record_by_place)
-        if parents:
-            record["search_text_with_parents"] = f"{context_header(record)}\n{parents}\n{record['text']}"
+        parents_line = build_parents_line(record, record_by_place)
+        if parents_line:
+            record["search_text_with_parents"] = f"{build_context_header(record)}\n{parents_line}\n{record['text']}"
         else:
             record["search_text_with_parents"] = record["search_text"]
 
@@ -382,12 +432,13 @@ def add_search_text_with_parents(records):
 # ===== Running all three documents =====
 
 def main() -> None:
+    """Chunks every document, adds both search texts, and saves the records."""
     all_records = []
     records_by_document = {}
     for document_info in DOCUMENTS:
         lines = read_lines(PDF_FOLDER / document_info["file_name"])
         chunks = build_chunks(document_info, lines)
-        records = to_records(document_info, chunks)
+        records = build_clause_records(document_info, chunks)
         records_by_document[document_info["document"]] = records
         print(f"{document_info['document']}: {len(records)} chunks")
         all_records.extend(records)
@@ -399,6 +450,7 @@ def main() -> None:
     add_search_text(all_records)
     add_search_text_with_parents(all_records)
 
+    # Save the records
     CHUNKS_FILE.write_text(json.dumps(all_records, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"saved {len(all_records)} chunks to {CHUNKS_FILE.relative_to(PROJECT_FOLDER)}")
 

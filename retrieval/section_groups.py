@@ -17,7 +17,7 @@ Use:
     section_groups = build_section_groups(load_chunks())
 """
 
-from scripts.build_rule_chunks import context_header
+from scripts.build_rule_chunks import build_context_header
 from retrieval.window_chunks import clause_as_printed
 
 
@@ -81,7 +81,7 @@ def group_record(group_chunks):
         "text": group_text,
 
         # The first clause's context header names the section, like a clause's search_text
-        "search_text": f"{context_header(first_chunk)}\n{group_text}",
+        "search_text": f"{build_context_header(first_chunk)}\n{group_text}",
         "covers": [chunk["id"] for chunk in group_chunks],
     }
 
