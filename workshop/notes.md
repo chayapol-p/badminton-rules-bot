@@ -98,4 +98,12 @@ Raw lines while the labs run. No polishing. After Lab 7 they become the two skil
 - Cost for 3 runs: slice 4 $5.16, slice 5 $5.48 (+6%); model calls a question 2.1–2.3 vs 3.0–3.2 (the write call).
 - Fails in all 6 runs: black-card and shuttle-from-next-court (missing key facts). shuttle-base-came-off failed 5 of 6 (slice 5 all 3), always with 0–1 tool rounds: the consequence clause is never fetched. Slice 5's line-judge-distance failed 2 of 3 (left out "protected from outside influence").
 
+- Natural answers (record 0027; 17 Nov, same judge for all, scorecard metric out of 100): per-part 81.95, 84.63, 84.63 (gate 36, 36, 36 of 41); natural first build 85.85, 88.29 (gate 31, 33; 2 runs, paused).
+- The first build lost key facts the gather call had filed as related: toss-choices (the loser's choice), racket-attachments (no device that changes the shape), game-point-call (call before the receiver's score) failed in both runs; the per-part flow passed them only because code pasted every related quote into the answer text.
+- Writer sees the related sentences: 90.85, 90.85, 87.93 (gate 36, 37, 35); those three questions pass 3 of 3. The format-first limit ("mention the standard rule only to say it doesn't apply") made the writer claim exactly that with no source: best-of-five-at-10-all failed grounded 3 of 3.
+- Format-first limit narrowed: 92.07, 91.10, 89.76 (gate 37, 38, 37); best-of-five-at-10-all and the wheelchair questions pass 3 of 3; consistency 0.951, as the per-part flow's.
+- Readable line: natural 21–29 of 41, per-part 4–9; refusals are written by code in both flows, so most readable fails are refusals (13 of 18 in the first run).
+- Speed: --parallel 4 and the judge's 3 votes at once take a run from 23–29 minutes to about 6 (answer about 25 s, grading about 3.5 s a question). Grading is about 72% of a run's cost ($1.45 of $2.00).
+- One Cloudflare 520 from Mistral (not in the SDK's retry list) stopped a run at one question; the run script now retries a question twice, 60 s apart, on any server error.
+
 ## Lab 7 · React chat UI

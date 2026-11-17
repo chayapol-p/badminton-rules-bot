@@ -53,9 +53,26 @@ Option 3, with these picks (Job, 16 Nov):
     measures only itself. A format error has no text, so every line fails.
   - The wrong-clause check (cites none of the clauses that hold the golden answer) stays as its own gate line
     with no weight, like citations valid.
+- **Fixes after the first runs (Job, 17 Nov, one at a time):**
+  - The write call also sees the related sentences, numbered after the parts', and adds one when it completes
+    the answer; a cited related sentence joins the source list, an uncited one stays related.
+  - The format-first limit: mention a standard rule only when a given sentence says how it relates to the
+    format; never claim a rule doesn't apply unless a sentence says so.
 
 ## Evidence
-To come: the new flow's runs, 3 against slice 5 (record 0026).
+17 Nov, hybrid, Phase 2 questions (41: 27 answerable, 14 should refuse), the same judge in every run. The
+before flow is kept as `--flow gather-then-write-per-part`.
+- Per-part (slice 5 before this record): combined metric 81.95, 84.63, 84.63; gate 36, 36, 36; consistency 0.951.
+- Natural answers, first build: 85.85, 88.29 (2 runs, paused); gate 31, 33. Key facts the gather call filed as
+  related never reached the writer (toss-choices, racket-attachments, game-point-call failed in both runs).
+- With related sentences for the writer: 90.85, 90.85, 87.93; gate 36, 37, 35; consistency 0.854. Those three
+  questions pass 3 of 3; best-of-five-at-10-all fails grounded 3 of 3 on "the standard rule does not apply".
+- With the format-first fix: 92.07, 91.10, 89.76; gate 37, 38, 37; consistency 0.951.
+- Verdict (record 0026): natural answers with both fixes win against per-part (ranges 89.76–92.07 and
+  81.95–84.63). Most of the gap is the readable line (21–28 of 41 against 4–9); correct 37–39 against 36,
+  grounded 39–41 against 40–41.
+- Still failing in every flow: black-card, shuttle-base-came-off, shuttle-from-next-court (the gather call never
+  fetches the clause with the missing fact).
 
 ## Consequences
 - Option 3 trusts the model more inside the answer, so the grounded line and record 0023's change 5 (a
