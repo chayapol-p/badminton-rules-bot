@@ -4,7 +4,7 @@
 // Slice 3: each [n] opens a popover with its source and a link to the PDF page (record 0034).
 // Slice 4: a failed answer shows an error instead of waiting for good (record 0035).
 // Slice 5: a refusal shows the bot's own words, labelled "Not covered by the rules", with no sources.
-// The empty-question message (slice 6) comes later.
+// Slice 6: an empty or blank question shows "Please type a question" and sends nothing.
 
 import * as Popover from "@radix-ui/react-popover";
 import { EventSourceParserStream } from "eventsource-parser/stream";
@@ -14,6 +14,9 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 // Constants
 // What the page shows when the answer never comes: the request failed, or the stream ended without an answer
 const FAILED_ANSWER_MESSAGE = "Couldn't write a checked answer. Please try again.";
+
+// What the page shows when Ask is pressed with an empty or blank box (criterion 6)
+const EMPTY_QUESTION_MESSAGE = "Please type a question";
 
 // How many of the newest steps show while waiting; older ones fold into one line (record 0036)
 const VISIBLE_STEP_COUNT = 4;
@@ -168,6 +171,7 @@ function describeCheckedSteps(stepCount: number, secondsTaken: number): string {
 // The whole page: holds the question as typed, the steps so far, and the answer once it arrives
 export function ChatPage() {
   const [question, setQuestion] = useState("");
+  const [isQuestionMissing, setIsQuestionMissing] = useState(false);
   const [isWaiting, setIsWaiting] = useState(false);
   const [steps, setSteps] = useState<ProgressUpdate[]>([]);
   const [secondsTaken, setSecondsTaken] = useState(0);
@@ -187,6 +191,13 @@ export function ChatPage() {
   // Clears the last answer, shows each step as it comes, then shows the answer and how long it took, or the error
   async function askQuestion(event: FormEvent) {
     event.preventDefault();
+
+    // An empty or blank box sends nothing: it asks for a question instead, with no wait
+    if (question.trim() === "") {
+      setIsQuestionMissing(true);
+      return;
+    }
+
     askedAt.current = Date.now();
     setRulesAnswer(null);
     setErrorMessage(null);
@@ -213,9 +224,20 @@ export function ChatPage() {
       <form className="question-form" onSubmit={askQuestion}>
         <label htmlFor="question">Your question</label>
         <div className="question-row">
-          <input id="question" value={question} onChange={(event) => setQuestion(event.target.value)} />
+          <input
+            id="question"
+            value={question}
+            aria-invalid={isQuestionMissing}
+            aria-describedby={isQuestionMissing ? "question-missing" : undefined}
+            onChange={(event) => {
+              setQuestion(event.target.value);
+              setIsQuestionMissing(false);
+            }}
+          />
           <button type="submit">Ask</button>
         </div>
+        {/* An alert, so screen readers say it at once; the box points to it, so they read it with the box too */}
+        {isQuestionMissing && <p id="question-missing" className="question-missing" role="alert">{EMPTY_QUESTION_MESSAGE}</p>}
       </form>
 
       {/* While waiting: a seconds counter, then a status region, so screen readers announce each new step without

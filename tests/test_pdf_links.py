@@ -9,9 +9,10 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
+from answer_flows.shared.cite_sentences import name_source
 from app.main import app
 from app.pdf_links import RULE_BOOKS_FOLDER, link_to_pdf_page
-from evals.golden_answer_chunks import load_chunks
+from evals.golden_answer_chunks import PROJECT_FOLDER, load_chunks
 from tests.test_chat_endpoint import placeholder_keys, read_events  # placeholder_keys runs for every test here too
 
 
@@ -56,3 +57,14 @@ def test_the_app_serves_the_rule_book_pdfs():
 
     assert response.status_code == 200
     assert response.headers["content-type"] == "application/pdf"
+
+
+# ===== The ITTO sample the page tests use (criterion 3) =====
+
+def test_the_itto_sample_citation_matches_the_real_clause():
+    sample_citation = json.loads((PROJECT_FOLDER / "app" / "sample_itto_citation.json").read_text(encoding="utf-8"))
+    clause = {chunk["id"]: chunk for chunk in load_chunks()}[sample_citation["chunk_id"]]
+
+    assert sample_citation["quote"] in clause["text"]
+    assert sample_citation["source_name"] == name_source(clause)
+    assert sample_citation["pdf_link"] == link_to_pdf_page(sample_citation["chunk_id"])

@@ -360,3 +360,13 @@ h1 {
 .refusal-text {
   white-space: pre-line;
 }
+
+/* The message under the box for an empty question (slice 6) */
+.question-missing {
+  margin: 0;
+  color: var(--error);
+  font-size: 0.9rem;
+}
+.question-row input[aria-invalid="true"] {
+  border-color: var(--error);
+}

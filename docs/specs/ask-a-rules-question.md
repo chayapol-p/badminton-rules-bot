@@ -58,7 +58,10 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 5. Refusals (criterion 4, with the stub)
    - After this slice the user can: ask a question the rule books don't answer and see the bot's own words, labelled "Not covered by the rules", with no source list
    - In scope: the page's refusal view; the stub refuses one fixed question ("What force, in newtons, should the net cord be stretched to?") with a real refusal copied from the 17 Nov run
-6. Error message for an empty question
+6. Error message for an empty question (criterion 6)
+   - After this slice the user can: press Ask with an empty or blank box and see "Please type a question" at once, with no request sent and no wait
+   - In scope: the check on the page before sending, the message under the box, the message clearing when the user types
+7. Refuse off-topic questions fast (plan: `docs/specs/refuse-off-topic-questions-fast.md`; its open questions wait for Job)
 
 ## Changes after building
 - 17 Nov, slice 1: the page reads the stream with eventsource-parser, not a hand-written reader (record 0032).
