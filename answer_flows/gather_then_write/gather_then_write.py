@@ -22,12 +22,15 @@ from mistralai.extra import response_format_from_pydantic_model
 from pydantic import ValidationError
 
 from answer_flows.gather_then_write.answer_shape import GatheredAnswer, WrittenAnswer
-from answer_flows.gather_then_write.assemble_written_answer import (assemble_written_answer, build_refusal,
-                                                                    check_gathered_picks, format_parts_for_writer,
-                                                                    is_refusal)
+from answer_flows.gather_then_write.assemble_written_answer import (assemble_written_answer, build_named_citations,
+                                                                    build_refusal, check_gathered_picks,
+                                                                    format_parts_for_writer, is_refusal,
+                                                                    number_picked_sentences)
 from answer_flows.gather_then_write.gather_and_write_rules import build_write_prompt
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS, split_reply_content
 from answer_flows.shared.flow_reply import FlowReply
+from answer_flows.shared.progress_updates import (ReportProgress, describe_sources_picked, describe_writing,
+                                                  ignore_progress)
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.shared.tool_loop import build_agent_prompt, run_tool_loop
 
@@ -51,12 +54,15 @@ def call_writer(client: Mistral, model: str, reasoning_effort: str, question_tex
 
 def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather_rules: str, question_text: str,
                       starting_items: list[dict], rule_tools: RuleTools,
-                      extra_agent_rule_names: list[str] | None = None) -> FlowReply:
-    """Answers one question: the gather call picks sentences with the tools, code decides the refusal, the write call answers."""
+                      extra_agent_rule_names: list[str] | None = None,
+                      report_progress: ReportProgress = ignore_progress) -> FlowReply:
+    """Answers one question: the gather call picks sentences with the tools, code decides the refusal, the write call answers.
+    Sends progress updates as it goes (the app shows them; eval runs ignore them)."""
 
     # Gather call: the tool loop, in the GatheredAnswer shape
     messages = build_agent_prompt(gather_rules, question_text, starting_items, extra_agent_rule_names)
-    loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, GatheredAnswer)
+    loop_result = run_tool_loop(client, model, reasoning_effort, messages, starting_items, rule_tools, GatheredAnswer,
+                                report_progress)
     shown_chunk_by_id = loop_result.shown_chunk_by_id
     raw_reply, thinking = split_reply_content(loop_result.choice.message.content)
     reply = FlowReply(
@@ -90,6 +96,11 @@ def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather
         reply.answer = build_refusal(checked_answer, shown_chunk_by_id)
         reply.is_format_error = False
         return reply
+
+    # Show the picked sentences with their quotes while the write call runs, the longest wait (17 Nov: 35-50 s)
+    picked_sources = build_named_citations(list(number_picked_sentences(checked_answer)), shown_chunk_by_id)
+    report_progress(describe_sources_picked(picked_sources))
+    report_progress(describe_writing())
 
     # Write call: only the question and the parts, with no tools
     parts_text = format_parts_for_writer(checked_answer, shown_chunk_by_id, loop_result.label_by_id)

@@ -28,6 +28,8 @@ from mistralai.client import Mistral
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import BaseModel
 
+from answer_flows.shared.progress_updates import (ReportProgress, describe_checking, describe_tool_call,
+                                                  ignore_progress)
 from answer_flows.shared.prompt_sections import bullet_lines, wrap_section
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import TOOL_DEFINITIONS, RuleTools, ToolResult
@@ -131,13 +133,14 @@ def has_reached_tool_limit(tool_rounds_used: int) -> bool:
 
 # ===== One tool round =====
 
-def run_tool_round(tool_calls: list, rule_tools: RuleTools, round_number: int,
-                   is_last_round: bool) -> tuple[list[dict], list[dict], list[ToolResult]]:
-    """Runs every tool call in one reply; returns the tool messages, the log lines and the tool results."""
+def run_tool_round(tool_calls: list, rule_tools: RuleTools, round_number: int, is_last_round: bool,
+                   report_progress: ReportProgress) -> tuple[list[dict], list[dict], list[ToolResult]]:
+    """Runs every tool call in one reply, reporting each before it runs; returns the tool messages, log lines and results."""
     tool_messages = []
     log_lines = []
     tool_results = []
     for tool_call in tool_calls:
+        report_progress(describe_tool_call(tool_call.function.name, tool_call.function.arguments, rule_tools.chunk_by_id))
         tool_result = rule_tools.run_tool_call(tool_call.function.name, tool_call.function.arguments)
         tool_results.append(tool_result)
 
@@ -172,8 +175,10 @@ class ToolLoopResult:
 
 
 def run_tool_loop(client: Mistral, model: str, reasoning_effort: str, messages: list, starting_items: list[dict],
-                  rule_tools: RuleTools, answer_shape: type[BaseModel]) -> ToolLoopResult:
-    """Calls the model, runs the tools each reply asks for, and calls again, until a reply asks for none."""
+                  rule_tools: RuleTools, answer_shape: type[BaseModel],
+                  report_progress: ReportProgress = ignore_progress) -> ToolLoopResult:
+    """Calls the model, runs the tools each reply asks for, and calls again, until a reply asks for none.
+    Sends a progress update before each call and each tool call (the app shows them; eval runs ignore them)."""
 
     # The clauses shown in full so far: the tools leave these out of their results, and the model may cite them
     shown_chunk_by_id = {chunk["id"]: chunk for chunk in full_chunks(starting_items)}
@@ -189,6 +194,7 @@ def run_tool_loop(client: Mistral, model: str, reasoning_effort: str, messages: 
     # Ask, run the tools the reply asks for, and ask again. A while loop, because the number of
     # calls is the model's choice; the round limit makes sure it ends
     while True:
+        report_progress(describe_checking(tool_rounds_used))
         response = call_model(client, model, reasoning_effort, messages, tools_allowed, answer_shape)
         choice = response.choices[0]
         model_calls += 1
@@ -217,7 +223,7 @@ def run_tool_loop(client: Mistral, model: str, reasoning_effort: str, messages: 
 
         # Tool round: run the tools it asked for, and get the tool messages, the log lines and the results
         tool_messages, log_lines, tool_results = run_tool_round(choice.message.tool_calls, rule_tools, tool_rounds_used,
-                                                                has_reached_tool_limit(tool_rounds_used))
+                                                                has_reached_tool_limit(tool_rounds_used), report_progress)
 
         # Add the tool messages to the conversation, the log lines to the run file, and the clauses to the seen set.
         # A clause keeps the first label it was shown with

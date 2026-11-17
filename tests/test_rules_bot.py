@@ -1,10 +1,13 @@
 """Tests the product entry point with a stub client and a stub search, so no test calls the API."""
 
 import json
+from types import SimpleNamespace
 
 import pytest
 
 from answer_flows.rules_bot import AnswerFormatError, RulesBot
+from answer_flows.shared.progress_updates import (CHECKING_RULES, FINDING_RULES, FOUND_RULES, SEARCHING,
+                                                  SOURCES_PICKED, WRITING, ProgressUpdate)
 from answer_flows.shared.rule_tools import RuleTools
 from app.settings import Settings
 from evals.golden_answer_chunks import load_chunks
@@ -108,3 +111,55 @@ def test_a_write_reply_with_no_sentence_raises():
     client = StubTwoCallClient(GATHER_REPLY, write_reply=json.dumps({"sentences": []}))
     with pytest.raises(AnswerFormatError, match="write call: no sentences"):
         build_bot(client, StubSearch()).answer(NEW_QUESTION)
+
+
+# ===== Progress updates =====
+
+class StubToolThenTwoCallClient(StubTwoCallClient):
+    """Stub: the gather call first asks for one search, then sends gather_reply; the write call sends the write reply."""
+
+    def __init__(self, gather_reply: str):
+        super().__init__(gather_reply)
+        self.replies = [None] + self.replies
+
+    def complete(self, **request):
+        """Replies with one search_rules call the first time, then as StubTwoCallClient."""
+        if not self.requests:
+            self.requests.append(request)
+            function = SimpleNamespace(name="search_rules", arguments='{"query": "post height", "top_k": 5}')
+            tool_call = SimpleNamespace(id="call-1", function=function, type="function")
+            message = SimpleNamespace(role="assistant", content="", tool_calls=[tool_call])
+            choice = SimpleNamespace(message=message, finish_reason="tool_calls")
+            return SimpleNamespace(choices=[choice], usage=SimpleNamespace(prompt_tokens=1000, completion_tokens=100))
+        return super().complete(**request)
+
+
+def collect_updates(client: StubTwoCallClient) -> list[ProgressUpdate]:
+    """Answers NEW_QUESTION with the client and returns every progress update, in order."""
+    updates = []
+    build_bot(client, StubSearch()).answer(NEW_QUESTION, report_progress=updates.append)
+    return updates
+
+
+def test_an_answer_reports_each_step_and_the_quoted_sources_before_writing():
+    updates = collect_updates(StubTwoCallClient(GATHER_REPLY))
+    assert [update.step for update in updates] == [FINDING_RULES, FOUND_RULES, CHECKING_RULES, SOURCES_PICKED, WRITING]
+
+    # The sources arrive with their quotes, before the write call starts
+    sources_update = updates[3]
+    assert sources_update.message == "Found 1 sentence that answers it"
+    assert sources_update.sources[0].source_name == "Laws of Badminton 5.0 (2), Clause 1.4"
+    assert sources_update.sources[0].quote in CHUNK_BY_ID["laws-1.4"]["text"]
+
+
+def test_a_tool_round_reports_the_search_words_and_a_second_check():
+    updates = collect_updates(StubToolThenTwoCallClient(GATHER_REPLY))
+    assert [update.step for update in updates] == [FINDING_RULES, FOUND_RULES, CHECKING_RULES, SEARCHING,
+                                                   CHECKING_RULES, SOURCES_PICKED, WRITING]
+    assert updates[3].message == 'Searching the rules: "post height"'
+    assert updates[4].message == "Checking what the search found"
+
+
+def test_a_refusal_reports_no_sources_and_no_writing():
+    updates = collect_updates(StubTwoCallClient(REFUSAL_GATHER_REPLY))
+    assert [update.step for update in updates] == [FINDING_RULES, FOUND_RULES, CHECKING_RULES]
