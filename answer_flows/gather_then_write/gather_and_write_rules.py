@@ -85,10 +85,11 @@ WRITE_LIMITS = [
     "sentence backs it.",
     "Leave out document versions and clause numbers, because the numbered list under the answer gives them. Name a "
     "format only where the next limit asks for it.",
-    "When the question names a format, answer from that format's rule first and name its in-force date; then mention "
-    "the standard rule only to say it doesn't apply there, because the user asked about their format. When the "
-    "question names no format and a format's rule differs, give the standard rule first, then name the format and its "
-    "in-force date for the alternative.",
+    "When the question names a format, answer from that format's rule first and name its in-force date, because the "
+    "user asked about their format. Mention a standard rule only when a sentence you were given says how it relates "
+    "to the format, and never write that a rule doesn't apply unless a sentence says so, because every claim must "
+    "rest on a sentence. When the question names no format and a format's rule differs, give the standard rule "
+    "first, then name the format and its in-force date for the alternative.",
     "When a sentence attaches a condition to a value (and…, when…, unless…), state the condition together with the "
     "value, because the value alone can mislead.",
     "Write plain sentences, with no lists or headings, and only what the parts need, because the answer reads as one "

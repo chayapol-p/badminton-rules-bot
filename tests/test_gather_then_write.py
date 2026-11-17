@@ -119,7 +119,9 @@ def test_write_rules_ask_for_a_related_sentence_only_when_it_completes_the_answe
 
 
 def test_write_rules_answer_a_named_format_first():
-    """A question that names a format gets that format's rule first; the standard rule only to say it doesn't apply."""
+    """A question that names a format gets that format's rule first. 17 Nov: "the standard rule doesn't apply" with no
+    sentence saying so failed grounded (best-of-five-at-10-all, 3 of 3 runs), so the claim needs a sentence behind it."""
     assert "When the question names a format, answer from that format's rule first" in WRITE_RULES
-    assert "mention the standard rule only to say it doesn't apply there" in WRITE_RULES
+    assert "never write that a rule doesn't apply unless a sentence says so" in WRITE_RULES
+    assert "mention the standard rule only to say it doesn't apply there" not in WRITE_RULES
     assert "give the standard rule first, then name the format" in WRITE_RULES
