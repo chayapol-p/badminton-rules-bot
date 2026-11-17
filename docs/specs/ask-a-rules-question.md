@@ -10,6 +10,7 @@
 - PDF link: the frozen PDF copy the app serves, opened at `#page=N` (RFC 8118 `page=`, the physical page counted from 1, which is how the chunks store `page`).
 - Front end lives in `frontend/` (the official FastAPI full-stack template's layout).
 - Streaming: FastAPI's built-in server-sent events; the page reads them with `fetch` and `eventsource-parser` (records 0031, 0032). Front-end stack: Vite, React and TypeScript, no router or data library yet (record 0030).
+- Progress: the steps show as a list while waiting, then fold into one "Checked N steps in N s" line after the answer; a "still writing" step replaces the one before it (record 0033).
 - Runs locally on Job's Mac. Tested with pytest (API), Vitest (page) and one Playwright test of the full path.
 
 ## Criteria
@@ -41,11 +42,14 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 1. Walking skeleton: the page with a question box sends the question to `POST /chat`, which returns a fixed answer from a stub bot, and the page shows it with a source list (criterion 1, with a stub)
    - After this slice the user can: type a question and see a cited answer, from the stub
    - In scope: `POST /chat` with the `answer` event only, the stub bot, a bare React page in `frontend/`, the source list, one Playwright test
-2. Progress updates while waiting
+2. Progress updates while waiting (criterion 2, with the stub)
+   - After this slice the user can: ask and watch the steps arrive; the answer area stays empty until the answer comes, then the steps fold into one line
+   - In scope: progress events from a worker thread through a thread-safe queue, the stub sends 4 updates 0.3 s apart, the step list with fold, still-writing replace, 3 pytest + 4 Vitest + 1 Playwright tests
 3. Clickable [n] popovers with PDF links
 4. Connect the real bot (Job checks it by hand with Job's own key)
 5. Refusals
 6. Error messages for a bad answer and an empty question
 
 ## Changes after building
-- (none yet)
+- 17 Nov, slice 1: the page reads the stream with eventsource-parser, not a hand-written reader (record 0032).
+- 17 Nov, slice 2 (Job, after trying it): the stub holds each step 1.5 s, not 0.3 s, so each step can be read; the step in progress shows a spinner and a shimmer, the steps before it a tick, each new step slides in, and a "Working · N s" timer counts up, so the wait looks alive (a reduced-motion setting gets a still dot and no movement).

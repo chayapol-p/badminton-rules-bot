@@ -123,3 +123,103 @@ h1 {
   color: var(--muted-text);
   font-size: 0.9rem;
 }
+
+/* Steps while waiting, and the line they fold into after the answer */
+.progress,
+.progress-summary {
+  color: var(--muted-text);
+  font-size: 0.95rem;
+}
+.progress {
+  display: grid;
+  gap: 8px;
+}
+.progress-timer {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.progress .step {
+  animation: step-arrives 200ms ease-out;
+}
+.step-marker {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+.progress-summary summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.progress-summary summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.progress-summary .steps {
+  margin-top: 8px;
+}
+
+/* The step in progress: a turning ring, and a light sweeping across its words */
+.step-spinner {
+  box-sizing: border-box;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spinner-turns 800ms linear infinite;
+}
+.step-running .step-message {
+  color: var(--text);
+  background: linear-gradient(90deg, var(--text) 40%, var(--muted-text) 50%, var(--text) 60%) 0 0 / 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-sweeps 1.8s linear infinite;
+}
+@keyframes step-arrives {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes spinner-turns {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer-sweeps {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+/* A reduced-motion setting gets no movement: a still dot for the step in progress, plain words (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  .progress .step,
+  .step-spinner,
+  .step-running .step-message {
+    animation: none;
+  }
+  .step-spinner {
+    border: none;
+    background: var(--accent);
+    width: 8px;
+    height: 8px;
+    margin: 3px;
+  }
+  .step-running .step-message {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}

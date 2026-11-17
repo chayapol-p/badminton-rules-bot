@@ -5,6 +5,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  // The app's stub holds each of its 4 steps 1.5 s, so an answer takes about 6 s; checks wait up to 15 s
+  expect: { timeout: 15_000 },
   use: {
     baseURL: "http://localhost:5173",
   },

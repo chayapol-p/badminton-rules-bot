@@ -54,6 +54,7 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0030](0030-the-front-end-is-vite-react-and-typescript-in-frontend.md) | The front end is Vite, React and TypeScript in `frontend/`, tested with Vitest and Playwright | Accepted |
 | [0031](0031-chat-streams-server-sent-events-read-by-a-hand-written-reader.md) | `/chat` streams server-sent events with FastAPI's built-in support, read by a hand-written reader | Superseded by 0032 |
 | [0032](0032-the-chat-page-reads-the-stream-with-eventsource-parser.md) | The chat page reads the `/chat` stream with `eventsource-parser` | Accepted |
+| [0033](0033-progress-steps-show-as-a-list-that-folds-after-the-answer.md) | Progress steps show as a list that folds into one line after the answer | Accepted |
 
 ## Template
 

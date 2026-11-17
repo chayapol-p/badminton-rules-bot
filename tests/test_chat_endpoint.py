@@ -24,12 +24,14 @@ from evals.golden_answer_chunks import load_chunks
 QUESTION = "How tall are the posts?"
 
 
-# Start every test with fresh settings, placeholder keys and no leftover dependency overrides
+# Start every test with fresh settings, placeholder keys, and a stub that sends its steps without waiting;
+# a test can still swap in another bot
 @pytest.fixture(autouse=True)
 def placeholder_keys(monkeypatch):
     monkeypatch.setenv("MISTRAL_API_KEY", "test-mistral-key")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-anthropic-key")
     load_settings.cache_clear()
+    app.dependency_overrides[get_rules_bot] = StubRulesBot
     yield
     load_settings.cache_clear()
     app.dependency_overrides.clear()
@@ -56,6 +58,7 @@ def read_events(body: str) -> list[tuple[str, str]]:
 class QuestionRecordingBot(StubRulesBot):
 
     def __init__(self):
+        super().__init__()
         self.questions_asked = []
 
     def answer(self, question_text: str, report_progress=None) -> RulesAnswer:
@@ -70,9 +73,12 @@ def test_a_question_streams_one_answer_event_with_the_stub_answer():
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
+    # Since slice 2, progress events come first; the answer is the one and only "answer" event, at the end
     events = read_events(response.text)
-    assert [event_name for event_name, _ in events] == ["answer"]
-    answer = json.loads(events[0][1])
+    answer_events = [event_data for event_name, event_data in events if event_name == "answer"]
+    assert len(answer_events) == 1
+    assert events[-1][0] == "answer"
+    answer = json.loads(answer_events[0])
     assert answer["answer_sentences"][0]["text"].endswith("[1].")
     assert answer["citations"][0]["source_name"] == "Laws of Badminton 5.0 (2), Clause 1.4"
     assert RulesAnswer.model_validate(answer) == SAMPLE_POSTS_ANSWER
