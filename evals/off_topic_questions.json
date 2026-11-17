@@ -1,0 +1,278 @@
+{
+  "about": "Questions for the off-topic screen (docs/specs/refuse-off-topic-questions-fast.md), refusal and screen scoring only, like the probes. Never scored for retrieval, never in public scores. expected_screen says what the screen must decide: off_topic gets the off-topic reply; on_topic goes on to the flow. Near misses come in pairs where possible (warm-up stretches vs the warm-up rule; fastest smash vs the shuttle speed test). Drafted by Claude, 17 Nov. Job's picks (17 Nov): history and rankings count as off topic, and all 20 first questions stay. Claude added 3 more near misses after that (net-touch-short, line-judge-unsighted-casual, tennis-net-let); Job kept all 23.",
+  "questions": [
+    {
+      "id": "test-word",
+      "category": "off_topic_screen",
+      "kind": "off_topic",
+      "question": "test",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Job's live check (17 Nov): took 77 s to refuse.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "greeting",
+      "category": "off_topic_screen",
+      "kind": "off_topic",
+      "question": "hi",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "A greeting, no question.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "weather-bangkok",
+      "category": "off_topic_screen",
+      "kind": "off_topic",
+      "question": "what's the weather in Bangkok?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Not about badminton.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "laptop-wifi",
+      "category": "off_topic_screen",
+      "kind": "off_topic",
+      "question": "How do I fix my laptop's wifi?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Not about badminton.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "multiply",
+      "category": "off_topic_screen",
+      "kind": "off_topic",
+      "question": "What's 17 times 23?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Not about badminton.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "translate-thai",
+      "category": "off_topic_screen",
+      "kind": "off_topic",
+      "question": "Translate 'good morning' into Thai.",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Not about badminton.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "backhand-clear-coaching",
+      "category": "off_topic_screen",
+      "kind": "near_miss_off_topic",
+      "question": "How do I hit a stronger backhand clear?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Coaching, not rules (smash-training in refusal_probes.json already asks for a training plan).",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "world-ranking-number-one",
+      "category": "off_topic_screen",
+      "kind": "near_miss_off_topic",
+      "question": "Who is ranked world number one in women's singles?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Rankings, not rules (world-champion in refusal_probes.json already asks about results).",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "beginner-racket",
+      "category": "off_topic_screen",
+      "kind": "near_miss_off_topic",
+      "question": "Which racket should a beginner buy?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Shopping advice; Law 4 limits rackets but names no brand or model.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "fastest-smash",
+      "category": "off_topic_screen",
+      "kind": "near_miss_off_topic",
+      "question": "What's the fastest badminton smash ever recorded?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "A record, not a rule; pairs with the Law 3 shuttle speed test.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "warm-up-stretches",
+      "category": "off_topic_screen",
+      "kind": "near_miss_off_topic",
+      "question": "What stretches should I do before playing badminton?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Fitness; pairs with the golden question warm-up-length, which asks for the warm-up rule.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "badminton-invented",
+      "category": "off_topic_screen",
+      "kind": "near_miss_off_topic",
+      "question": "When was badminton invented?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "History (plan open question 5: off topic unless it asks what a rule says).",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "sweaty-grip",
+      "category": "off_topic_screen",
+      "kind": "near_miss_off_topic",
+      "question": "How do I stop my grip slipping when my hands sweat?",
+      "expected_screen": "off_topic",
+      "rule_locations": [],
+      "why": "Equipment care; no rule covers it.",
+      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "split": "probe"
+    },
+    {
+      "id": "serve-overhead-casual",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "can i serve overhead lol",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-9.1.6"
+      ],
+      "why": "Casual wording; the service height rule answers it.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "shuttle-hits-ceiling",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "what happens if the shuttle hits the ceiling",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-13.3.3"
+      ],
+      "why": "Sounds like a venue question; it's a fault.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "opponent-shouts",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "my opponent yells every time i hit, is he allowed to do that",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-13.4.5",
+        "itto-5.9.1.3"
+      ],
+      "why": "Sounds like a complaint; deliberate distraction is a fault.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "both-partners-hit",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "me and my partner both touched it before it went over, does that count",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-13.3.8"
+      ],
+      "why": "Casual doubles story; hit by a player and partner successively is a fault.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "towel-between-points",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "can I grab a towel and a drink between points?",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "itto-5.10.3.1",
+        "itto-5.10.3.2"
+      ],
+      "why": "Sounds like comfort; the ITTO sets when a towel and drink are allowed.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "shuttle-on-the-line",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "the shuttle landed right on the line, is that in or out?",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-1.3"
+      ],
+      "why": "Casual wording; the lines form part of the area they define, so it's in.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "tennis-ball",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "Can i use tennis ball to play in badminton court",
+      "expected_screen": "on_topic",
+      "rule_locations": [],
+      "why": "Job's own question (17 Nov): about the equipment rules (Law 2, the shuttle). No clause names a tennis ball, so the flow decides; the screen must not call it off topic.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "net-touch-short",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "net touch?",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-13.4.1"
+      ],
+      "why": "Two words; touching the net is a fault.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "line-judge-unsighted-casual",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "what if the line judge couldn't see where it landed?",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-17.6.6"
+      ],
+      "why": "No word 'badminton' or 'rule'; the umpire's duty answers it.",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "tennis-net-let",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "In tennis a serve that clips the net is a let. Is that the same in badminton?",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-14"
+      ],
+      "why": "Names tennis, but asks a badminton rule (pairs with tennis-ball).",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    }
+  ]
+}
