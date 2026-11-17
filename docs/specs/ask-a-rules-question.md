@@ -12,6 +12,7 @@
 - Streaming: FastAPI's built-in server-sent events; the page reads them with `fetch` and `eventsource-parser` (records 0031, 0032). Front-end stack: Vite, React and TypeScript, no router or data library yet (record 0030).
 - Progress: the steps show as a list while waiting, then fold into one "Checked N steps in N s" line after the answer; a "still writing" step replaces the one before it (record 0033).
 - Popovers: each [n] opens a Radix Popover; the quoted sources the flow sends early wait for a later slice (record 0034).
+- The real bot: `RULES_BOT=real` in .env switches it on, stub when unset; the Playwright tests run their own stub servers on ports 8001 and 5174; a failed answer shows an error from slice 4 on (record 0035).
 - Runs locally on Job's Mac. Tested with pytest (API), Vitest (page) and one Playwright test of the full path.
 
 ## Criteria
@@ -33,6 +34,7 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 ## Out of scope
 - Follow-up questions and chat history; phone layout; deployment; sign-in; streaming the answer word by word.
 - The quoted sources the flow sends early ("sources_picked") shown while waiting (backlog, record 0034).
+- The Introduction's definitions read oddly in the source list: the name says "Clause Introduction" and the quote runs the defined word into its definition ("Match The basic contest…"); a fix in the ingest, not the app (backlog, Job, 17 Nov).
 
 ## Open questions
 - Does Safari's built-in PDF viewer honour `#page=`? (Unchecked; check in the slice 3 demo.)
@@ -50,10 +52,13 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 3. Clickable [n] popovers with PDF links (criterion 3, with the stub)
    - After this slice the user can: click [n] to see the quote, the source name and a link that opens the PDF at its page; Escape or a click outside closes it
    - In scope: `pdf_link` on each citation in the answer event, FastAPI serves `data/bwf` at `/rule-books`, a Radix popover on each [n], the same link in the source list
-4. Connect the real bot (Job checks it by hand with Job's own key)
+4. Connect the real bot, and show an error when it fails (criterion 5; Job checks it by hand with Job's own key)
+   - After this slice the user can: ask any question and get the real bot's answer, steps and citations; a failed answer shows "Couldn't write a checked answer. Please try again." instead of waiting for good
+   - In scope: the `RULES_BOT` setting (stub when unset), the bot loaded once at startup, the "error" event, the error message on the page, Playwright on its own stub servers
 5. Refusals
-6. Error messages for a bad answer and an empty question
+6. Error message for an empty question
 
 ## Changes after building
 - 17 Nov, slice 1: the page reads the stream with eventsource-parser, not a hand-written reader (record 0032).
 - 17 Nov, slice 2 (Job, after trying it): the stub holds each step 1.5 s, not 0.3 s, so each step can be read; the step in progress shows a spinner and a shimmer, the steps before it a tick, each new step slides in, and a "Working · N s" timer counts up, so the wait looks alive (a reduced-motion setting gets a still dot and no movement).
+- 17 Nov, before slice 4 (Job): criterion 5, the error for a failed answer, moves from slice 6 into slice 4, so the live check never hangs; slice 6 keeps the empty-question check (record 0035).

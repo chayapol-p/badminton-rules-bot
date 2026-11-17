@@ -16,19 +16,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.chat_endpoint import router as chat_router
+from app.chat_endpoint import choose_rules_bot, router as chat_router
 from app.pdf_links import RULE_BOOKS_ADDRESS, RULE_BOOKS_FOLDER
 from app.settings import load_settings
 
 
-# Load the settings once at startup, so a missing key stops the server straight away
+# Load the settings and the bot once at startup, so a missing key or data file stops the server straight away,
+# and every question shares one bot (record 0035)
 @asynccontextmanager
-async def check_settings_at_startup(app: FastAPI):
-    load_settings()
+async def load_settings_and_bot_at_startup(app: FastAPI):
+    app.state.rules_bot = choose_rules_bot(load_settings())
     yield
 
 
-app = FastAPI(title="RAG workshop", lifespan=check_settings_at_startup)
+app = FastAPI(title="RAG workshop", lifespan=load_settings_and_bot_at_startup)
 app.include_router(chat_router)
 
 # The rule-book PDFs the citation links open. check_dir=False, because the PDFs are downloaded by hand and never

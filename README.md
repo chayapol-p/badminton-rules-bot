@@ -20,7 +20,13 @@ It's also how we learn RAG, one lab at a time. We measured every choice before w
 >
 > [1] Laws of Badminton 5.0 (2), Clause 8.1.3 · [2] Clause 8.2 · [3] Clause 8.2
 
-This answer came from our test run on 17 Nov. Each number points to a sentence in the rule book, and code copies that sentence in word for word, so the model never retypes a quote.
+> **Q:** what is mazimum player can have in each side
+>
+> **A:** A side can have a maximum of two players [1] [2]. A match is the basic contest in Badminton between opposing sides, each of one or two players [1]. Doubles is a match where there are two players on each of the opposing sides [2], while singles is a match where there is one player on each of the opposing sides [3].
+>
+> [1] Laws of Badminton 5.0 (2), Introduction (Match) · [2] Introduction (Doubles) · [3] Introduction (Singles)
+
+The first answer came from our test run on 17 Nov. The second came from the chat app the same day, typo and all, in 47 s. Each number points to a sentence in the rule book, and code copies that sentence in word for word, so the model never retypes a quote. In the app, each number opens its quote and a link to the PDF page.
 
 ## Why it's hard
 

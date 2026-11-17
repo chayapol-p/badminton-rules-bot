@@ -4,8 +4,8 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 
-// Where FastAPI runs during development (uv run uvicorn app.main:app)
-const FASTAPI_ADDRESS = "http://localhost:8000";
+// Where FastAPI runs during development (uv run uvicorn app.main:app); the Playwright tests set their own (record 0035)
+const FASTAPI_ADDRESS = process.env.FASTAPI_ADDRESS ?? "http://localhost:8000";
 
 
 export default defineConfig({

@@ -11,6 +11,7 @@ later, deep inside an API call, with an unclear authentication error.
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import SecretStr, ValidationError, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -48,6 +49,9 @@ class Settings(BaseSettings):
     claude_comparison_model: str = "claude-haiku-5-5"
     # The answer judge (Stage 2): another model family than the answer model, to avoid self-preference bias
     claude_judge_model: str = "claude-sonnet-5-5"
+
+    # Which bot answers /chat: the stub (a fixed answer, no API calls) unless .env says real (record 0035)
+    rules_bot: Literal["stub", "real"] = "stub"
 
     # Database address: Supabase > Connect > Session pooler. Optional, because only vector search needs it.
     database_url: SecretStr | None = None

@@ -2,11 +2,17 @@
 // Slices 1 and 2 of docs/specs/ask-a-rules-question.md: the steps show as they arrive, and the answer shows once the
 // stream's "answer" event arrives, whole (record 0028); then the steps fold into one line (record 0033).
 // Slice 3: each [n] opens a popover with its source and a link to the PDF page (record 0034).
-// Refusals (slice 5) and error messages (slice 6) come later.
+// Slice 4: a failed answer shows an error instead of waiting for good (record 0035).
+// Refusals (slice 5) and the empty-question message (slice 6) come later.
 
 import * as Popover from "@radix-ui/react-popover";
 import { EventSourceParserStream } from "eventsource-parser/stream";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+
+
+// Constants
+// What the page shows when the answer never comes: the request failed, or the stream ended without an answer
+const FAILED_ANSWER_MESSAGE = "Couldn't write a checked answer. Please try again.";
 
 
 // ===== The answer, as /chat sends it =====
@@ -41,6 +47,9 @@ interface ProgressUpdate {
 
 // ===== Asking =====
 
+// The server's "error" event: the bot failed, and the event's message is the one to show
+class AnswerFailedError extends Error {}
+
 // Posts the question to /chat, hands each "progress" event to onProgress as it comes, and returns the answer from the
 // stream's "answer" event, read with eventsource-parser (record 0032)
 async function askChat(question: string, onProgress: (update: ProgressUpdate) => void): Promise<RulesAnswer> {
@@ -71,6 +80,9 @@ async function askChat(question: string, onProgress: (update: ProgressUpdate) =>
     }
     if (event.event === "answer") {
       return JSON.parse(event.data) as RulesAnswer;
+    }
+    if (event.event === "error") {
+      throw new AnswerFailedError((JSON.parse(event.data) as { message: string }).message);
     }
   }
 }
@@ -128,6 +140,7 @@ export function ChatPage() {
   const [steps, setSteps] = useState<ProgressUpdate[]>([]);
   const [secondsTaken, setSecondsTaken] = useState(0);
   const [rulesAnswer, setRulesAnswer] = useState<RulesAnswer | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const askedAt = useRef(0);
 
   // While the bot works, count the seconds up once a second, so the wait shows it is still going
@@ -139,20 +152,27 @@ export function ChatPage() {
     return () => clearInterval(timer);
   }, [isWaiting]);
 
-  // Clears the last answer, shows each step as it comes, then shows the answer and how long it took
+  // Clears the last answer, shows each step as it comes, then shows the answer and how long it took, or the error
   async function askQuestion(event: FormEvent) {
     event.preventDefault();
     askedAt.current = Date.now();
     setRulesAnswer(null);
+    setErrorMessage(null);
     setSteps([]);
     setSecondsTaken(0);
     setIsWaiting(true);
 
-    const newAnswer = await askChat(question, (update) => setSteps((stepsSoFar) => addStep(stepsSoFar, update)));
-
-    setSecondsTaken(Math.round((Date.now() - askedAt.current) / 1000));
-    setIsWaiting(false);
-    setRulesAnswer(newAnswer);
+    // Any failure ends the wait with a message: the server's own for an "error" event, the page's for the rest
+    try {
+      const newAnswer = await askChat(question, (update) => setSteps((stepsSoFar) => addStep(stepsSoFar, update)));
+      setSecondsTaken(Math.round((Date.now() - askedAt.current) / 1000));
+      setRulesAnswer(newAnswer);
+    } catch (error) {
+      const isServerMessage = error instanceof AnswerFailedError;
+      setErrorMessage(isServerMessage ? error.message : FAILED_ANSWER_MESSAGE);
+    } finally {
+      setIsWaiting(false);
+    }
   }
 
   return (
@@ -176,6 +196,9 @@ export function ChatPage() {
           </section>
         </div>
       )}
+
+      {/* A failed answer: an alert, so screen readers read it out at once */}
+      {errorMessage !== null && <p className="error-message" role="alert">{errorMessage}</p>}
 
       {/* After the answer: the steps fold into one closed line that opens on a click */}
       {rulesAnswer !== null && (
