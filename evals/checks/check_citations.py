@@ -13,7 +13,8 @@ fill (a clause not shown, a sentence number out of range), and it re-checks olde
 
 A natural answer (record 0027) also has its inline markers checked, sentence by sentence: every marker must be
 a source's number in the list, every answer sentence needs at least one, and a gap sentence none. A bad
-one fails by name.
+one fails by name. Bracketed text the rule books print themselves, such as "[name of player(s)]" in a quoted
+call, is not a marker (17 Nov: black-card failed on it).
 
 Use:
     problems = find_citation_problems(rules_answer, retrieved_chunks)
@@ -84,12 +85,30 @@ def is_source_number(marker: str, source_count: int) -> bool:
     return 1 <= int(marker) <= source_count
 
 
+def is_quoted_from_sources(marker: str, rules_answer: RulesAnswer) -> bool:
+    """True when the bracketed text appears, brackets and all, in one of the answer's quoted sources."""
+    bracketed_text = normalise_text(f"[{marker}]")
+    for citation in rules_answer.citations + rules_answer.related_citations:
+        if bracketed_text in normalise_text(citation.quote):
+            return True
+    return False
+
+
+def find_markers(text: str, rules_answer: RulesAnswer) -> list[str]:
+    """Returns the inline markers in a sentence, leaving out bracketed text the sources print themselves."""
+    markers = []
+    for bracketed_text in MARKER_PATTERN.findall(text):
+        if not is_quoted_from_sources(bracketed_text, rules_answer):
+            markers.append(bracketed_text)
+    return markers
+
+
 def find_marker_problems(rules_answer: RulesAnswer) -> list[dict]:
     """Returns one problem per bad marker and per sentence with the wrong markers: an answer sentence needs one, a gap none."""
     problems = []
     source_count = len(rules_answer.citations)
     for sentence_number, answer_sentence in enumerate(rules_answer.answer_sentences, start=1):
-        markers = MARKER_PATTERN.findall(answer_sentence.text)
+        markers = find_markers(answer_sentence.text, rules_answer)
 
         # A gap says what the rules don't cover, so no source backs it; every other sentence rests on one
         if answer_sentence.is_gap and markers:

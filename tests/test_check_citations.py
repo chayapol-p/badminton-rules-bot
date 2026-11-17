@@ -149,3 +149,13 @@ def test_a_marker_past_the_list_or_not_a_number_fails():
 
 def test_marker_numbers_are_not_read_as_numbers_in_the_answer():
     assert remove_markers("Capped at 30 [1][2].") == "Capped at 30 ."
+
+
+def test_bracketed_text_the_rule_book_prints_is_not_a_marker():
+    """17 Nov, black-card: the umpire's call "[name of player(s)], disqualified for misconduct" is the rule's own text."""
+    call = "Come here, [name of player(s)], disqualified for misconduct"
+    rules_answer = RulesAnswer(
+        reasoning="", refused=False, answer=f'The umpire says "{call}" [1].',
+        citations=[Citation(chunk_id="itto-5.17.4", quote=f'say "{call}"')],
+        answer_sentences=[AnswerSentence(is_gap=False, text=f'The umpire says "{call}" [1].')])
+    assert find_citation_problems(rules_answer, [{"id": "itto-5.17.4", "text": f'say "{call}"'}]) == []
