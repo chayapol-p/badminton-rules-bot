@@ -1,9 +1,11 @@
 """
 FastAPI app for the RAG workshop.
 
-For now it has one endpoint, /health. It confirms the server is running and
-shows which models are configured. It never calls Mistral or Claude, so it
-costs nothing to hit. Later labs add the /chat endpoint.
+Two endpoints:
+- /health confirms the server is running and shows which models are configured.
+  It never calls Mistral or Claude, so it costs nothing to hit.
+- POST /chat answers one rules question as a stream of server-sent events
+  (app/chat_endpoint.py; docs/specs/ask-a-rules-question.md).
 
 Run it from the project root:  uv run uvicorn app.main:app --reload
 """
@@ -12,6 +14,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.chat_endpoint import router as chat_router
 from app.settings import load_settings
 
 
@@ -23,6 +26,7 @@ async def check_settings_at_startup(app: FastAPI):
 
 
 app = FastAPI(title="RAG workshop", lifespan=check_settings_at_startup)
+app.include_router(chat_router)
 
 
 # Health check: server status and the configured model names (never the keys)

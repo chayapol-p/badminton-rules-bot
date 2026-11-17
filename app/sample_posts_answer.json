@@ -1,0 +1,16 @@
+{
+  "reasoning": "Sample answer for the stub bot: Law 1.4 gives the height of the posts.",
+  "refused": false,
+  "answer": "The posts are 1.55 metres high, measured from the surface of the court [1].",
+  "citations": [
+    {
+      "chunk_id": "laws-1.4",
+      "quote": "The posts shall be 1.55 metres in height from the surface of the court and shall remain vertical when the net is strained as provided in Law 1.10.",
+      "source_name": "Laws of Badminton 5.0 (2), Clause 1.4"
+    }
+  ],
+  "related_citations": [],
+  "answer_sentences": [
+    {"is_gap": false, "text": "The posts are 1.55 metres high, measured from the surface of the court [1]."}
+  ]
+}

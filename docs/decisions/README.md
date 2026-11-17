@@ -50,6 +50,10 @@ shows what it was chosen over. See https://adr.github.io/adr-templates/.
 | [0026](0026-call-a-win-with-3-runs-per-flow.md) | Call a win with 3 runs per flow and a gap bigger than the noise | Accepted |
 | [0027](0027-one-natural-answer-with-inline-citations.md) | One natural answer with inline citations, and a scorecard per run | Accepted |
 | [0028](0028-progress-updates-make-the-wait-feel-shorter.md) | Progress updates make the wait feel shorter; the answer shows only once checked | Accepted |
+| [0029](0029-the-chat-app-cites-each-claim-with-a-popover-and-the-pdf-page.md) | The chat app answers one question at a time, and cites each claim with a popover and the PDF page | Accepted |
+| [0030](0030-the-front-end-is-vite-react-and-typescript-in-frontend.md) | The front end is Vite, React and TypeScript in `frontend/`, tested with Vitest and Playwright | Accepted |
+| [0031](0031-chat-streams-server-sent-events-read-by-a-hand-written-reader.md) | `/chat` streams server-sent events with FastAPI's built-in support, read by a hand-written reader | Superseded by 0032 |
+| [0032](0032-the-chat-page-reads-the-stream-with-eventsource-parser.md) | The chat page reads the `/chat` stream with `eventsource-parser` | Accepted |
 
 ## Template
 
