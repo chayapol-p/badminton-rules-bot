@@ -72,3 +72,13 @@ def test_the_retired_per_part_flow_runs_with_its_own_gather_prompt():
     choices = parse_run_choices(["--setup", "hybrid", "--flow", "gather-then-write-per-part", "--phase2"])
     assert choices.label == "hybrid-gather-then-write-per-part-phase2"
     assert GATHER_RULES_BY_FLOW["gather-then-write-per-part"] != GATHER_RULES_BY_FLOW["gather-then-write"]
+
+
+def test_parallel_defaults_to_one_question_at_a_time():
+    assert parse_run_choices(["--setup", "hybrid", "--phase2"]).parallel == 1
+    assert parse_run_choices(["--setup", "hybrid", "--phase2", "--parallel", "4"]).parallel == 4
+
+
+def test_parallel_below_one_stops_the_run():
+    with pytest.raises(SystemExit):
+        parse_run_choices(["--setup", "hybrid", "--parallel", "0"])

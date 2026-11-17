@@ -16,8 +16,8 @@ The judge sees what a user sees: refused or not, the answer and its citations. T
 field is its working notes, kept in the run log only: on 8 Nov leaving-court failed because its
 reasoning named the para clause it rightly left out of the answer.
 
-Each answer is graded JUDGE_VOTES times, and each rubric line goes with the majority, so one odd
-grade can't flip an answer (self-consistency, Wang et al.; Anthropic's "Adding Error Bars to Evals").
+Each answer is graded JUDGE_VOTES times, at the same time (the votes don't depend on each other), and each
+rubric line goes with the majority, so one odd grade can't flip an answer (self-consistency, Wang et al.; Anthropic's "Adding Error Bars to Evals").
 
 Two settings to know:
 - Sonnet 5.5 takes no temperature (any value returns a 400 error), so a regrade can differ.
@@ -32,9 +32,11 @@ Use:
     passed = judge_passed(reply.grade)
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from anthropic import Anthropic
+from anthropic.types import ParsedMessage
 from pydantic import BaseModel, Field
 
 from answer_flows.shared.answer_shape import Citation, RulesAnswer
@@ -184,22 +186,31 @@ def combine_votes(grades: list[JudgeGrade]) -> JudgeGrade:
 
 # ===== One grade =====
 
+def ask_judge(client: Anthropic, model: str, prompt: str) -> ParsedMessage[JudgeGrade]:
+    """Sends one vote's grading request and returns the response."""
+    return client.messages.parse(
+        model=model,
+        max_tokens=MAX_GRADE_TOKENS,
+        system=JUDGE_RULES,
+        messages=[{"role": "user", "content": prompt}],
+        output_format=JudgeGrade,
+        thinking={"type": "between_tools"},
+    )
+
+
 def grade_answer(client: Anthropic, model: str, question: dict, rules_answer: RulesAnswer,
                  retrieved_chunks: list[dict], code_warnings: list[str]) -> GradeReply:
-    """Returns the judge's grade for one reply: JUDGE_VOTES calls, combined line by line by majority."""
+    """Returns the judge's grade for one reply: JUDGE_VOTES calls at the same time, combined line by line by majority."""
     prompt = build_judge_prompt(question, rules_answer, retrieved_chunks, code_warnings)
+
+    # All votes at once; their order stays fixed, so the reason kept for each line doesn't depend on timing
+    with ThreadPoolExecutor(max_workers=JUDGE_VOTES) as executor:
+        vote_futures = [executor.submit(ask_judge, client, model, prompt) for _ in range(JUDGE_VOTES)]
+        responses = [vote_future.result() for vote_future in vote_futures]
     grades = []
     input_tokens = 0
     output_tokens = 0
-    for _ in range(JUDGE_VOTES):
-        response = client.messages.parse(
-            model=model,
-            max_tokens=MAX_GRADE_TOKENS,
-            system=JUDGE_RULES,
-            messages=[{"role": "user", "content": prompt}],
-            output_format=JudgeGrade,
-            thinking={"type": "between_tools"},
-        )
+    for response in responses:
         grades.append(response.parsed_output)
         input_tokens += response.usage.input_tokens
         output_tokens += response.usage.output_tokens

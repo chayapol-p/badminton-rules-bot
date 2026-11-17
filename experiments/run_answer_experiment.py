@@ -34,9 +34,13 @@ model at temperature 0 and the judge (record 0014).
   --unseen        answer the unseen questions: once per setup, read against each one's "needs" tag
   --phase2        answer the Phase 2 questions (41 dev questions, 14 should refuse; slice 2)
   --label         a short name for the run, used in its file names
+  --parallel      how many questions are answered and graded at once (default 1). Answers and grades don't
+                  change: each question stands alone at temperature 0; only the order of lines in the run
+                  files does. Too many at once can hit Mistral's rate limit, which the client retries
   --dry-run       answer only the first question, and don't log the run
 
-Writes, for each run (each line saved as soon as its question is done, so a crash keeps what was paid for):
+Writes, for each run (each line saved as soon as its question is done, so a crash keeps what was paid for;
+each answer line records the seconds its answer and its grading took):
   evals/answer_runs/<time>-<label>-answers.jsonl  per question: the sources, the answer, the tool use and the code checks
   evals/answer_runs/<time>-<label>-grades.jsonl   per question: the judge's grade (none for a format error) and its
                                                   scorecard, every line pass or fail (record 0027)
@@ -56,6 +60,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
@@ -153,6 +158,7 @@ class RunChoices:
     question_set: str
     label: str
     is_dry_run: bool
+    parallel: int = 1
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -170,6 +176,7 @@ def build_parser() -> argparse.ArgumentParser:
     question_sets.add_argument("--unseen", action="store_true", help="answer the unseen questions, once per setup")
     question_sets.add_argument("--phase2", action="store_true", help="answer the Phase 2 questions (slice 2)")
     parser.add_argument("--label", help="a short name for the run")
+    parser.add_argument("--parallel", type=int, default=1, help="how many questions are answered at once (default 1)")
     parser.add_argument("--dry-run", action="store_true", help="answer only the first question, and don't log the run")
     return parser
 
@@ -182,6 +189,8 @@ def find_choice_problem(arguments: argparse.Namespace, setup: Setup, flow: str) 
         return f"--top-k: --setup {arguments.setup} has no starting sources"
     if arguments.agent_rule and not setup.has_tools:
         return f"--agent-rule: --setup {arguments.setup} has no tools"
+    if arguments.parallel < 1:
+        return f"--parallel must be 1 or more, not {arguments.parallel}"
     if arguments.rule and flow in GATHER_RULES_BY_FLOW:
         return f"--rule: {flow} has its own rules"
     return None
@@ -232,7 +241,7 @@ def parse_run_choices(command_line: list[str]) -> RunChoices:
         label = f"{label}-dry-run"
     return RunChoices(setup_name=arguments.setup, flow=flow, top_k=top_k, extra_rule_names=arguments.rule,
                       agent_rule_names=agent_rule_names, question_set=question_set, label=label,
-                      is_dry_run=arguments.dry_run)
+                      is_dry_run=arguments.dry_run, parallel=arguments.parallel)
 
 
 # ===== The questions =====
@@ -303,7 +312,7 @@ def build_answer_line(question: dict, reply: FlowReply, answer_model: str) -> di
 
 def grade_reply(question: dict, reply: FlowReply, chunks: list[dict], chunk_by_id: dict[str, dict],
                 anthropic_client: Anthropic, settings: Settings) -> tuple[dict, dict]:
-    """Returns one question's answer line and grade line: the code checks, then the judge when they pass."""
+    """Returns one question's answer line and grade line: the code checks, then the judge."""
     answer_line = build_answer_line(question, reply, settings.mistral_answer_model)
 
     # A reply that didn't fit the shape can't be checked or graded: it counts as a fail, with its raw text kept
@@ -314,6 +323,30 @@ def grade_reply(question: dict, reply: FlowReply, chunks: list[dict], chunk_by_i
     answer_line["answer"] = reply.answer.model_dump()
     grade_line = check_and_grade(answer_line, reply.answer, question, reply.shown_chunks, chunks, chunk_by_id,
                                  anthropic_client, settings.claude_judge_model)
+    return answer_line, grade_line
+
+
+def answer_and_grade(question: dict, choices: RunChoices, retrieve: Callable[[str], list[dict]] | None,
+                     build_rule_tools: Callable[[], RuleTools] | None, answer_rules: str, mistral_client: Mistral,
+                     anthropic_client: Anthropic, chunks: list[dict], chunk_by_id: dict[str, dict],
+                     settings: Settings) -> tuple[dict, dict]:
+    """Answers and grades one question, and records in its answer line how many seconds each took."""
+
+    # Each question gets its own tools, because the tools remember which clauses this question has seen
+    rule_tools = None
+    if build_rule_tools is not None:
+        rule_tools = build_rule_tools()
+
+    # Answer, then grade, timing each
+    started = time.perf_counter()
+    reply = answer_question(question["question"], choices, retrieve, rule_tools, answer_rules, mistral_client, settings)
+    answered = time.perf_counter()
+    answer_line, grade_line = grade_reply(question, reply, chunks, chunk_by_id, anthropic_client, settings)
+    answer_line["answer_seconds"] = round(answered - started, 1)
+    answer_line["grade_seconds"] = round(time.perf_counter() - answered, 1)
+
+    # A pause before this worker's next question, to stay under the APIs' requests-per-second limits
+    time.sleep(SECONDS_BETWEEN_QUESTIONS)
     return answer_line, grade_line
 
 
@@ -356,6 +389,7 @@ def build_run_settings(run_name: str, choices: RunChoices, split_name: str, sett
         "answer_model": settings.mistral_answer_model,
         "reasoning_effort": settings.mistral_reasoning_effort,
         "judge_model": settings.claude_judge_model,
+        "questions_at_once": choices.parallel,
     })
     run_settings.update(read_code_version())
     return run_settings
@@ -383,10 +417,13 @@ def run_answer_experiment(choices: RunChoices) -> dict:
     if setup.has_starting_sources:
         question_search = build_clause_vector_search(chunks, questions, settings.mistral_embedding_model).search
         retrieve = build_retrieve_function(question_search, choices.top_k, chunk_by_id, rule_map)
-    rule_tools = None
+    build_rule_tools = None
     if setup.has_tools:
         live_search = build_live_vector_search(chunks, mistral_client, settings.mistral_embedding_model)
-        rule_tools = RuleTools(chunks, live_search.search, rule_map)
+
+        def build_rule_tools() -> RuleTools:
+            """Returns fresh tools for one question, sharing the search and its saved query vectors."""
+            return RuleTools(chunks, live_search.search, rule_map)
 
     # The gather-then-write flows have their own gather prompts; the other flows use the answer prompt, with the
     # search steps when they have tools
@@ -400,20 +437,32 @@ def run_answer_experiment(choices: RunChoices) -> dict:
     answers_path = ANSWER_RUNS_FOLDER / f"{run_name}-answers.jsonl"
     grades_path = ANSWER_RUNS_FOLDER / f"{run_name}-grades.jsonl"
 
-    # Answer and grade each question, saving both lines before the next, so a crash keeps what was paid for
+    # Answer and grade --parallel questions at a time; each pair of lines is saved the moment its question is done,
+    # by this thread only, so a crash keeps what was paid for and two writes never mix
     started = time.perf_counter()
     answer_lines = []
     grade_lines = []
-    for question_number, question in enumerate(questions, start=1):
-        print(f"{question_number}/{len(questions)} {question['id']}", flush=True)
-        reply = answer_question(question["question"], choices, retrieve, rule_tools, answer_rules, mistral_client,
-                                settings)
-        answer_line, grade_line = grade_reply(question, reply, chunks, chunk_by_id, anthropic_client, settings)
-        append_line(answers_path, answer_line)
-        append_line(grades_path, grade_line)
-        answer_lines.append(answer_line)
-        grade_lines.append(grade_line)
-        time.sleep(SECONDS_BETWEEN_QUESTIONS)
+    with ThreadPoolExecutor(max_workers=choices.parallel) as executor:
+        futures: list[Future] = []
+        for question in questions:
+            futures.append(executor.submit(answer_and_grade, question, choices, retrieve, build_rule_tools,
+                                           answer_rules, mistral_client, anthropic_client, chunks, chunk_by_id,
+                                           settings))
+
+        # A question that raises stops the run, as before: the questions not started yet are cancelled
+        try:
+            for done_count, future in enumerate(as_completed(futures), start=1):
+                answer_line, grade_line = future.result()
+                print(f"{done_count}/{len(questions)} {answer_line['id']}  answer {answer_line['answer_seconds']} s"
+                      f" · grade {answer_line['grade_seconds']} s", flush=True)
+                append_line(answers_path, answer_line)
+                append_line(grades_path, grade_line)
+                answer_lines.append(answer_line)
+                grade_lines.append(grade_line)
+        except BaseException:
+            for future in futures:
+                future.cancel()
+            raise
     seconds = time.perf_counter() - started
 
     # Score and print; the tool setups add their tool use
