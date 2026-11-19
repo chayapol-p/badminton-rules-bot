@@ -12,12 +12,16 @@ from answer_flows.shared.tool_loop import (EXTRA_AGENT_RULES, LAST_ROUND_NOTE, M
                                            has_reached_tool_limit)
 from answer_flows.shared.rule_tools import RuleTools
 from experiments.retired_flows.single_call.answer_rules import ANSWER_RULES
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 from tests.sample_data import full_items
 
 
 # ===== The stub client and the tools =====
+
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
 
 CHUNKS = load_chunks()
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}

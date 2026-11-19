@@ -22,7 +22,7 @@ def test_plain_rag_answers_in_one_call_with_the_default_top_k_and_keeps_its_old_
 
 
 def test_a_tool_setup_uses_the_product_flow_and_no_extra_agent_rules_by_default():
-    """The product flow, gather-then-write, is the default (17 Nov). Record 0024: the two default agent rules became
+    """The product flow, gather-then-write, is the default. Record 0024: the two default agent rules became
     the search steps, so a run names no extra ones."""
     assert parse_run_choices(["--setup", "agentic"]).flow == "gather-then-write"
     choices = parse_run_choices(["--setup", "hybrid"])
@@ -76,7 +76,7 @@ def test_read_code_version_names_the_commit_and_any_changes():
 
 
 def test_the_retired_per_part_flow_runs_with_its_own_gather_prompt():
-    """Record 0027: the per-part slice 5 stays runnable, so 3 runs per flow can compare it with natural answers."""
+    """Record 0027: the per-part flow stays runnable, so 3 runs per flow can compare it with natural answers."""
     choices = parse_run_choices(["--setup", "hybrid", "--flow", "gather-then-write-per-part", "--phase2"])
     assert choices.label == "hybrid-gather-then-write-per-part-phase2"
     assert GATHER_RULES_BY_FLOW["gather-then-write-per-part"] != GATHER_RULES_BY_FLOW["gather-then-write"]
@@ -100,7 +100,7 @@ def mistral_error(status_code: int) -> SDKError:
 
 
 def test_a_server_error_retries_the_question(monkeypatch):
-    """17 Nov: a Cloudflare 520 stopped a whole run at one question; the SDK retries only 429 and 500-504."""
+    """A Cloudflare 520 stopped a whole run at one question; the SDK retries only 429 and 500-504."""
     monkeypatch.setattr(run_answer_experiment, "SECONDS_BEFORE_QUESTION_RETRY", 0)
     replies = [mistral_error(520), ({"id": "q1"}, {"id": "q1"})]
 

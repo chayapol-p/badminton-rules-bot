@@ -1,4 +1,4 @@
-// Slice 7 browser test: "test" gets the short off-topic reply, with no "Not covered" label
+// Browser test: "test" gets the short off-topic reply, with no "Not covered" label
 // (docs/specs/refuse-off-topic-questions-fast.md, criterion 1). Runs against the stub bot, which answers "test" this way.
 
 import { expect, test } from "@playwright/test";

@@ -9,7 +9,7 @@ Per answer, each line passes or fails:
   readable         the judge's readable line: tracked, never failing an answer
   refusal_right    no missed or false refusal (code)
   citations_valid  no citation problem, markers included (code)
-  right_clause     cites a clause that holds the golden answer (code; Job's pick: a gate line with no weight)
+  right_clause     cites a clause that holds the golden answer (code; a gate line with no weight)
 An answer passes only when every gate line passes. A format error has no text, so every line fails.
 
 Per run: each line's share of answers, the share that passed the gate, and the combined metric, a weighted sum

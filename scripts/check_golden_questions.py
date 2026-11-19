@@ -17,7 +17,8 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from evals.golden_answer_chunks import QUESTIONS_FILE, expected_chunk_ids, load_chunks
+from evals.golden_answer_chunks import QUESTIONS_FILE, expected_chunk_ids
+from retrieval.load_rule_chunks import load_chunks
 
 
 # Constants

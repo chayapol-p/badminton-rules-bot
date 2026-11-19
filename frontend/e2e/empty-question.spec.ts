@@ -1,4 +1,4 @@
-// Slice 6 browser test: pressing Ask with a blank box shows the message and makes no /chat request (spec criterion 6).
+// Browser test: pressing Ask with a blank box shows the message and makes no /chat request (spec criterion 6).
 
 import { expect, test } from "@playwright/test";
 

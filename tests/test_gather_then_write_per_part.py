@@ -1,4 +1,4 @@
-"""Tests the retired per-part slice 5's two calls with a stub client that replays scripted replies, so no test calls the API."""
+"""Tests the retired per-part flow's two calls with a stub client that replays scripted replies, so no test calls the API."""
 
 import json
 from types import SimpleNamespace
@@ -7,12 +7,16 @@ from experiments.retired_flows.gather_then_write_per_part.gather_then_write impo
 from answer_flows.shared.rule_tools import RuleTools
 from experiments.retired_flows.gather_then_write_per_part.answer_shape import GatheredAnswer, WrittenAnswer
 from experiments.retired_flows.gather_then_write_per_part.gather_and_write_rules import GATHER_RULES, WRITE_RULES
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 from tests.sample_data import full_items
 
 
 # ===== The stub client =====
+
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
 
 CHUNKS = load_chunks()
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}

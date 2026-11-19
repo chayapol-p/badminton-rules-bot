@@ -1,4 +1,4 @@
-// End-to-end check of slice 1: the real page in a browser, through the Vite proxy, to FastAPI with the stub bot
+// End-to-end check of asking a question: the real page in a browser, through the Vite proxy, to FastAPI with the stub bot
 
 import { expect, test } from "@playwright/test";
 

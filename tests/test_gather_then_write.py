@@ -1,4 +1,4 @@
-"""Tests slice 5's two calls with a stub client that replays scripted replies, so no test calls the API."""
+"""Tests the gather-then-write calls with a stub client that replays scripted replies, so no test calls the API."""
 
 import json
 from types import SimpleNamespace
@@ -7,12 +7,16 @@ from answer_flows.gather_then_write.gather_then_write import gather_then_write
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.gather_then_write.answer_shape import GatheredAnswer, WrittenAnswer
 from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES, WRITE_RULES
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 from tests.sample_data import full_items
 
 
 # ===== The stub client =====
+
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
 
 CHUNKS = load_chunks()
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}
@@ -119,7 +123,7 @@ def test_write_rules_ask_for_a_related_sentence_only_when_it_completes_the_answe
 
 
 def test_write_rules_answer_a_named_format_first():
-    """A question that names a format gets that format's rule first. 17 Nov: "the standard rule doesn't apply" with no
+    """A question that names a format gets that format's rule first. In one run: "the standard rule doesn't apply" with no
     sentence saying so failed grounded (best-of-five-at-10-all, 3 of 3 runs), so the claim needs a sentence behind it."""
     assert "When the question names a format, answer from that format's rule first" in WRITE_RULES
     assert "never write that a rule doesn't apply unless a sentence says so" in WRITE_RULES

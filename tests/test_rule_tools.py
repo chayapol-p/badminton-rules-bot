@@ -3,11 +3,15 @@
 import pytest
 
 from answer_flows.shared.rule_tools import LARGEST_TOP_K, RuleTools
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 
 
 # ===== The tools over the real clauses =====
+
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
 
 CHUNKS = load_chunks()
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}

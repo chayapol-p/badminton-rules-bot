@@ -1,4 +1,4 @@
-"""Tests slice 5's code between and after the two calls: checking picks, the refusal gate, the write call's input and the answer."""
+"""Tests the gather-then-write code between and after the two calls: checking picks, the refusal gate, the write call's input and the answer."""
 
 from answer_flows.gather_then_write.answer_shape import GatheredAnswer, GatheredPart, WrittenAnswer
 from answer_flows.shared.answer_shape import AnswerSentence, SentenceCitation
@@ -8,10 +8,14 @@ from answer_flows.gather_then_write.assemble_written_answer import (NO_SOURCE_MA
                                                                     build_refusal, check_gathered_picks,
                                                                     format_parts_for_writer, is_refusal)
 from evals.checks.check_citations import find_citation_problems
-from evals.golden_answer_chunks import load_chunks
+from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 
 
 # ===== Real clauses: Law 1.4 (one sentence) and Law 4.2.2 (two sentences, its subject in 4.2's heading) =====
+
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
 
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in load_chunks()}
 SHOWN_CHUNK_BY_ID = {chunk_id: CHUNK_BY_ID[chunk_id] for chunk_id in ["laws-1.4", "laws-4.2.2"]}
@@ -54,7 +58,7 @@ def test_a_pick_never_shown_or_past_the_last_sentence_is_dropped_and_recorded():
 
 
 def test_a_part_whose_only_pick_is_bad_counts_as_unanswered_and_the_gate_refuses():
-    """Job's pick, 13 Nov: a bad pick counts as no sentence, so it can't pass the gate."""
+    """a bad pick counts as no sentence, so it can't pass the gate."""
     answer = gathered([GatheredPart(asks="how tall the posts are", sentences=picks(("laws-7.4", 1)))])
     checked_answer, bad_picks = check_gathered_picks(answer, SHOWN_CHUNK_BY_ID)
     assert is_refusal(checked_answer)
@@ -81,7 +85,7 @@ def test_no_parts_at_all_is_a_refusal_that_says_so():
 
 
 def test_a_refusal_quotes_the_related_sentence_word_for_word():
-    """Job's pick, 13 Nov: the related text is a code-quoted sentence, not a model-written note."""
+    """the related text is a code-quoted sentence, not a model-written note."""
     answer = gathered([GatheredPart(asks="the highest string tension allowed", sentences=[])], related=[("laws-4.2.2", 1)])
     refusal = build_refusal(answer, SHOWN_CHUNK_BY_ID)
     assert refusal.refused
@@ -113,7 +117,7 @@ def test_a_picked_sentence_keeps_its_subject_from_the_under_line():
 
 
 def test_the_writer_sees_related_sentences_numbered_after_the_parts_but_never_the_reasoning():
-    """17 Nov: a key fact the gather call filed as related (toss-choices, Law 6.2) never reached the writer."""
+    """A key fact the gather call filed as related (toss-choices, Law 6.2) never reached the writer."""
     answer = GatheredAnswer(reasoning="SECRET REASONING", parts=TWO_PARTS.parts, related_sentences=picks(("laws-4.2.2", 1)))
     writer_input = format_parts_for_writer(answer, SHOWN_CHUNK_BY_ID, LABEL_BY_ID)
     assert "SECRET REASONING" not in writer_input

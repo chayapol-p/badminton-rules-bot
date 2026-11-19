@@ -6,8 +6,9 @@ import json
 
 import pytest
 
-from evals.golden_answer_chunks import QUESTIONS_FILE, expected_chunk_ids, load_chunks
+from evals.golden_answer_chunks import QUESTIONS_FILE, expected_chunk_ids
 from evals.probes import load_false_premise_probes, load_probes, load_refusal_probes
+from retrieval.load_rule_chunks import load_chunks
 
 
 # ===== Refusal probes =====

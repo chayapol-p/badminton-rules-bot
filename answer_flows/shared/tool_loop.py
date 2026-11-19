@@ -1,16 +1,17 @@
 """
-The tool loop every agent flow uses (slice 4's one call, slice 5's gather call): the model searches and reads
+The tool loop every flow with tools uses (the gather call of gather-then-write, and the retired flows): the model
+searches and reads
 clauses until it replies with no tool calls, in the answer shape the flow asks for.
 
-The loop (Stage 3):
-1. Send the question, with the starting sources (setup C) or none (setup B), and the two tools.
+The loop:
+1. Send the question, with the starting sources (the hybrid setup) or none (the agentic setup), and the two tools.
 2. Read the reply's finish reason:
    "tool_calls"  run each tool it asks for, add the results, and ask again
    "stop"        the reply is the answer
-   "length"      the reply was cut off: a format error, as in Stage 2
+   "length"      the reply was cut off: a format error
 3. Tool round limit: a round is one reply that asks for tools, however many tools it asks for.
    Round 10 is the last: its tools run, its last tool result gets a note saying the tools are now
-   off, and the next call can only answer. The note matters: in a live check (9 Nov), a model whose
+   off, and the next call can only answer. The note matters: in a live check, a model whose
    tools were turned off without it was still planning a read, and sent valid JSON with an empty
    answer, which passes the format check.
 
@@ -25,6 +26,7 @@ Use:
 from dataclasses import dataclass
 
 from mistralai.client import Mistral
+from mistralai.client.models import ChatCompletionResponse
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import BaseModel
 
@@ -50,9 +52,10 @@ FINISH_REASON_TOOL_CALLS = "tool_calls"
 
 
 ## The search steps every flow with tools puts between finding sentences and replying. They hold what the two
-## default agent rules said (record 0022): check-each-part (9 Nov: B read 27.5 clauses a question; C never searched
-## for yellow-card-before-play) and search-before-gaps (10 Nov: C still wrote "the sources don't cover" with 0 rounds,
-## because the old rule 3 won over searching). As steps, searching comes before giving up on a part (record 0024)
+## default agent rules said (record 0022): check-each-part (the agent read 27.5 clauses a question; the hybrid setup
+## never searched for yellow-card-before-play) and search-before-gaps (the hybrid setup still wrote "the sources
+## don't cover" with 0 rounds, because the old rule 3 won over searching). As steps, searching comes before giving
+## up on a part (record 0024)
 SEARCH_STEPS = [
     "For each part that no sentence answers yet, search for it with the tools before you give up on it.",
     "Stop searching when every part has sentences, or when a search for the missing part finds nothing. "
@@ -90,7 +93,7 @@ def build_agent_prompt(system_prompt: str, question_text: str, starting_items: l
     """Returns the first messages: the flow's system prompt with the tools section, then the starting bundle (if any) and the question."""
     question_block = f"<question>\n{question_text}\n</question>"
 
-    # Setup B starts with no sources, setup C with setup A's bundle
+    # The agentic setup starts with no sources, the hybrid setup with the plain RAG bundle
     user_message = f"No sources yet: use the tools to find them.\n\n{question_block}"
     if starting_items:
         sources_text = format_bundle(starting_items)
@@ -104,7 +107,7 @@ def build_agent_prompt(system_prompt: str, question_text: str, starting_items: l
 # ===== One model call =====
 
 def call_model(client: Mistral, model: str, reasoning_effort: str, messages: list, tools_allowed: bool,
-               answer_shape: type[BaseModel]):
+               answer_shape: type[BaseModel]) -> ChatCompletionResponse:
     """Sends the conversation so far with the tools, at the fixed settings of every eval run, and returns the response."""
 
     # After the last round, the tools stay listed but the model may not call them
@@ -208,7 +211,7 @@ def run_tool_loop(client: Mistral, model: str, reasoning_effort: str, messages: 
 
         # A reply that says "tool calls" but holds none is broken: end the loop, and the parse step records
         # it as a format error with its finish reason. No later question depends on this one, so the run
-        # goes on (coding style rule 14)
+        # goes on
         is_tool_reply_without_calls = choice.finish_reason == FINISH_REASON_TOOL_CALLS and not choice.message.tool_calls
         if is_tool_reply_without_calls:
             break

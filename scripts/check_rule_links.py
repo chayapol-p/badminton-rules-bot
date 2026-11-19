@@ -20,8 +20,9 @@ Run from the project root (after scripts.build_rule_chunks and scripts.build_rul
 import json
 from collections import defaultdict
 
-from evals.golden_answer_chunks import QUESTIONS_FILE, expected_chunk_ids, load_chunks
+from evals.golden_answer_chunks import QUESTIONS_FILE, expected_chunk_ids
 from retrieval.expand_with_rule_links import expand_with_links, load_rule_map
+from retrieval.load_rule_chunks import load_chunks
 
 
 # ===== Turning an answer location into chunk ids =====

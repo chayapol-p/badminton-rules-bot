@@ -1,4 +1,4 @@
-// Slice 4 tests for the chat page: a failed answer shows an error instead of waiting for good (spec criterion 5,
+// Tests for the chat page: a failed answer shows an error instead of waiting for good (spec criterion 5,
 // record 0035).
 
 import { render, screen } from "@testing-library/react";

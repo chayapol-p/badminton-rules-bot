@@ -1,8 +1,8 @@
 """
 The checked answer every flow returns, and the sentence citation every flow's model writes.
 
-Each flow's own model shapes live in its folder: answer_flows/gather_then_write/answer_shape.py (slice 5, the product
-flow) and, for the retired flows, experiments/retired_flows/single_call/answer_shape.py (ModelAnswer, setup A and slice 4).
+Each flow's own model shapes live in its folder: answer_flows/gather_then_write/answer_shape.py (the product
+flow) and, for the retired flows, experiments/retired_flows/single_call/answer_shape.py (ModelAnswer).
 
 SentenceCitation  what every flow's model writes for one sentence: a chunk id and a sentence number.
 AnswerSentence    one sentence of a natural answer, with inline [n] markers, or a gap with none (record 0027).
@@ -56,12 +56,12 @@ class RulesAnswer(BaseModel):
     reasoning: str = Field(description="Before deciding: which sources bear on the question, and whether together they answer what was asked. Name what is missing, if anything.")
     refused: bool = Field(description="True when the sources don't answer the question that was asked")
     # Which kind of refusal, set by code: "off_topic" from the topic check, "not_covered" from the flow, so the app
-    # labels only the second. Empty for answers, and for run files from before (Job, 17 Nov)
+    # labels only the second. Empty for answers, and for older run files
     refusal_kind: Literal["off_topic", "not_covered"] | None = None
     answer: str = Field(description="The answer. When refusing, say what the sources do cover and what they don't.")
     citations: list[Citation] = Field(description="One citation per claim; empty only when no source applies")
     # Related sentences are context, never the answer, so they get their own list: with one list the judge read
-    # them as the answer's sources and failed correct refusals (14 Nov baseline, record 0025). Empty by default,
+    # them as the answer's sources and failed correct refusals (record 0025). Empty by default,
     # so run files from before still load
     related_citations: list[Citation] = Field(default_factory=list, description="Sentences that bear on the question without answering it; context only")
     # A natural answer (record 0027) keeps its sentences, so the marker check can re-run from a run file: marker [n]

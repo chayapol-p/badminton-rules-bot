@@ -47,7 +47,7 @@ def test_the_prompt_has_the_task_then_numbered_steps_then_limits():
 
 
 def test_a_flow_with_tools_searches_after_finding_sentences_and_before_replying():
-    """The old rule 3 (leave a part empty) won over searching; as steps, searching comes first (notes, 10 Nov)."""
+    """The old rule 3 (leave a part empty) won over searching; as steps, searching comes first (workshop/notes.md)."""
     rules_with_tools = build_answer_rules([], uses_tools=True)
     for search_step in SEARCH_STEPS:
         assert search_step not in ANSWER_RULES

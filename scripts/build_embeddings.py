@@ -8,10 +8,10 @@ Ten sets, each saved to data/embeddings/<name>.npz:
   windows              each fixed-size window's text
   section_groups       each section group's search_text (context header, then its clauses)
   questions            each golden question, keyed by its id
-  refusal_probes       each refusal probe (Stage 2), keyed by its id
-  false_premise_probes each false-premise probe (Stage 2), keyed by its id
-  unseen_questions     each unseen question (Stage 3), keyed by its id
-  phase2_questions     each Phase 2 question (slice 2), keyed by its id
+  refusal_probes       each refusal probe, keyed by its id
+  false_premise_probes each false-premise probe, keyed by its id
+  unseen_questions     each unseen question, keyed by its id
+  phase2_questions     each Phase 2 question, keyed by its id
 
 A set that is already saved with the same model and the same ids is skipped, so a rerun costs
 nothing; a set that gained or lost an id is embedded again.
@@ -33,12 +33,13 @@ import time
 from mistralai.client import Mistral
 from tqdm import tqdm
 
-from app.settings import load_settings
-from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
+from evals.golden_answer_chunks import QUESTIONS_FILE
 from evals.probes import load_false_premise_probes, load_phase2_questions, load_refusal_probes, load_unseen_questions
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.stored_embeddings import embeddings_file, load_embeddings, save_embeddings
 from retrieval.section_groups import build_section_groups
 from retrieval.window_chunks import build_windows
+from settings import load_settings
 
 
 # Constants
@@ -124,7 +125,7 @@ def is_already_saved(name: str, model: str, ids: list[str]) -> bool:
     except ValueError:
         return False
 
-    # A question added to a set or removed from it means the saved file is out of date. 9 Nov: the 3 new
+    # A question added to a set or removed from it means the saved file is out of date. Before this check, 3 new
     # unseen questions were skipped because the file existed. A question reworded under the same id is
     # not caught: pass --force after rewording one
     return set(saved_vector_by_id) == set(ids)

@@ -13,7 +13,7 @@ What it does, in order:
    so search reads the header too. This follows Anthropic's Contextual Retrieval, with a
    header built from the tags instead of written by a model.
 6. Writes a second search text that also names the parent clauses ("2.2 Feathered Shuttle"
-   for 2.2.6), so Stage 1 can measure what the parents add on top of the header.
+   for 2.2.6), so a search run can measure what the parents add on top of the header.
 
   Input:  the three PDFs in data/bwf/ (downloaded by hand, never committed)
   Output: data/rule_chunks.json, one record per clause

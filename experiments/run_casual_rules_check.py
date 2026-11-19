@@ -16,10 +16,10 @@ import argparse
 import json
 
 from answer_flows.shared.mistral_client import build_mistral_client
-from app.settings import load_settings
-from evals.golden_answer_chunks import PROJECT_FOLDER
 from experiments.run_red_team_check import run_check_part
 from experiments.run_topic_check_eval import CostTracker, RecordingClient
+from retrieval.load_rule_chunks import PROJECT_FOLDER
+from settings import load_settings
 
 
 # Constants

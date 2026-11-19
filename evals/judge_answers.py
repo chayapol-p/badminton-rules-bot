@@ -13,7 +13,7 @@ judge, decides the overall grade: the first three lines must pass; readable is t
 an answer.
 
 The judge sees what a user sees: refused or not, the answer and its citations. The bot's reasoning
-field is its working notes, kept in the run log only: on 8 Nov leaving-court failed because its
+field is its working notes, kept in the run log only: once, leaving-court failed because its
 reasoning named the para clause it rightly left out of the answer.
 
 Each answer is graded JUDGE_VOTES times, at the same time (the votes don't depend on each other), and each

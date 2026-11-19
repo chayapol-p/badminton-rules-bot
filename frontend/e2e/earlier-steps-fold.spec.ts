@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
 
 
 // Constants
-// Twelve steps, like the real question in Job's live check: long search lines between short ones
+// Twelve steps, like a real question in a live check: long search lines between short ones
 const TWELVE_STEPS = [
   "Searching the rule books",
   "Found 5 rules to check",

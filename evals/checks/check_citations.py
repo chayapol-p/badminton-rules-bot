@@ -14,7 +14,7 @@ fill (a clause not shown, a sentence number out of range), and it re-checks olde
 A natural answer (record 0027) also has its inline markers checked, sentence by sentence: every marker must be
 a source's number in the list, every answer sentence needs at least one, and a gap sentence none. A bad
 one fails by name. Bracketed text the rule books print themselves, such as "[name of player(s)]" in a quoted
-call, is not a marker (17 Nov: black-card failed on it).
+call, is not a marker (black-card once failed on it).
 
 Use:
     problems = find_citation_problems(rules_answer, retrieved_chunks)
@@ -30,7 +30,7 @@ from answer_flows.shared.inline_markers import MARKER_PATTERN
 
 # Constants
 ## Curly quote marks and long dashes, and the plain characters they become
-## 8 Nov: red-card quoted "..." where ITTO 5.17.4 prints the one-character ellipsis "…"
+## Red-card quoted "..." where ITTO 5.17.4 prints the one-character ellipsis "…"
 TYPOGRAPHIC_REPLACEMENTS = {"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", "…": "..."}
 
 ## Any run of spaces, tabs and line breaks

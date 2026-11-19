@@ -1,5 +1,6 @@
 """
-Settings for the RAG workshop.
+Settings for the bot, the app, the evals and the scripts. It sits at the project root, so the bot reads its
+settings without importing the web app.
 
 Reads the API keys and model names from the .env file at the project root.
 Environment variables override the .env file.
@@ -20,7 +21,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 # Project root: the folder that holds .env and pyproject.toml
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 
 # Error raised when a required setting is missing, with a message a person can act on
@@ -50,14 +51,11 @@ class Settings(BaseSettings):
     # Large 4 always thinks; this pins how much (low, medium or high), so every eval run uses the same setting
     mistral_reasoning_effort: str = "low"
     claude_comparison_model: str = "claude-haiku-5-5"
-    # The answer judge (Stage 2): another model family than the answer model, to avoid self-preference bias
+    # The answer judge: another model family than the answer model, to avoid self-preference bias
     claude_judge_model: str = "claude-sonnet-5-5"
 
     # Which bot answers /chat: the stub (a fixed answer, no API calls) unless .env says real (record 0035)
     rules_bot: Literal["stub", "real"] = "stub"
-
-    # Database address: Supabase > Connect > Session pooler. Optional, because only vector search needs it.
-    database_url: SecretStr | None = None
 
     # A key line left as "MISTRAL_API_KEY=" in .env arrives as an empty string: treat it as missing
     @field_validator("mistral_api_key")
@@ -87,16 +85,6 @@ def load_settings() -> Settings:
             f"Missing or empty setting: {', '.join(problem_names)}. "
             f"Copy .env.example to .env in {PROJECT_ROOT} and paste the key after the = sign."
         ) from None
-
-
-# Return the database address, or stop with a message that says where to find it
-def require_database_url(settings: Settings) -> str:
-    if settings.database_url is None or not settings.database_url.get_secret_value().strip():
-        raise MissingSettingError(
-            "Missing setting: DATABASE_URL. In Supabase, open your project > Connect > Session pooler, "
-            "copy the URI, put your database password in it, and paste it into .env."
-        )
-    return settings.database_url.get_secret_value()
 
 
 # Return the Anthropic key, or stop with a message that says who needs it and where to put it

@@ -1,4 +1,4 @@
-"""Tests the Phase 2 question set loads with the shape every answer run reads (slice 2)."""
+"""Tests the Phase 2 question set loads with the shape every answer run reads."""
 
 from evals.checks.check_refusals import should_refuse
 from evals.probes import load_phase2_questions

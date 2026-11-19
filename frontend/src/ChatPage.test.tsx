@@ -1,4 +1,4 @@
-// Tests for the chat page, slice 1 (criterion 1): ask a question, then see the answer with its [1] marker and the source list
+// Tests for the chat page (criterion 1): ask a question, then see the answer with its [1] marker and the source list
 
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

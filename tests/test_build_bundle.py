@@ -1,5 +1,5 @@
 """
-Tests the bundle: one source block format for setup A and both tools, role labels on every block, and
+Tests the bundle: one source block format for plain RAG and both tools, role labels on every block, and
 previews and "shown above" lines in place of text the model doesn't need again.
 """
 
@@ -7,10 +7,10 @@ import json
 
 import pytest
 
-from evals.golden_answer_chunks import CHUNKS_FILE, load_chunks
 from retrieval.build_bundle import (FULL, PREVIEW, SHOWN, build_bundle, describe_source, format_bundle,
                                     format_preview, format_source, full_chunks, parent_headings)
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import CHUNKS_FILE, load_chunks
 from tests.sample_data import SAMPLE_CHUNKS
 
 
@@ -85,8 +85,8 @@ def detail_by_id(items):
     return {item["chunk"]["id"]: item["detail"] for item in items}
 
 
-def test_setup_a_gets_every_clause_in_full_with_its_label(corpus):
-    """13 Nov: the labels were made but dropped before the prompt, so the model never saw which rule was the default."""
+def test_plain_rag_gets_every_clause_in_full_with_its_label(corpus):
+    """The labels were made but dropped before the prompt, so the model never saw which rule was the default."""
     items = build_bundle(["alt-best-of-5-games-11:8.1.3"], corpus["chunks_by_id"], corpus["rule_map"], related_in_full=True)
     assert set(detail_by_id(items).values()) == {FULL}
     assert "[laws-8.1.3] DEFAULT · Laws of Badminton" in format_bundle(items)
@@ -125,7 +125,7 @@ def test_a_clause_shown_before_is_one_line_and_not_citable_again(corpus):
 
 
 def test_a_source_block_shows_the_heading_above_a_fragment_clause(corpus):
-    """8 Nov: clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:")."""
+    """Clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:")."""
     assert "Under: 4.2 The stringed area:" in format_source(corpus["chunks_by_id"]["laws-4.2.2"])
 
 

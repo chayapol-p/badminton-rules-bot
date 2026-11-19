@@ -1,12 +1,12 @@
 """
-Loads the probes: questions outside the golden set that test one behaviour each (Stage 2).
+Loads the probes: questions outside the golden set that test one behaviour each.
 
   refusal probes        no answer in the corpus: the bot should refuse
   false-premise probes  answerable, but the question assumes something the sources contradict:
                         the bot should correct the premise, then answer
-  unseen questions      written after the rule map, never tuned on (Stage 3): each setup is
+  unseen questions      written after the rule map, never tuned on: each setup is
                         scored on them once, question by question against its "needs" tag
-  Phase 2 questions     41 dev questions, 14 of them should be refused (slice 2), for the Phase 2 runs
+  Phase 2 questions     41 dev questions, 14 of them should be refused, for the Phase 2 runs
                         after the measurement restart
 
 Both have the golden questions' shape, so the answer run handles them the same way. Their split is
@@ -44,10 +44,10 @@ def load_probes() -> list[dict]:
 
 
 def load_unseen_questions() -> list[dict]:
-    """Returns every unseen question (Stage 3)."""
+    """Returns every unseen question."""
     return json.loads(UNSEEN_QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
 
 
 def load_phase2_questions() -> list[dict]:
-    """Returns every Phase 2 question (slice 2)."""
+    """Returns every Phase 2 question."""
     return json.loads(PHASE2_QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]

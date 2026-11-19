@@ -1,7 +1,7 @@
 """
 The product entry point: the one function the app calls to answer a rules question.
 
-It runs the product flow, gather-then-write (record 0023, slice 5, with record 0027's natural answers), in the
+It runs the product flow, gather-then-write (records 0023 and 0027: one natural answer with inline citations), in the
 hybrid setup: the retrieve step hands over the top clauses, then the gather call searches with the tools.
 Both searches embed each new question with one live call, so any question works, not only the saved ones.
 
@@ -32,11 +32,11 @@ from answer_flows.shared.progress_updates import (CHECKING_QUESTION, FINDING_RUL
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.topic_screen import (IsRulesQuestion, build_mistral_topic_check, build_off_topic_answer,
                                        pass_every_question)
-from app.settings import Settings, load_settings
-from evals.golden_answer_chunks import load_chunks
 from retrieval.build_bundle import full_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.retrieve_sources import DEFAULT_TOP_K, build_live_vector_search, build_retrieve_function
+from settings import Settings, load_settings
 
 
 logger = logging.getLogger(__name__)

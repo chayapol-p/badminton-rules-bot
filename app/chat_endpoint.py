@@ -1,10 +1,10 @@
 """
 POST /chat: takes one rules question and streams the answer back as server-sent events (record 0031).
 
-The stream holds a "progress" event for each ProgressUpdate the bot sends (slice 2 of
-docs/specs/ask-a-rules-question.md, record 0028), then one "answer" event with the whole RulesAnswer as JSON, each
-citation with its PDF link (slice 3). When the bot fails, an "error" event with a plain message takes the answer's
-place, and the server log keeps the bot's own error (slice 4, record 0035).
+The stream holds a "progress" event for each ProgressUpdate the bot sends (docs/specs/ask-a-rules-question.md,
+record 0028), then one "answer" event with the whole RulesAnswer as JSON, each citation with its PDF link. When the
+bot fails, an "error" event with a plain message takes the answer's place, and the server log keeps the bot's own
+error (record 0035).
 
 The app answers only through load_rules_bot() and the bot's answer(question, report_progress=...) method (CLAUDE.md,
 "The app"). RULES_BOT in .env picks the bot: the stub when unset, which costs nothing, or the real one.
@@ -23,12 +23,12 @@ from answer_flows.rules_bot import RulesBot, load_rules_bot
 from answer_flows.shared.answer_shape import RulesAnswer
 from answer_flows.shared.progress_updates import ProgressUpdate
 from app.pdf_links import add_pdf_links
-from app.settings import Settings
 from app.stub_rules_bot import StubRulesBot
+from settings import Settings
 
 
 # Constants
-## Seconds the app's stub holds each step, so each one can be read (Job, 17 Nov, after trying slice 2)
+## Seconds the app's stub holds each step, so each one can be read
 STUB_SECONDS_BETWEEN_UPDATES = 1.5
 
 ## What the page shows for any failed answer (spec criterion 5); the log keeps the real reason
@@ -96,6 +96,6 @@ def stream_chat_answer(chat_request: ChatRequest,
             yield ServerSentEvent(data={"message": FAILED_ANSWER_MESSAGE}, event="error")
             return
         else:
-            # Each citation gets the link that opens its PDF at the clause's page (slice 3, record 0034)
+            # Each citation gets the link that opens its PDF at the clause's page (record 0034)
             yield ServerSentEvent(data=add_pdf_links(item), event="answer")
             return

@@ -1,4 +1,4 @@
-// Slice 3 tests for the chat page: each [n] marker opens a popover with its source and a PDF link (spec criterion 3,
+// Tests for the chat page: each [n] marker opens a popover with its source and a PDF link (spec criterion 3,
 // record 0034). The server adds pdf_link to each citation, so these tests send the sample answer with its link.
 
 import { render, screen, within } from "@testing-library/react";

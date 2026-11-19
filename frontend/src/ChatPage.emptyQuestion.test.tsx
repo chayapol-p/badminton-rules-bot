@@ -1,4 +1,4 @@
-// Slice 6 tests for the chat page: an empty or blank question shows "Please type a question" and sends nothing
+// Tests for the chat page: an empty or blank question shows "Please type a question" and sends nothing
 // (spec criterion 6).
 
 import { render, screen } from "@testing-library/react";

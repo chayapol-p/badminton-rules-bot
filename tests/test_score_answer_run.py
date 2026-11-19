@@ -127,7 +127,7 @@ def answer_line_to_check(rules_answer) -> dict:
 
 
 def test_an_answer_that_fails_a_code_check_is_still_judged_and_still_fails():
-    """Record 0027 (Job's pick): every answer with text is judged, so each scorecard line measures only itself."""
+    """Record 0027: every answer with text is judged, so each scorecard line measures only itself."""
     client = StubJudgeClient()
     refused_reply = POSTS_REPLY.model_copy(update={"refused": True})
     line = answer_line_to_check(refused_reply)

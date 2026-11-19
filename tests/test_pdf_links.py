@@ -1,5 +1,5 @@
 """
-Slice 3 tests for the PDF links (spec criterion 3, record 0034): each citation in the answer event carries a link
+Tests for the PDF links (spec criterion 3, record 0034): each citation in the answer event carries a link
 that opens the frozen PDF at the clause's page, and FastAPI serves those PDFs at /rule-books.
 Nothing here runs a paid API.
 """
@@ -12,7 +12,8 @@ from fastapi.testclient import TestClient
 from answer_flows.shared.cite_sentences import name_source
 from app.main import app
 from app.pdf_links import RULE_BOOKS_FOLDER, link_to_pdf_page
-from evals.golden_answer_chunks import PROJECT_FOLDER, load_chunks
+from retrieval.load_rule_chunks import PROJECT_FOLDER, load_chunks
+from tests.rule_data import skip_without_rule_data
 from tests.test_chat_endpoint import placeholder_keys, read_events  # placeholder_keys runs for every test here too
 
 
@@ -24,11 +25,13 @@ ITTO_IS_MISSING = not (RULE_BOOKS_FOLDER / ITTO_FILE_NAME).exists()
 # ===== The link for one clause =====
 
 def test_a_clause_links_to_its_rule_book_at_its_page():
+    skip_without_rule_data()
     # Record 0029 checked this page by hand: ITTO clause 7.2 is on page 37
     assert link_to_pdf_page("itto-7.2") == "/rule-books/bwf-itto-2025-v7.0.pdf#page=37"
 
 
 def test_an_unknown_clause_fails_loudly():
+    skip_without_rule_data()
     with pytest.raises(ValueError, match="laws-99.9"):
         link_to_pdf_page("laws-99.9")
 
@@ -36,6 +39,7 @@ def test_an_unknown_clause_fails_loudly():
 # ===== The link in the answer event =====
 
 def test_each_citation_in_the_answer_event_carries_its_pdf_link():
+    skip_without_rule_data()
     chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
     posts_page = chunk_by_id["laws-1.4"]["page"]
 
@@ -62,6 +66,7 @@ def test_the_app_serves_the_rule_book_pdfs():
 # ===== The ITTO sample the page tests use (criterion 3) =====
 
 def test_the_itto_sample_citation_matches_the_real_clause():
+    skip_without_rule_data()
     sample_citation = json.loads((PROJECT_FOLDER / "app" / "sample_itto_citation.json").read_text(encoding="utf-8"))
     clause = {chunk["id"]: chunk for chunk in load_chunks()}[sample_citation["chunk_id"]]
 

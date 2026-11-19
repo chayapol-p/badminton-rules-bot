@@ -1,5 +1,5 @@
 """
-Tests for the real topic check (docs/specs/refuse-off-topic-questions-fast.md, its slice 2): one Mistral Small call
+Tests for the real topic check (docs/specs/refuse-off-topic-questions-fast.md): one Mistral Small call
 that answers whether a question is about the rules of badminton, with a 5 s limit and no retries, and a bot that lets
 the question through when the call fails.
 
@@ -13,7 +13,8 @@ import pytest
 
 from answer_flows import rules_bot as rules_bot_module
 from answer_flows.topic_screen import (CHECK_TIMEOUT_MS, TOPIC_CHECK_PROMPT, build_mistral_topic_check)
-from app.settings import Settings
+from settings import Settings
+from tests.rule_data import skip_test_without_saved_vectors
 from tests.test_gather_then_write import GATHER_REPLY, StubTwoCallClient
 from tests.test_rules_bot import CHUNKS, NEW_QUESTION, RULE_MAP, SETTINGS, StubSearch
 
@@ -64,7 +65,7 @@ def test_the_check_sends_the_question_to_mistral_small_with_a_5_second_limit_and
 
 
 def test_the_prompt_follows_jobs_picks_for_what_counts_as_off_topic():
-    # Badminton-wide (Job, 18 Nov): any badminton question goes on, however it is worded, and only one with nothing
+    # Badminton-wide: any badminton question goes on, however it is worded, and only one with nothing
     # to do with badminton is off topic; a doubt goes to the full flow, so no rules question is refused by mistake
     for words in ["any question about badminton", "coaching", "history", "not about badminton at all",
                   "another sport on its own", "casual", "even when they do not name the sport",
@@ -122,6 +123,7 @@ def test_an_off_topic_reply_from_the_real_check_gives_the_off_topic_answer_witho
 # ===== Wiring =====
 
 def test_load_rules_bot_wires_in_the_real_check_on_the_settings_model(monkeypatch):
+    skip_test_without_saved_vectors()
     check_client = RecordingCheckClient('{"is_badminton_question": false}')
     monkeypatch.setattr(rules_bot_module, "build_mistral_client", lambda settings: check_client)
     monkeypatch.setattr(rules_bot_module, "load_settings",

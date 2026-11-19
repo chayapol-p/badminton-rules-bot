@@ -1,5 +1,5 @@
 """
-Slice 4 tests for POST /chat: the RULES_BOT setting picks the stub or the real bot, the bot loads once at startup,
+Tests for POST /chat: the RULES_BOT setting picks the stub or the real bot, the bot loads once at startup,
 and a failed answer streams an "error" event (spec criterion 5, record 0035).
 
 No test calls Mistral: the real bot's loader is swapped for one that returns a stub.
@@ -16,8 +16,9 @@ from answer_flows.shared.progress_updates import ProgressUpdate, ReportProgress,
 from app import chat_endpoint
 from app.chat_endpoint import FAILED_ANSWER_MESSAGE, choose_rules_bot
 from app.main import app
-from app.settings import MissingSettingError, Settings, load_settings
 from app.stub_rules_bot import StubRulesBot
+from settings import MissingSettingError, Settings, load_settings
+from tests.rule_data import skip_without_rule_data
 from tests.test_chat_endpoint import QuestionRecordingBot, placeholder_keys, read_events  # placeholder_keys runs here too
 
 
@@ -52,6 +53,7 @@ def test_the_stub_answers_when_rules_bot_is_not_set():
 
 
 def test_rules_bot_real_loads_the_real_bot_once_at_startup(monkeypatch):
+    skip_without_rule_data()
     monkeypatch.setenv("RULES_BOT", "real")
     load_settings.cache_clear()
     loaded_bots = []

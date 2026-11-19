@@ -27,12 +27,12 @@ from datetime import datetime, timezone
 import numpy
 
 from answer_flows.shared.mistral_client import build_mistral_client
-from app.settings import load_settings
-from evals.golden_answer_chunks import PROJECT_FOLDER, load_chunks
 from evals.log_eval_run import append_run
 from experiments.run_answer_experiment import read_code_version
 from retrieval.keyword_search import tokenize, KeywordSearch
+from retrieval.load_rule_chunks import PROJECT_FOLDER, load_chunks
 from retrieval.stored_embeddings import load_embeddings
+from settings import load_settings
 
 
 # Constants

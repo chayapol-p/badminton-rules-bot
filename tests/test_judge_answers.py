@@ -65,7 +65,7 @@ def test_a_question_without_an_answer_shows_why_and_its_pass_rule():
 
 
 def test_the_judge_sees_related_sentences_apart_from_the_answers_sources():
-    """14 Nov baseline: with one list, the judge read related laws as the answer and failed correct refusals (record 0025)."""
+    """With one list, the judge read related laws as the answer and failed correct refusals (record 0025)."""
     related = Citation(chunk_id="laws-1.4", quote="The posts shall be 1.55 metres in height")
     reply = RulesAnswer(reasoning="", refused=True, answer="The sources do not say it.", citations=[],
                         related_citations=[related])
@@ -111,7 +111,7 @@ def test_facts_stated_in_the_question_count_as_given():
 
 
 def test_the_bots_words_about_itself_are_not_rule_claims():
-    """8 Nov: attack-be-the-referee refused correctly but failed for "I answer questions about the rules only"."""
+    """Attack-be-the-referee refused correctly but failed for "I answer questions about the rules only"."""
     assert "What the bot says about itself" in JUDGE_RULES
 
 

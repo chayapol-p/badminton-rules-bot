@@ -10,11 +10,15 @@ from answer_flows.shared.progress_updates import (READING, SEARCHING, STILL_WRIT
                                                   call_with_still_writing_updates, describe_checking,
                                                   describe_found_rules, describe_question_parts,
                                                   describe_sources_picked, describe_tool_call)
-from evals.golden_answer_chunks import load_chunks
+from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 
 
 # Constants
 ## The real clauses, so the names are the ones the app will show
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
+
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in load_chunks()}
 LAW_1_4_NAME = "Laws of Badminton 5.0 (2), Clause 1.4"
 

@@ -2,7 +2,7 @@
 Builds a system prompt in the sections every answer flow uses: the task, the steps in order and the limits.
 The flows with tools add a tools section after them (answer_flows/shared/tool_loop.py build_tools_section).
 
-Why this layout (record 0024, Job, 13 Nov):
+Why this layout (record 0024):
 - Steps as a numbered list, because the order matters: list the parts, find sentences, search, then reply
   (Anthropic prompting best practices: sequential steps when order or completeness matters).
 - Limits apart from the steps, each with its reason, so the model can apply a limit to cases it doesn't name

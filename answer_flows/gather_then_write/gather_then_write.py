@@ -1,7 +1,7 @@
 """
-Slice 5: answers one question in two calls with a code gate between them.
+Gather then write: answers one question in two calls with a code gate between them.
 
-1. Gather call: the same tool loop as slice 4 (answer_flows/shared/tool_loop.py run_tool_loop), with GATHER_RULES and
+1. Gather call: the tool loop (answer_flows/shared/tool_loop.py run_tool_loop), with GATHER_RULES and
    the tools section. It sends GatheredAnswer: the sentences that answer each part, and no answer text.
 2. Code checks each pick, drops the bad ones and records them (answer_flows/gather_then_write/assemble_written_answer.py).
 3. Gate: when no part has a sentence left, code refuses and the write call never runs.
@@ -20,6 +20,7 @@ Use:
 from functools import partial
 
 from mistralai.client import Mistral
+from mistralai.client.models import ChatCompletionResponse
 from mistralai.extra import response_format_from_pydantic_model
 from pydantic import ValidationError
 
@@ -40,7 +41,8 @@ from answer_flows.shared.tool_loop import build_agent_prompt, run_tool_loop
 
 # ===== The write call =====
 
-def call_writer(client: Mistral, model: str, reasoning_effort: str, question_text: str, parts_text: str):
+def call_writer(client: Mistral, model: str, reasoning_effort: str, question_text: str,
+                parts_text: str) -> ChatCompletionResponse:
     """Sends the write call, with no tools, at the fixed settings of every eval run, and returns the response."""
     return client.chat.complete(
         model=model,
@@ -83,7 +85,7 @@ def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather
         output_tokens=loop_result.output_tokens,
     )
 
-    # A gather reply that doesn't fit the shape is a format error, as in slice 4; the run goes on
+    # A gather reply that doesn't fit the shape is a format error; the run goes on
     try:
         gathered_answer = GatheredAnswer.model_validate_json(raw_reply)
     except ValidationError as error:
@@ -101,7 +103,7 @@ def gather_then_write(client: Mistral, model: str, reasoning_effort: str, gather
         reply.is_format_error = False
         return reply
 
-    # Show the picked sentences with their quotes while the write call runs, the longest wait (17 Nov: 35-50 s)
+    # Show the picked sentences with their quotes while the write call runs, the longest wait (35-50 s in live checks)
     picked_sources = build_named_citations(list(number_picked_sentences(checked_answer)), shown_chunk_by_id)
     report_progress(describe_sources_picked(picked_sources))
     report_progress(describe_writing())

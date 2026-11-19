@@ -1,8 +1,8 @@
 """
-Tests for POST /chat, slice 1 of docs/specs/ask-a-rules-question.md: a question goes in, and the answer comes back
+Tests for POST /chat (docs/specs/ask-a-rules-question.md): a question goes in, and the answer comes back
 as one server-sent event named "answer" (record 0031).
 
-Until slice 4 the app answers with the stub bot, which returns the sample answer about the posts. No test calls
+These tests answer with the stub bot, which returns the sample answer about the posts. No test calls
 Mistral: the keys are placeholders.
 """
 
@@ -15,9 +15,10 @@ from answer_flows.shared.answer_shape import RulesAnswer
 from answer_flows.shared.cite_sentences import name_source
 from app.chat_endpoint import get_rules_bot
 from app.main import app
-from app.settings import load_settings
 from app.stub_rules_bot import SAMPLE_POSTS_ANSWER, StubRulesBot
-from evals.golden_answer_chunks import load_chunks
+from retrieval.load_rule_chunks import load_chunks
+from settings import load_settings
+from tests.rule_data import skip_without_rule_data
 
 
 # Constants
@@ -68,12 +69,13 @@ class QuestionRecordingBot(StubRulesBot):
 
 # Criterion 1: a question streams back exactly one "answer" event that holds the stub's answer, markers and citations
 def test_a_question_streams_one_answer_event_with_the_stub_answer():
+    skip_without_rule_data()
     with TestClient(app) as client:
         response = client.post("/chat", json={"question": QUESTION})
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
-    # Since slice 2, progress events come first; the answer is the one and only "answer" event, at the end
+    # Progress events come first; the answer is the one and only "answer" event, at the end
     events = read_events(response.text)
     answer_events = [event_data for event_name, event_data in events if event_name == "answer"]
     assert len(answer_events) == 1
@@ -86,6 +88,7 @@ def test_a_question_streams_one_answer_event_with_the_stub_answer():
 
 # The question in the request body is the question the bot answers
 def test_the_question_reaches_the_bot():
+    skip_without_rule_data()
     recording_bot = QuestionRecordingBot()
     app.dependency_overrides[get_rules_bot] = lambda: recording_bot
 
@@ -97,6 +100,7 @@ def test_the_question_reaches_the_bot():
 
 # The sample answer is a real sample: its quote is the clause text as printed, under the clause's own name
 def test_the_sample_answer_quotes_the_real_clause():
+    skip_without_rule_data()
     chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
     citation = SAMPLE_POSTS_ANSWER.citations[0]
     clause = chunk_by_id[citation.chunk_id]

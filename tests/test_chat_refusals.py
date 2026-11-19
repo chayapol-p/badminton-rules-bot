@@ -1,6 +1,6 @@
 """
-Slice 5 tests for POST /chat: a refusal streams as a normal "answer" event with refused true and no citations
-(spec criterion 4). The stub refuses one fixed question with a real refusal from the 17 Nov run.
+Tests for POST /chat: a refusal streams as a normal "answer" event with refused true and no citations
+(spec criterion 4). The stub refuses one fixed question with a real refusal from an earlier run.
 Nothing here runs a paid API.
 """
 
@@ -48,7 +48,7 @@ def test_the_sample_refusal_is_the_real_one_from_the_run():
     raise AssertionError(f"{REFUSAL_QUESTION_ID} is missing from {REFUSAL_RUN_FILE}")
 
 
-# ===== An off-topic question (slice 7) =====
+# ===== An off-topic question =====
 
 def test_the_stub_answers_test_with_the_off_topic_reply():
     with TestClient(app) as client:

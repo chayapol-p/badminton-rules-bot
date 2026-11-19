@@ -9,14 +9,18 @@ from answer_flows.rules_bot import AnswerFormatError, RulesBot
 from answer_flows.shared.progress_updates import (CHECKING_QUESTION, CHECKING_RULES, FINDING_RULES, FOUND_RULES, QUESTION_PARTS,
                                                   SEARCHING, SOURCES_PICKED, WRITING, ProgressUpdate)
 from answer_flows.shared.rule_tools import RuleTools
-from app.settings import Settings
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
+from settings import Settings
+from tests.rule_data import skip_without_rule_data
 from tests.test_gather_then_write import GATHER_REPLY, REFUSAL_GATHER_REPLY, StubTwoCallClient
 
 
 # Constants
 ## The clauses, the rule map and the settings every test shares; the keys are placeholders, never used
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
+
 CHUNKS = load_chunks()
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}
 RULE_MAP = load_rule_map()

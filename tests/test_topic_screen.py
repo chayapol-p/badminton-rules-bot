@@ -1,5 +1,5 @@
 """
-Slice 7 tests (docs/specs/refuse-off-topic-questions-fast.md, its slice 1): a topic check runs before the search.
+Tests for the topic check (docs/specs/refuse-off-topic-questions-fast.md): a topic check runs before the search.
 An off-topic question gets the fixed off-topic reply with no search and no model call (criterion 1); a failing
 check lets the question through to the full flow (criterion 5); every refusal says which kind it is.
 

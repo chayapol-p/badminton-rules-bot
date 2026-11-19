@@ -74,7 +74,7 @@ STATUTE_SECTION_REFERENCE = re.compile(r"\bSection\s+(4\.1(?:\.\d+)*)")
 SECTIONS_IN_CORPUS = {"4.1", "4.1.1", "4.1.4"}
 
 ## Each official's duty in the Laws, and the ITTO clause that instructs that official in it
-# 8 Nov: service-fault-officials never got ITTO 7.2 ("call 'Fault' loudly"); it ranked 13th in vector search
+# Without these links, service-fault-officials never got ITTO 7.2 ("call 'Fault' loudly"); it ranked 13th in vector search
 OFFICIAL_INSTRUCTIONS = [
     ("laws-17.3", "itto-7.2", "the service judge"),
     ("laws-17.4", "itto-8.2", "a line judge"),

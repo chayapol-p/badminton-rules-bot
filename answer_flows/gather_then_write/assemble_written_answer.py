@@ -1,24 +1,24 @@
 """
-Slice 5's code between and after the two calls: checks the gather call's picks, decides the refusal,
+The gather-then-write code between and after the two calls: checks the gather call's picks, decides the refusal,
 builds the write call's input, and builds the checked answer from both calls.
 
 The flow (answer_flows/gather_then_write/gather_then_write.py runs it):
 1. The gather call (tools) sends GatheredAnswer: the sentences that answer each part, no answer text.
 2. Code checks each pick. A bad pick (a clause never shown in full, or no such sentence) is dropped, so its part
    counts as unanswered, and it is recorded by name in bad_picks, so the run counts it apart from
-   false refusals (Job's pick, 13 Nov).
+   false refusals.
 3. The gate: when no part has a sentence left, code refuses and the write call never runs. The refusal says
-   what the sources don't say, and quotes the related sentences word for word (Job's pick, 13 Nov:
-   code-quoted, not a model-written note).
+   what the sources don't say, and quotes the related sentences word for word
+   (quoted by code, not a note the model writes).
 4. Otherwise the write call (no tools) gets a clean input: the question and every part, an unanswered part
    marked NO SOURCE, an answered part with its sentences under their label and Under: line, then the
    related sentences under their own heading. Every sentence is numbered [1]…[n] once: the parts' sentences
-   in part order, then the related ones (record 0027; related added 17 Nov, after runs where a key fact
+   in part order, then the related ones (record 0027; related sentences were added after runs where a key fact
    sat in related and never reached the writer).
 5. Code builds the answer: the write call's sentences joined into one paragraph with their [n] markers, the
    numbered source list (marker [n] is citations[n - 1]) and the related sentences in their own list. A related
    sentence the writer cited joins the source list after the parts' sentences, and its markers are renumbered;
-   one it didn't cite stays related. Every quote is copied by code, as in slice 4. The model writes the gaps
+   one it didn't cite stays related. Every quote is copied by code. The model writes the gaps
    itself; the citation check (evals/checks/check_citations.py) checks every marker.
 
 Use:

@@ -26,9 +26,10 @@ import textwrap
 
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, HUMAN_GRADES_FILE, read_lines
 from evals.code_checks import find_code_failures
-from evals.golden_answer_chunks import load_chunks, load_questions
+from evals.golden_answer_chunks import load_questions
 from evals.probes import load_probes
 from evals.score_answer_run import IMAGE_ONLY_QUESTION_IDS
+from retrieval.load_rule_chunks import load_chunks
 
 
 # Constants

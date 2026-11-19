@@ -76,10 +76,9 @@ from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.shared.tool_loop import EXTRA_AGENT_RULES
-from app.settings import Settings, load_settings, require_anthropic_api_key
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line
 from evals.checks.check_refusals import should_refuse
-from evals.golden_answer_chunks import load_chunks, load_questions
+from evals.golden_answer_chunks import load_questions
 from evals.log_eval_run import append_run
 from evals.probes import load_phase2_questions, load_probes, load_unseen_questions
 from evals.scorecard import build_scorecard, print_scorecard, summarise_scorecards
@@ -93,8 +92,10 @@ from experiments.retired_flows.loop_call_with_tools.answer_with_tools import ans
 from experiments.retired_flows.single_call.answer_rules import EXTRA_ANSWER_RULES, build_answer_rules
 from experiments.retired_flows.single_call.generate_answer import generate_answer
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.retrieve_sources import (DEFAULT_TOP_K, build_clause_vector_search, build_live_vector_search,
                                         build_retrieve_function)
+from settings import Settings, load_settings, require_anthropic_api_key
 
 
 # Constants

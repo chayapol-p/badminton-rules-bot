@@ -82,7 +82,7 @@ def is_list_heading(chunk):
 def direct_sub_clauses(chunks_by_id: dict[str, dict], parent_id: str) -> list[str]:
     """Ids of the clauses one level below a clause id (laws-16.7 -> laws-16.7.1, laws-16.7.2), in document order."""
     # Matched on the id, not on the document and clause number: an Alternative Laws id holds its format
-    # ("alt-best-of-3-games-21:16.2.1"), so the old "alt-16.2." prefix never matched (13 Nov: 7 headings lost their items)
+    # ("alt-best-of-3-games-21:16.2.1"), so the old "alt-16.2." prefix never matched (7 headings lost their items)
     prefix = f"{parent_id}."
     sub_clause_ids = []
     for chunk_id in chunks_by_id:
@@ -96,7 +96,7 @@ def direct_sub_clauses(chunks_by_id: dict[str, dict], parent_id: str) -> list[st
 
 def brings_its_items(chunk: dict, is_hit: bool, is_context: bool, question_is_para: bool) -> bool:
     """True for a list heading whose items should come: one that is a rule to apply, not context for another clause."""
-    # Context (the kinds are listed at the top of this file) comes as one line: 13 Nov, wheelchair-shuttle-on-net
+    # Context (the kinds are listed at the top of this file) comes as one line: wheelchair-shuttle-on-net
     # got Law 13.3's nine regular faults only because the wheelchair rule 13.3.10 is its para exception
     if not is_list_heading(chunk) or is_context:
         return False
@@ -108,7 +108,7 @@ def brings_its_items(chunk: dict, is_hit: bool, is_context: bool, question_is_pa
 def add_list_items(context: list[dict], hit_ids: set[str], context_ids: set[str], chunks_by_id: dict[str, dict],
                    question_is_para: bool) -> list[dict]:
     """Returns the context with each list heading's items added after it, down every level (16.7.1 -> 16.7.1.1)."""
-    # 11 Nov: only a heading search found brought its items, so sweat-on-court got Law 16.7.1 ("... by:")
+    # Before this, only a heading search found brought its items, so sweat-on-court got Law 16.7.1 ("... by:")
     # without its three steps, and every-let-situation got 14.2.3 ("the shuttle is:") without its two cases
     expanded_context = list(context)
     seen_ids = {item["chunk"]["id"] for item in context}
@@ -208,7 +208,7 @@ def expand_with_links(hit_ids, chunks_by_id, rule_map, question_is_para=False, t
             add(cited_id, "CITED", hit_id)
 
             # A cited Law brings its alternatives too (ITTO 7.4.1 -> Law 9.1.6 -> the waist rule). This second hop
-            # is context: 13 Nov, Law 16.2's alternatives brought other formats' interval rules to card questions
+            # is context: Law 16.2's alternatives brought other formats' interval rules to card questions
             for alternative_id in linked_ids(rule_map, cited_id, "overrides", "incoming"):
                 add(alternative_id, alternative_label(chunks_by_id[alternative_id], today), cited_id)
                 context_ids.add(alternative_id)

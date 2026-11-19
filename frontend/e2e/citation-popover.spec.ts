@@ -1,4 +1,4 @@
-// Slice 3 browser test: clicking [1] shows the PDF link, and the link opens the real rule book (spec criterion 3).
+// Browser test: clicking [1] shows the PDF link, and the link opens the real rule book (spec criterion 3).
 // Runs against the stub bot. The PDFs in data/bwf/ are never committed, so the test skips where they are missing.
 
 import { existsSync } from "node:fs";
