@@ -1,5 +1,5 @@
 """
-Tests for the real topic check (docs/specs/refuse-off-topic-questions-fast.md, its slice 2): one Mistral Small call
+Tests for the real topic check (docs/specs/refuse-off-topic-questions-fast.md): one Mistral Small call
 that answers whether a question is about the rules of badminton, with a 5 s limit and no retries, and a bot that lets
 the question through when the call fails.
 
@@ -64,7 +64,7 @@ def test_the_check_sends_the_question_to_mistral_small_with_a_5_second_limit_and
 
 
 def test_the_prompt_follows_jobs_picks_for_what_counts_as_off_topic():
-    # Badminton-wide (Job, 18 Nov): any badminton question goes on, however it is worded, and only one with nothing
+    # Badminton-wide: any badminton question goes on, however it is worded, and only one with nothing
     # to do with badminton is off topic; a doubt goes to the full flow, so no rules question is refused by mistake
     for words in ["any question about badminton", "coaching", "history", "not about badminton at all",
                   "another sport on its own", "casual", "even when they do not name the sport",

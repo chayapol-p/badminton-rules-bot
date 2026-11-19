@@ -45,7 +45,7 @@ def check_and_grade(answer_line: dict, rules_answer: RulesAnswer, question: dict
                     judge_model: str) -> dict:
     """Runs the code checks and the judge on one answer; fills in the answer line's checks and judge cost, and returns the grade line."""
 
-    # Code checks first; a failure fails the answer, but the judge still grades it (Job's pick, record 0027), so
+    # Code checks first; a failure fails the answer, but the judge still grades it (record 0027), so
     # each scorecard line measures only itself: a citation slip doesn't also drag the judge's lines down
     answer_line["citation_problems"] = find_citation_problems(rules_answer, retrieved_chunks)
     answer_line["refusal_outcome"] = refusal_outcome(question, rules_answer.refused)
@@ -109,7 +109,7 @@ def summarise_answer_run(answer_lines: list[dict], passed_by_id: dict[str, bool]
         same_category = [line for line in text_answerable if line["category"] == category]
         by_category[category] = {"passed": count_passed(same_category, passed_by_id), "questions": len(same_category)}
 
-    # Unseen questions: answers passed per needs tag, the reading Stage 3 compares setups on
+    # Unseen questions: answers passed per needs tag, the reading the setups are compared on
     by_needs = {}
     for needs in sorted({line["needs"] for line in answer_lines if line.get("needs")}):
         same_needs = [line for line in answer_lines if line.get("needs") == needs]
@@ -230,7 +230,7 @@ def summarise_tool_use(answer_lines: list[dict]) -> dict:
 
 
 def print_tool_use(tool_use: dict) -> None:
-    """Prints the agent's tool use, under the Stage 2 scores."""
+    """Prints the agent's tool use, under the scores."""
     print(f"tool rounds  mean {tool_use['mean_tool_rounds']}  · most {tool_use['most_tool_rounds']}  "
           f"· no tool call on {tool_use['questions_with_no_tool_call']} questions  · model calls mean {tool_use['mean_model_calls']}")
     print(f"tool calls {tool_use['tool_calls']}  · errors {tool_use['tool_errors']}  "

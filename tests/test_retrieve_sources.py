@@ -16,7 +16,7 @@ CHUNK_BY_ID = {chunk["id"]: chunk for chunk in SAMPLE_CHUNKS}
 # ===== The retrieve step =====
 
 def test_retrieve_brings_the_items_of_an_item_that_is_a_heading():
-    """11 Nov: every-let-situation got 14.2.3 ("the shuttle is:") without its two cases."""
+    """Every-let-situation got 14.2.3 ("the shuttle is:") without its two cases."""
     try:
         chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
         retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["laws-14.2"]], 1, chunk_by_id,
@@ -47,7 +47,7 @@ def test_rule_links_bring_the_clause_a_hit_cites():
 
 
 def test_a_found_list_heading_brings_its_items():
-    """8 Nov: wheelchair-shuttle-on-net got the heading "in Wheelchair Badminton if the shuttle is:" but not its items."""
+    """Wheelchair-shuttle-on-net got the heading "in Wheelchair Badminton if the shuttle is:" but not its items."""
     try:
         chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
         retrieve = build_retrieve_function(lambda question_text, top_k: [chunk_by_id["laws-13.3.10"]], 1, chunk_by_id,

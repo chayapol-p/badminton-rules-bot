@@ -1,5 +1,5 @@
-// Slice 5 tests for the chat page: a refusal shows the bot's own words, labelled "Not covered by the rules", with no
-// source list (spec criterion 4). Slice 7: an off-topic reply drops the label.
+// Tests for the chat page: a refusal shows the bot's own words, labelled "Not covered by the rules", with no
+// source list (spec criterion 4). An off-topic reply drops the label.
 
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -61,7 +61,7 @@ test("a normal answer has no refusal label", async () => {
 });
 
 
-// ===== An off-topic question (slice 7) =====
+// ===== An off-topic question =====
 
 test("an off-topic reply shows its words with no 'Not covered' label and no sources", async () => {
   stubChatWithAnswer(sampleOffTopicAnswer);

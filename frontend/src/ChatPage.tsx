@@ -1,11 +1,12 @@
-// The chat page: a question box, then the answer with its [n] markers and a numbered source list.
-// Slices 1 and 2 of docs/specs/ask-a-rules-question.md: the steps show as they arrive, and the answer shows once the
-// stream's "answer" event arrives, whole (record 0028); then the steps fold into one line (record 0033).
-// Slice 3: each [n] opens a popover with its source and a link to the PDF page (record 0034).
-// Slice 4: a failed answer shows an error instead of waiting for good (record 0035).
-// Slice 5: a refusal shows the bot's own words, labelled "Not covered by the rules", with no sources.
-// Slice 6: an empty or blank question shows "Please type a question" and sends nothing.
-// Slice 7: an off-topic reply shows without the "Not covered" label.
+// The chat page (docs/specs/ask-a-rules-question.md): a question box, the bot's steps while it works, then the answer
+// with its [n] markers and a numbered source list.
+// - The steps show as they arrive; the answer shows only once the stream's "answer" event arrives whole (record 0028),
+//   and then the steps fold into one line (record 0033).
+// - Each [n] opens a popover with its quote, its source and a link to the PDF page (record 0034).
+// - A failed answer shows an error instead of waiting for good (record 0035).
+// - A refusal shows the bot's own words with no sources: labelled "Not covered by the rules" when the rule books don't
+//   cover a badminton question, and with no label when the question is not about badminton.
+// - An empty or blank question shows "Please type a question" and sends nothing.
 
 import * as Popover from "@radix-ui/react-popover";
 import { EventSourceParserStream } from "eventsource-parser/stream";
@@ -41,7 +42,7 @@ interface AnswerSentence {
 
 interface RulesAnswer {
   refused: boolean;
-  // "off_topic" from the topic check, "not_covered" from the flow; missing in answers from before slice 7
+  // "off_topic" from the topic check, "not_covered" from the flow; missing in older answers
   refusal_kind?: "off_topic" | "not_covered" | null;
   answer: string;
   citations: Citation[];
@@ -123,11 +124,20 @@ function StepList({ steps, isWorking, firstStepNumber = 0 }: { steps: ProgressUp
       {/* The place in the whole list is the key, because steps only ever add to the end or replace the last one */}
       {steps.map((step, i) => {
         const isRunning = i === runningStepNumber;
+
+        // A running step gets a spinner and is marked as the current step; a done step gets a tick
+        let stepClass = "step";
+        let currentStep: "step" | undefined = undefined;
+        let marker = <span className="step-marker" aria-hidden="true">✓</span>;
+        if (isRunning) {
+          stepClass = "step step-running";
+          currentStep = "step";
+          marker = <span className="step-marker step-spinner" aria-hidden="true" />;
+        }
+
         return (
-          <li key={firstStepNumber + i} className={isRunning ? "step step-running" : "step"} aria-current={isRunning ? "step" : undefined}>
-            {isRunning
-              ? <span className="step-marker step-spinner" aria-hidden="true" />
-              : <span className="step-marker" aria-hidden="true">✓</span>}
+          <li key={firstStepNumber + i} className={stepClass} aria-current={currentStep}>
+            {marker}
             <span className="step-message" title={step.message}>{step.message}</span>
           </li>
         );
@@ -214,11 +224,20 @@ export function ChatPage() {
       setSecondsTaken(Math.round((Date.now() - askedAt.current) / 1000));
       setRulesAnswer(newAnswer);
     } catch (error) {
-      const isServerMessage = error instanceof AnswerFailedError;
-      setErrorMessage(isServerMessage ? error.message : FAILED_ANSWER_MESSAGE);
+      let shownMessage = FAILED_ANSWER_MESSAGE;
+      if (error instanceof AnswerFailedError) {
+        shownMessage = error.message;
+      }
+      setErrorMessage(shownMessage);
     } finally {
       setIsWaiting(false);
     }
+  }
+
+  // The box points to the empty-question message only while it shows, so screen readers read the two together
+  let questionHintId: string | undefined = undefined;
+  if (isQuestionMissing) {
+    questionHintId = "question-missing";
   }
 
   return (
@@ -231,7 +250,7 @@ export function ChatPage() {
             id="question"
             value={question}
             aria-invalid={isQuestionMissing}
-            aria-describedby={isQuestionMissing ? "question-missing" : undefined}
+            aria-describedby={questionHintId}
             onChange={(event) => {
               setQuestion(event.target.value);
               setIsQuestionMissing(false);
@@ -327,7 +346,7 @@ function AnswerText({ text, citations }: { text: string; citations: Citation[] }
 }
 
 // A refusal: the bot's own words, with no sources, because nothing in the rules answers it (criterion 4). A rules
-// question the books don't cover gets the "Not covered by the rules" label; an off-topic reply needs none (slice 7).
+// question the books don't cover gets the "Not covered by the rules" label; an off-topic reply needs none.
 // Its text keeps its line breaks, so a "Related" line shows on its own line
 function RefusalAnswer({ rulesAnswer }: { rulesAnswer: RulesAnswer }) {
   const isOffTopic = rulesAnswer.refusal_kind === "off_topic";

@@ -1,5 +1,5 @@
-// Slice 5 browser test: a question the rule books don't answer shows the refusal, labelled, with no sources
-// (spec criterion 4). The stub refuses exactly this question, with a real refusal from the 17 Nov run.
+// Browser test: a question the rule books don't answer shows the refusal, labelled, with no sources
+// (spec criterion 4). The stub refuses exactly this question, with a real refusal from an earlier run.
 
 import { expect, test } from "@playwright/test";
 

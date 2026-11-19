@@ -6,7 +6,7 @@ Two numbers per run, overall and per category:
   hit@k     the share of questions with at least one answer location in the top k
 
 Only questions with an answer are scored. Unanswerable and attack questions have no
-right clause to find, so the Stage 2 refusal check covers them instead.
+right clause to find, so the refusal check covers them instead.
 
 A search function takes a question and a number k, and returns up to k chunk dictionaries:
     search(question_text, top_k) -> list of chunks

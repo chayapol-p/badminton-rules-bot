@@ -1,5 +1,5 @@
 """
-Builds what the model sees for a set of clauses: the bundle. Setup A's sources, search_rules and
+Builds what the model sees for a set of clauses: the bundle. The plain RAG sources, search_rules and
 read_clause all call build_bundle, so every source block has one format, wherever it comes from.
 
 A bundle is the clauses the rule map brings for the hits (retrieval/expand_with_rule_links.py), each
@@ -14,7 +14,7 @@ with its role label and one of three levels of detail:
   shown     one line saying the clause was shown earlier for this question, so a tool never sends
             the same text twice.
 
-Setup A sends every clause in full: it has one call and no tools. The tools send the hits and their
+Plain RAG sends every clause in full: it has one call and no tools. The tools send the hits and their
 list items in full, and every other clause the map brings as a preview, so a tool result stays short
 and the model decides which links are worth a read.
 
@@ -72,7 +72,7 @@ def is_parent_heading(parent_text: str) -> bool:
 def parent_headings(chunk: dict) -> str:
     """Returns the headings above this clause, as search_text_with_parents holds them ("4.2 The stringed area:"), or "".
 
-    8 Nov: a full parent rule shown here got quoted as if it were the clause (string-tension quoted Law 4.1
+    A full parent rule shown here once got quoted as if it were the clause (string-tension quoted Law 4.1
     under 4.1.2), so only parents that name a subject are kept.
     """
     lines_after_header = chunk["search_text_with_parents"].split("\n", 1)[1]
@@ -109,7 +109,7 @@ def first_line(chunk_id: str, label: str | None, chunk: dict) -> str:
 
 def format_source(chunk: dict, label: str | None = None) -> str:
     """Returns one source block: the first line, the headings above the clause, then its numbered sentences."""
-    # 8 Nov: clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:"), record 0017
+    # Clause 4.2.2 reads "shall not exceed 280 mm…"; its subject is in 4.2 ("The stringed area:"), record 0017
     under_line = ""
     headings = parent_headings(chunk)
     if headings:

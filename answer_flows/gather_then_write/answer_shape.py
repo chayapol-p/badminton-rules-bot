@@ -1,5 +1,5 @@
 """
-Slice 5's two shapes: GatheredAnswer from the gather call (the sentences per part, no answer text) and
+The two shapes of gather-then-write: GatheredAnswer from the gather call (the sentences per part, no answer text) and
 WrittenAnswer from the write call (one natural answer, sentence by sentence, with inline [n] markers; record 0027).
 """
 

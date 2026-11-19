@@ -1,4 +1,4 @@
-"""Checks the unseen questions (Stage 3): their shape, their tags, and that every answer location has its chunk."""
+"""Checks the unseen questions: their shape, their tags, and that every answer location has its chunk."""
 
 from evals.golden_answer_chunks import expected_chunk_ids, load_questions
 from evals.probes import load_probes, load_unseen_questions

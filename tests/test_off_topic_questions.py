@@ -1,6 +1,6 @@
 """
 Checks the off-topic question set (evals/off_topic_questions.json) before any run scores it: its shape, its counts
-(6 off topic; 18 that must reach the flow, badminton-wide since Job's relabel of 18 Nov;
+(6 off topic; 18 that must reach the flow, badminton-wide;
 docs/specs/refuse-off-topic-questions-fast.md), unique ids
 across every question set, and that each rule location exists in the chunks.
 """

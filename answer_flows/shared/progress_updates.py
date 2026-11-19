@@ -1,13 +1,13 @@
 """
 The progress updates the product flow sends while it answers, so the app can show each step as it happens
-(Job's pick, 17 Nov: plain-language steps, then the quoted sources early; the answer only once it is checked).
+(record 0028: plain-language steps, then the quoted sources early; the answer only once it is checked).
 
 Each update names its step and carries one plain-language line. "found_rules" also carries the rules' names,
 and "sources_picked" the quoted sentences the answer will rest on. Those keep their numbers in the final answer:
 source n here is citations[n - 1] there, and the final list adds only the related sentences the answer cites.
 
 Steps, in the order they come:
-    checking_question  before anything else: the topic check (slice 7 of the chat app)
+    checking_question  before anything else: the topic check
     finding_rules   before the retrieve step
     found_rules     after it, with the names of the rules it found
     checking_rules  before each gather call: the model checks which rules answer the question
@@ -16,7 +16,7 @@ Steps, in the order they come:
     question_parts  at the code gate: what the question asks, part by part (also before a refusal)
     sources_picked  the sentences code kept, with their quotes (not sent when the question is refused)
     writing         before the write call
-    still_writing   every few seconds while the write call runs, with the seconds so far (Job, 17 Nov: the write
+    still_writing   every few seconds while the write call runs, with the seconds so far (the write
                     call can take 15-100 s, and a static line for that long reads as stuck)
 
 Use:

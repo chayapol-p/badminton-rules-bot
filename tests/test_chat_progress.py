@@ -1,5 +1,5 @@
 """
-Slice 2 tests for POST /chat: progress updates stream before the answer (spec criterion 2, record 0028).
+Tests for POST /chat: progress updates stream before the answer (spec criterion 2, record 0028).
 Nothing here runs a paid API.
 """
 

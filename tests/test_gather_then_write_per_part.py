@@ -1,4 +1,4 @@
-"""Tests the retired per-part slice 5's two calls with a stub client that replays scripted replies, so no test calls the API."""
+"""Tests the retired per-part flow's two calls with a stub client that replays scripted replies, so no test calls the API."""
 
 import json
 from types import SimpleNamespace

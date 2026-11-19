@@ -1,6 +1,6 @@
 """
-Slice 5's prompts, each as a task, numbered steps and limits with reasons (answer_flows/shared/prompt_sections.py,
-record 0024): GATHER_RULES for the gather call (the tool loop adds the tools section), and WRITE_RULES with
+The gather-then-write prompts, each as a task, numbered steps and limits with reasons
+(answer_flows/shared/prompt_sections.py, record 0024): GATHER_RULES for the gather call (the tool loop adds the tools section), and WRITE_RULES with
 build_write_prompt for the write call, which sees only the parts and their numbered sentences
 and writes one natural answer with inline [n] markers (record 0027).
 
@@ -103,7 +103,7 @@ WRITE_RULES = build_system_prompt(WRITE_TASK, WRITE_STEPS, WRITE_LIMITS)
 # ===== The write call's messages =====
 
 def build_write_prompt(question_text: str, parts_text: str) -> list[dict]:
-    """Returns the prompt for slice 5's write call: the write rules, then the parts with their sentences and the question."""
+    """Returns the prompt for the write call: the write rules, then the parts with their sentences and the question."""
     user_message = f"<parts>\n{parts_text}\n</parts>\n\n<question>\n{question_text}\n</question>"
     return [
         {"role": "system", "content": WRITE_RULES},

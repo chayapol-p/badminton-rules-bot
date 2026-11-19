@@ -1,6 +1,7 @@
 """
 The topic check in front of the flow: a question that has nothing to do with badminton gets one short, polite reply,
-with no search and no model call (docs/specs/refuse-off-topic-questions-fast.md; badminton-wide, Job, 18 Nov).
+with no search and no answer call (docs/specs/refuse-off-topic-questions-fast.md). Any question about badminton
+passes, not only questions about its rules.
 
 A check is a function that takes the question and returns True for a rules question. The real check is one
 Mistral Small call (mistral_draft_model) with a strict yes/no reply, a 5 s limit and no retries; the stub check calls
@@ -24,7 +25,7 @@ from answer_flows.shared.answer_shape import RulesAnswer
 
 
 # Constants
-## The reply every off-topic question gets (Job, 19 Nov: ask only about badminton, or be more specific)
+## The reply every off-topic question gets: ask only about badminton, or be more specific
 OFF_TOPIC_REPLY = ("I can only help with questions about badminton, from the official BWF rule books. If your "
                    "question is about badminton, can you be more specific? For example: \"I'm bleeding, can I stop "
                    "playing?\"")
@@ -35,16 +36,16 @@ STUB_OFF_TOPIC_QUESTIONS = {"test"}
 ## What every check takes and returns: the question, and True for a rules question
 IsRulesQuestion = Callable[[str], bool]
 
-## The real check's limit: 5 s, and no retries, because a retry would blow the 5 s target (Job, 17 Nov)
+## The real check's limit: 5 s, and no retries, because a retry would blow the 5 s target
 CHECK_TIMEOUT_MS = 5_000
 NO_RETRIES = RetryConfig("none", BackoffStrategy(0, 0, 1.0, 0), retry_connection_errors=False)
 
-## The real check's instructions. Badminton-wide (Job, 18 Nov): only a question with nothing to do with badminton is
+## The real check's instructions. Badminton-wide: only a question with nothing to do with badminton is
 ## off topic; any badminton question goes on to the flow, which answers it or says the rules don't cover it.
-## The court and equipment line (Job, 18 Nov) keeps a question that never names the sport, such as the net cord's
+## The court and equipment line keeps a question that never names the sport, such as the net cord's
 ## tension in newtons, from reading as physics.
-## The scoring line (Job, 18 Nov) does the same for short play questions, such as "How long is the break at 11?".
-## A framing sentence in their place was tried and reverted (Job, 18 Nov): it blocked the break question again.
+## The scoring line does the same for short play questions, such as "How long is the break at 11?".
+## A framing sentence in their place was tried and reverted: it blocked the break question again.
 ## "When unsure, answer true" sends a doubt to the full flow, so a rules question is never refused by mistake
 TOPIC_CHECK_PROMPT = (
     "You check whether a question is about badminton, before a rules bot searches the official BWF rule books (the "

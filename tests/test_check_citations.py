@@ -107,7 +107,7 @@ def test_service_height_sample_matches_the_real_file():
 
 
 def test_three_dots_match_the_ellipsis_character():
-    """8 Nov: red-card quoted "..." where ITTO 5.17.4 prints "…"."""
+    """Red-card quoted "..." where ITTO 5.17.4 prints "…"."""
     assert normalise_text("call: “… [name of player]") == normalise_text('call: "... [name of player]')
 
 
@@ -152,7 +152,7 @@ def test_marker_numbers_are_not_read_as_numbers_in_the_answer():
 
 
 def test_bracketed_text_the_rule_book_prints_is_not_a_marker():
-    """17 Nov, black-card: the umpire's call "[name of player(s)], disqualified for misconduct" is the rule's own text."""
+    """Black-card: the umpire's call "[name of player(s)], disqualified for misconduct" is the rule's own text."""
     call = "Come here, [name of player(s)], disqualified for misconduct"
     rules_answer = RulesAnswer(
         reasoning="", refused=False, answer=f'The umpire says "{call}" [1].',

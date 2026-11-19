@@ -1,9 +1,9 @@
 """
 The two tools the agent can call: search_rules and read_clause. Both answer with a bundle
-(retrieval/build_bundle.py), the same builder setup A's sources come from, so every source block has
+(retrieval/build_bundle.py), the same builder the plain RAG sources come from, so every source block has
 one format, and the model cites tool results exactly as it cites the starting sources.
 
-search_rules(query, top_k)  vector search on the clauses, the same search as setup A, but with the
+search_rules(query, top_k)  vector search on the clauses, the same search as plain RAG, but with the
                             model's own words and its own top_k (1 to 100). Each hit comes in full,
                             with its list items; every clause the rule map brings for it comes as a
                             one-line preview.
@@ -123,7 +123,7 @@ class RuleTools:
         shown_chunks = full_chunks(items)
         self.shown_ids.update(chunk["id"] for chunk in shown_chunks)
 
-        # The labels go with the clauses, so slice 5's write call sees each sentence under its label
+        # The labels go with the clauses, so the write call sees each sentence under its label
         return ToolResult(text=format_bundle(items), shown_chunks=shown_chunks, shown_label_by_id=label_by_full_id(items))
 
     def search_rules(self, query: str, top_k: int) -> ToolResult:

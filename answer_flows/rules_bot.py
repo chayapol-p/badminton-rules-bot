@@ -1,7 +1,7 @@
 """
 The product entry point: the one function the app calls to answer a rules question.
 
-It runs the product flow, gather-then-write (record 0023, slice 5, with record 0027's natural answers), in the
+It runs the product flow, gather-then-write (records 0023 and 0027: one natural answer with inline citations), in the
 hybrid setup: the retrieve step hands over the top clauses, then the gather call searches with the tools.
 Both searches embed each new question with one live call, so any question works, not only the saved ones.
 

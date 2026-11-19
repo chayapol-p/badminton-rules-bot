@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     # Large 4 always thinks; this pins how much (low, medium or high), so every eval run uses the same setting
     mistral_reasoning_effort: str = "low"
     claude_comparison_model: str = "claude-haiku-5-5"
-    # The answer judge (Stage 2): another model family than the answer model, to avoid self-preference bias
+    # The answer judge: another model family than the answer model, to avoid self-preference bias
     claude_judge_model: str = "claude-sonnet-5-5"
 
     # Which bot answers /chat: the stub (a fixed answer, no API calls) unless .env says real (record 0035)

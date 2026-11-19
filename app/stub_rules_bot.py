@@ -1,16 +1,16 @@
 """
 The stub rules bot: a stand-in for RulesBot that returns one fixed, correctly shaped answer and never calls Mistral.
 
-Before its answer it sends four progress updates, a moment apart (slice 2): the app waits 1.5 s between them, tests
-0 s. The app answers with it until slice 4 of docs/specs/ask-a-rules-question.md connects the real bot, and the app
-tests keep using it after that, so no test calls a paid API (CLAUDE.md, "The app").
+Before its answer it sends four progress updates, a moment apart: the app waits 1.5 s between them, tests 0 s.
+The app answers with it unless RULES_BOT=real is set in .env (record 0035), and the app tests always use it, so no
+test calls a paid API (CLAUDE.md, "The app").
 
 Its answer, SAMPLE_POSTS_ANSWER, is a real sample: the quote is the text of Laws of Badminton clause 1.4 as printed
 (tests/test_chat_endpoint.py checks it). The front-end tests read the same file.
 
 It refuses exactly one question, STUB_REFUSED_QUESTION, with SAMPLE_REFUSAL_ANSWER: the real bot's refusal of that
-question in the 17 Nov run (slice 5; tests/test_chat_refusals.py checks the copy). It answers "test" with the
-off-topic reply, as the real bot's topic check does (slice 7).
+question in a real run (tests/test_chat_refusals.py checks the copy). It answers "test" with the off-topic reply,
+as the real bot's topic check does.
 
 Use:
     rules_bot = StubRulesBot()
@@ -43,7 +43,7 @@ STUB_REFUSED_QUESTION = "What force, in newtons, should the net cord be stretche
 SAMPLE_REFUSAL_ANSWER_FILE = Path(__file__).resolve().parent / "sample_refusal_answer.json"
 SAMPLE_REFUSAL_ANSWER = RulesAnswer.model_validate_json(SAMPLE_REFUSAL_ANSWER_FILE.read_text())
 
-## The progress updates the stub sends before its answer, shaped like the real flow's (slice 2)
+## The progress updates the stub sends before its answer, shaped like the real flow's
 STUB_PROGRESS_UPDATES = [
     ProgressUpdate(step=FINDING_RULES, message="Searching the rule books"),
     ProgressUpdate(step=FOUND_RULES, message="Found 5 rules to check"),

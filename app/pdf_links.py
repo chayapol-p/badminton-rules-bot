@@ -1,6 +1,6 @@
 """
 Links each citation to its page in the frozen rule-book PDF, so the page can open the clause where it is printed
-(slice 3 of docs/specs/ask-a-rules-question.md, records 0029 and 0034).
+(docs/specs/ask-a-rules-question.md, records 0029 and 0034).
 
 A link is the PDF's address under /rule-books, then #page=N: the physical page counted from 1 (RFC 8118), which is
 how the chunks store "page". The file names come from the frozen corpus list in evals/golden_questions.json, the one

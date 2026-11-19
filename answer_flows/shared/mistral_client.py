@@ -13,7 +13,7 @@ from settings import Settings
 
 # Constants
 ## The SDK's own retry on a rate limit (429) or a server error: wait 2 s, doubling up to 60 s, for at
-## most 5 minutes. Top 15 hit Mistral's rate limit on 8 Nov and lost the run at question 15
+## most 5 minutes. Without it, a run with the top 15 clauses hit Mistral's rate limit and was lost at question 15
 MISTRAL_RETRY = RetryConfig("backoff", BackoffStrategy(2_000, 60_000, 2.0, 300_000), retry_connection_errors=True)
 
 

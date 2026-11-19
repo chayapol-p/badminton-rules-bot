@@ -1,5 +1,5 @@
 """
-Slice 3 tests for the PDF links (spec criterion 3, record 0034): each citation in the answer event carries a link
+Tests for the PDF links (spec criterion 3, record 0034): each citation in the answer event carries a link
 that opens the frozen PDF at the clause's page, and FastAPI serves those PDFs at /rule-books.
 Nothing here runs a paid API.
 """

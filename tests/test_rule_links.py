@@ -50,22 +50,22 @@ def context_ids(hit_ids, corpus, question_is_para=False):
 
 
 def test_an_item_that_is_a_heading_brings_its_own_items(corpus):
-    """11 Nov: 14.2 ("It shall be a let, if:") brought 14.2.3 ("the shuttle is:") but not its two cases."""
+    """14.2 ("It shall be a let, if:") brought 14.2.3 ("the shuttle is:") but not its two cases."""
     assert {"laws-14.2.3", "laws-14.2.3.1", "laws-14.2.3.2"}.issubset(context_ids(["laws-14.2"], corpus))
 
 
 def test_a_cited_heading_brings_every_level_of_its_items(corpus):
-    """11 Nov: sweat-on-court got Law 16.7.1 ("... by:") through a citation, without its three steps."""
+    """Sweat-on-court got Law 16.7.1 ("... by:") through a citation, without its three steps."""
     assert {"laws-16.7.1.1", "laws-16.7.1.2", "laws-16.7.1.3"}.issubset(context_ids(["itto-5.9.1.6"], corpus))
 
 
 def test_an_alternative_laws_heading_brings_its_items(corpus):
-    """13 Nov: items were found by an "alt-16.2." prefix, but the ids hold the format ("alt-best-of-3-games-21:16.2.1")."""
+    """Items were found by an "alt-16.2." prefix, but the ids hold the format ("alt-best-of-3-games-21:16.2.1")."""
     assert "alt-best-of-3-games-21:16.2.1" in context_ids(["alt-best-of-3-games-21:16.2"], corpus)
 
 
 def test_a_regular_rule_shown_as_context_stays_one_line(corpus):
-    """13 Nov: the wheelchair rule 13.3.10 pulled in Law 13.3 as context, and with it nine regular faults."""
+    """The wheelchair rule 13.3.10 pulled in Law 13.3 as context, and with it nine regular faults."""
     found_ids = context_ids(["laws-13.3.10"], corpus)
     assert "laws-13.3" in found_ids
     assert "laws-13.3.1" not in found_ids
@@ -89,7 +89,7 @@ def test_alternative_service_law_overrides_law_9_1_6(corpus):
 
 
 def test_the_service_judges_law_links_to_their_itto_instructions(corpus):
-    """8 Nov: service-fault-officials never got ITTO 7.2, the "call 'Fault' loudly" clause."""
+    """Service-fault-officials never got ITTO 7.2, the "call 'Fault' loudly" clause."""
     assert ("laws-17.3", "itto-7.2", "instructions_for") in corpus["link_keys"]
 
 
@@ -168,7 +168,7 @@ def test_cited_list_heading_brings_its_sub_clauses(corpus):
 
 
 def test_a_cited_laws_alternative_stays_one_line(corpus):
-    """13 Nov: ITTO 5.17.3 cites Law 16.2, whose alternatives brought other formats' interval rules to card questions."""
+    """ITTO 5.17.3 cites Law 16.2, whose alternatives brought other formats' interval rules to card questions."""
     found_ids = context_ids(["itto-5.17.3"], corpus)
     assert "alt-best-of-3-games-21:16.2" in found_ids
     assert "alt-best-of-3-games-21:16.2.1" not in found_ids

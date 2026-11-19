@@ -1,8 +1,8 @@
 """
-Tests for POST /chat, slice 1 of docs/specs/ask-a-rules-question.md: a question goes in, and the answer comes back
+Tests for POST /chat (docs/specs/ask-a-rules-question.md): a question goes in, and the answer comes back
 as one server-sent event named "answer" (record 0031).
 
-Until slice 4 the app answers with the stub bot, which returns the sample answer about the posts. No test calls
+These tests answer with the stub bot, which returns the sample answer about the posts. No test calls
 Mistral: the keys are placeholders.
 """
 
@@ -73,7 +73,7 @@ def test_a_question_streams_one_answer_event_with_the_stub_answer():
 
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
-    # Since slice 2, progress events come first; the answer is the one and only "answer" event, at the end
+    # Progress events come first; the answer is the one and only "answer" event, at the end
     events = read_events(response.text)
     answer_events = [event_data for event_name, event_data in events if event_name == "answer"]
     assert len(answer_events) == 1

@@ -100,7 +100,7 @@ def test_a_part_with_no_sentences_gets_a_line_saying_the_sources_do_not_say_it()
 
 
 def test_no_answered_part_is_a_refusal_even_with_related_sentences():
-    """10 Nov: version 2's model counted nearby rules as an answer and missed 4 refusals; related sentences never count."""
+    """Version 2's model counted nearby rules as an answer and missed 4 refusals; related sentences never count."""
     rules_answer = assemble_answer(model_answer([part("how many coaches a side may have at an exhibition match")],
                                                 related=[("itto-5.4.13", 1)],
                                                 related_note="In match intervals, at most two coaches may join a side."),

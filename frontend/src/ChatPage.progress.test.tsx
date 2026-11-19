@@ -1,4 +1,4 @@
-// Slice 2 tests for the chat page: steps show while waiting, then fold away (spec criterion 2, record 0033).
+// Tests for the chat page: steps show while waiting, then fold away (spec criterion 2, record 0033).
 // Each test controls the stream by hand, so it can check the page between events.
 
 import { render, screen, within } from "@testing-library/react";

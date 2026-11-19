@@ -1,5 +1,5 @@
 """
-Slice 4 tests for POST /chat: the RULES_BOT setting picks the stub or the real bot, the bot loads once at startup,
+Tests for POST /chat: the RULES_BOT setting picks the stub or the real bot, the bot loads once at startup,
 and a failed answer streams an "error" event (spec criterion 5, record 0035).
 
 No test calls Mistral: the real bot's loader is swapped for one that returns a stub.

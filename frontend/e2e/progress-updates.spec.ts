@@ -1,4 +1,4 @@
-// Slice 2 browser test: the first step shows within 1 s of pressing Ask (spec criterion 2).
+// Browser test: the first step shows within 1 s of pressing Ask (spec criterion 2).
 // Runs against the stub bot, which sends its steps 0.3 s apart before the answer.
 
 import { expect, test } from "@playwright/test";
