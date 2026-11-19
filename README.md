@@ -166,17 +166,19 @@ Blue dashed boxes are model calls and green boxes are code. The model makes one 
 
 ## Try it
 
-Needs [uv](https://docs.astral.sh/uv/) and Node.js. The stub bot answers every question with one saved answer and refuses one set question, so you can click through the whole page at no cost.
+Needs [uv](https://docs.astral.sh/uv/) and Node.js. The stub bot answers every question with one saved answer and refuses one set question, so you can click through the whole page at no cost. None of these steps needs an API key.
 
 ```bash
 git clone https://github.com/chayapol-p/badminton-rules-bot && cd badminton-rules-bot
 cp .env.example .env     # then put any text after MISTRAL_API_KEY= (the stub never calls Mistral)
 uv sync
+uv run python -m scripts.download_rule_books   # the 3 BWF rule books, checked against their frozen hashes
+uv run python -m scripts.build_rule_chunks     # 754 clauses, so each citation links to its PDF page
 uv run uvicorn app.main:app              # the API on http://127.0.0.1:8000
 cd frontend && npm install && npm run dev   # in a second terminal: the chat on http://localhost:5173
 ```
 
-For real answers you need a Mistral key and a few build steps (a script downloads the rule books). See [docs/setup.md](docs/setup.md).
+For real answers you need a Mistral key and two more build steps (the rule map and the vectors). See [docs/setup.md](docs/setup.md).
 
 ---
 
