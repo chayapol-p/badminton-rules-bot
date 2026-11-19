@@ -24,14 +24,15 @@ import time
 from anthropic import Anthropic
 
 from answer_flows.shared.answer_shape import RulesAnswer
-from app.settings import load_settings, require_anthropic_api_key
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line, read_lines
 from evals.code_checks import find_code_failures
-from evals.golden_answer_chunks import load_chunks, load_questions
+from evals.golden_answer_chunks import load_questions
 from evals.probes import load_probes, load_unseen_questions
 from evals.scorecard import build_scorecard
 from evals.score_answer_run import check_and_grade, print_scores, summarise_answer_run
 from experiments.run_answer_experiment import SECONDS_BETWEEN_QUESTIONS
+from retrieval.load_rule_chunks import load_chunks
+from settings import load_settings, require_anthropic_api_key
 
 
 # ===== Re-scoring with the saved verdicts =====

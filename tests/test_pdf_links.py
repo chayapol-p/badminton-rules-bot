@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from answer_flows.shared.cite_sentences import name_source
 from app.main import app
 from app.pdf_links import RULE_BOOKS_FOLDER, link_to_pdf_page
-from evals.golden_answer_chunks import PROJECT_FOLDER, load_chunks
+from retrieval.load_rule_chunks import PROJECT_FOLDER, load_chunks
 from tests.test_chat_endpoint import placeholder_keys, read_events  # placeholder_keys runs for every test here too
 
 

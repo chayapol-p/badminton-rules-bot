@@ -7,10 +7,10 @@ import json
 
 import pytest
 
-from evals.golden_answer_chunks import CHUNKS_FILE, load_chunks
 from retrieval.build_bundle import (FULL, PREVIEW, SHOWN, build_bundle, describe_source, format_bundle,
                                     format_preview, format_source, full_chunks, parent_headings)
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import CHUNKS_FILE, load_chunks
 from tests.sample_data import SAMPLE_CHUNKS
 
 

@@ -7,8 +7,8 @@ from answer_flows.gather_then_write.gather_then_write import gather_then_write
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.gather_then_write.answer_shape import GatheredAnswer, WrittenAnswer
 from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES, WRITE_RULES
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
 from tests.sample_data import full_items
 
 

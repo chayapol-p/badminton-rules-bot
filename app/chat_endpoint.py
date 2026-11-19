@@ -23,8 +23,8 @@ from answer_flows.rules_bot import RulesBot, load_rules_bot
 from answer_flows.shared.answer_shape import RulesAnswer
 from answer_flows.shared.progress_updates import ProgressUpdate
 from app.pdf_links import add_pdf_links
-from app.settings import Settings
 from app.stub_rules_bot import StubRulesBot
+from settings import Settings
 
 
 # Constants

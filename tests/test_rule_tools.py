@@ -3,8 +3,8 @@
 import pytest
 
 from answer_flows.shared.rule_tools import LARGEST_TOP_K, RuleTools
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
 
 
 # ===== The tools over the real clauses =====

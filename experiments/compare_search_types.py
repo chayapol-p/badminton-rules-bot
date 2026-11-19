@@ -21,16 +21,17 @@ from statistics import mean
 
 import numpy
 
-from app.settings import load_settings
-from evals.golden_answer_chunks import load_chunks, load_questions
+from evals.golden_answer_chunks import load_questions
 from evals.log_eval_run import append_run
 from evals.score_retrieval import score_search
 from retrieval.hybrid_search import CANDIDATE_COUNT, HybridSearch
 from retrieval.keyword_search import KeywordSearch
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.stored_embeddings import load_embeddings
 from retrieval.vector_search import VectorSearch
 from retrieval.section_groups import build_section_groups
 from retrieval.window_chunks import build_windows
+from settings import load_settings
 
 
 # Constants

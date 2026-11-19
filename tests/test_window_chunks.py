@@ -4,7 +4,7 @@ Tests the fixed-size windows: right size, every clause covered, no window across
 
 import pytest
 
-from evals.golden_answer_chunks import CHUNKS_FILE, load_chunks
+from retrieval.load_rule_chunks import CHUNKS_FILE, load_chunks
 from retrieval.window_chunks import WINDOW_CHARACTERS, build_windows
 
 

@@ -6,22 +6,16 @@ the ingest check agree on what counts as the right chunk.
 """
 
 import json
-from pathlib import Path
+
+from retrieval.load_rule_chunks import PROJECT_FOLDER
 
 
 # Constants
 ## Path to each resource
-PROJECT_FOLDER = Path(__file__).resolve().parent.parent
 QUESTIONS_FILE = PROJECT_FOLDER / "evals" / "golden_questions.json"
-CHUNKS_FILE = PROJECT_FOLDER / "data" / "rule_chunks.json"
 
 
 # ===== Loading =====
-
-def load_chunks():
-    """Returns every clause chunk from the ingest step."""
-    return json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))
-
 
 def load_questions(split_name):
     """Returns the golden questions in one split: "dev" or "held_out"."""

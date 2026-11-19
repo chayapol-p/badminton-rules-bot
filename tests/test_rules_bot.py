@@ -9,9 +9,9 @@ from answer_flows.rules_bot import AnswerFormatError, RulesBot
 from answer_flows.shared.progress_updates import (CHECKING_QUESTION, CHECKING_RULES, FINDING_RULES, FOUND_RULES, QUESTION_PARTS,
                                                   SEARCHING, SOURCES_PICKED, WRITING, ProgressUpdate)
 from answer_flows.shared.rule_tools import RuleTools
-from app.settings import Settings
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
+from settings import Settings
 from tests.test_gather_then_write import GATHER_REPLY, REFUSAL_GATHER_REPLY, StubTwoCallClient
 
 

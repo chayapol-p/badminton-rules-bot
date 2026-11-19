@@ -15,7 +15,8 @@ import json
 from functools import cache
 
 from answer_flows.shared.answer_shape import Citation, RulesAnswer
-from evals.golden_answer_chunks import PROJECT_FOLDER, QUESTIONS_FILE, load_chunks
+from evals.golden_answer_chunks import QUESTIONS_FILE
+from retrieval.load_rule_chunks import PROJECT_FOLDER, load_chunks
 
 
 # Constants

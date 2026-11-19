@@ -7,7 +7,7 @@ from experiments.retired_flows.gather_then_write_per_part.assemble_written_answe
                                                                     build_refusal, check_gathered_picks,
                                                                     format_parts_for_writer, is_refusal)
 from evals.checks.check_citations import find_citation_problems
-from evals.golden_answer_chunks import load_chunks
+from retrieval.load_rule_chunks import load_chunks
 
 
 # ===== Real clauses: Law 1.4 (one sentence) and Law 4.2.2 (two sentences, its subject in 4.2's heading) =====

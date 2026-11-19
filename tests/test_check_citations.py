@@ -8,7 +8,7 @@ import pytest
 
 from answer_flows.shared.answer_shape import AnswerSentence, Citation, RulesAnswer
 from evals.checks.check_citations import find_citation_problem, find_citation_problems, normalise_text, remove_markers
-from evals.golden_answer_chunks import CHUNKS_FILE
+from retrieval.load_rule_chunks import CHUNKS_FILE
 from tests.sample_data import SAMPLE_CHUNKS
 
 

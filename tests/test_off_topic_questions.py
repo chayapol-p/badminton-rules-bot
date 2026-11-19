@@ -8,7 +8,7 @@ across every question set, and that each rule location exists in the chunks.
 import json
 from collections import Counter
 
-from evals.golden_answer_chunks import PROJECT_FOLDER, load_chunks
+from retrieval.load_rule_chunks import PROJECT_FOLDER, load_chunks
 
 
 # Constants

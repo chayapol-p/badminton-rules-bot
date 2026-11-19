@@ -15,9 +15,9 @@ from answer_flows.shared.answer_shape import RulesAnswer
 from answer_flows.shared.cite_sentences import name_source
 from app.chat_endpoint import get_rules_bot
 from app.main import app
-from app.settings import load_settings
 from app.stub_rules_bot import SAMPLE_POSTS_ANSWER, StubRulesBot
-from evals.golden_answer_chunks import load_chunks
+from retrieval.load_rule_chunks import load_chunks
+from settings import load_settings
 
 
 # Constants

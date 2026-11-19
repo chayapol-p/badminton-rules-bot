@@ -3,7 +3,7 @@ Asks Mistral for one answer in the ModelAnswer shape, builds the checked answer 
 thinking and the tokens it used.
 
 Fixed for every eval run (experiment rule 2): the pinned model and reasoning effort from
-app/settings.py, and temperature 0. Mistral calls temperature 0 greedy sampling and rejects it
+settings.py, and temperature 0. Mistral calls temperature 0 greedy sampling and rejects it
 unless top_p is exactly 1 (400 error, code 3054), and the SDK sends no top_p of its own, so the
 call sets both.
 

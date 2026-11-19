@@ -10,7 +10,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.settings import MissingSettingError, Settings, load_settings, require_anthropic_api_key
+from settings import MissingSettingError, Settings, load_settings, require_anthropic_api_key
 
 
 # Start every test with fresh settings and placeholder keys

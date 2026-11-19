@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.chat_endpoint import choose_rules_bot, router as chat_router
 from app.pdf_links import RULE_BOOKS_ADDRESS, RULE_BOOKS_FOLDER
-from app.settings import load_settings
+from settings import load_settings
 
 
 # Show the app's own info lines (such as each topic check's verdict and time) next to uvicorn's

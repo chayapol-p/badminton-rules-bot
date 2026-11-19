@@ -4,9 +4,9 @@ Tests the retrieve step: the search hits in full, and the clauses the rule map b
 
 import pytest
 
-from evals.golden_answer_chunks import load_chunks
 from retrieval.build_bundle import full_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.retrieve_sources import build_clause_vector_search, build_retrieve_function
 from tests.sample_data import SAMPLE_CHUNKS, full_items
 

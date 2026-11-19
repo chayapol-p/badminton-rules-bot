@@ -12,8 +12,8 @@ from answer_flows.shared.tool_loop import (EXTRA_AGENT_RULES, LAST_ROUND_NOTE, M
                                            has_reached_tool_limit)
 from answer_flows.shared.rule_tools import RuleTools
 from experiments.retired_flows.single_call.answer_rules import ANSWER_RULES
-from evals.golden_answer_chunks import load_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
 from tests.sample_data import full_items
 
 

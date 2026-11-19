@@ -13,7 +13,7 @@ import pytest
 
 from answer_flows import rules_bot as rules_bot_module
 from answer_flows.topic_screen import (CHECK_TIMEOUT_MS, TOPIC_CHECK_PROMPT, build_mistral_topic_check)
-from app.settings import Settings
+from settings import Settings
 from tests.test_gather_then_write import GATHER_REPLY, StubTwoCallClient
 from tests.test_rules_bot import CHUNKS, NEW_QUESTION, RULE_MAP, SETTINGS, StubSearch
 

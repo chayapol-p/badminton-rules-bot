@@ -1,5 +1,6 @@
 """
-Settings for the RAG workshop.
+Settings for the bot, the app, the evals and the scripts. It sits at the project root, so the bot reads its
+settings without importing the web app.
 
 Reads the API keys and model names from the .env file at the project root.
 Environment variables override the .env file.
@@ -20,7 +21,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 # Project root: the folder that holds .env and pyproject.toml
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent
 
 
 # Error raised when a required setting is missing, with a message a person can act on

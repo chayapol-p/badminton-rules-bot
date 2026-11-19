@@ -23,14 +23,14 @@ from datetime import datetime, timezone
 from answer_flows.rules_bot import RulesBot
 from answer_flows.shared.mistral_client import build_mistral_client
 from answer_flows.topic_screen import CHECK_TIMEOUT_MS, TOPIC_CHECK_PROMPT, build_mistral_topic_check
-from app.settings import load_settings
-from evals.golden_answer_chunks import PROJECT_FOLDER, load_chunks
 from evals.log_eval_run import append_run
 from experiments.run_answer_experiment import read_code_version
 from experiments.run_topic_check_eval import (CostTracker, RecordingClient, answer_one_question, check_one_question,
                                               percentile)
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import PROJECT_FOLDER, load_chunks
 from retrieval.retrieve_sources import build_live_vector_search
+from settings import load_settings
 
 
 # Constants

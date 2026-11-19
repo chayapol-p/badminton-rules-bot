@@ -16,8 +16,8 @@ from answer_flows.shared.progress_updates import ProgressUpdate, ReportProgress,
 from app import chat_endpoint
 from app.chat_endpoint import FAILED_ANSWER_MESSAGE, choose_rules_bot
 from app.main import app
-from app.settings import MissingSettingError, Settings, load_settings
 from app.stub_rules_bot import StubRulesBot
+from settings import MissingSettingError, Settings, load_settings
 from tests.test_chat_endpoint import QuestionRecordingBot, placeholder_keys, read_events  # placeholder_keys runs here too
 
 

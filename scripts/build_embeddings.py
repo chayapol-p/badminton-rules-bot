@@ -33,12 +33,13 @@ import time
 from mistralai.client import Mistral
 from tqdm import tqdm
 
-from app.settings import load_settings
-from evals.golden_answer_chunks import QUESTIONS_FILE, load_chunks
+from evals.golden_answer_chunks import QUESTIONS_FILE
 from evals.probes import load_false_premise_probes, load_phase2_questions, load_refusal_probes, load_unseen_questions
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.stored_embeddings import embeddings_file, load_embeddings, save_embeddings
 from retrieval.section_groups import build_section_groups
 from retrieval.window_chunks import build_windows
+from settings import load_settings
 
 
 # Constants

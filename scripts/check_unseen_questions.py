@@ -15,11 +15,12 @@ Run from the project root:
     uv run python -m scripts.check_unseen_questions
 """
 
-from app.settings import load_settings
-from evals.golden_answer_chunks import expected_chunk_ids, load_chunks
+from evals.golden_answer_chunks import expected_chunk_ids
 from evals.probes import load_unseen_questions
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.retrieve_sources import build_clause_vector_search, build_retrieve_function
 from retrieval.expand_with_rule_links import load_rule_map
+from settings import load_settings
 
 
 # Constants

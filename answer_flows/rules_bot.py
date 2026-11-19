@@ -32,11 +32,11 @@ from answer_flows.shared.progress_updates import (CHECKING_QUESTION, FINDING_RUL
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.topic_screen import (IsRulesQuestion, build_mistral_topic_check, build_off_topic_answer,
                                        pass_every_question)
-from app.settings import Settings, load_settings
-from evals.golden_answer_chunks import load_chunks
 from retrieval.build_bundle import full_chunks
 from retrieval.expand_with_rule_links import load_rule_map
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.retrieve_sources import DEFAULT_TOP_K, build_live_vector_search, build_retrieve_function
+from settings import Settings, load_settings
 
 
 logger = logging.getLogger(__name__)

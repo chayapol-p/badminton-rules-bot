@@ -8,7 +8,7 @@ Use:
 from mistralai.client import Mistral
 from mistralai.client.utils import BackoffStrategy, RetryConfig
 
-from app.settings import Settings
+from settings import Settings
 
 
 # Constants

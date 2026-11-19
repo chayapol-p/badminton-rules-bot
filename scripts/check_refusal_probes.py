@@ -12,11 +12,11 @@ Run from the project root:
     uv run python -m scripts.check_refusal_probes
 """
 
-from app.settings import load_settings
-from evals.golden_answer_chunks import load_chunks
 from evals.probes import load_refusal_probes
+from retrieval.load_rule_chunks import load_chunks
 from retrieval.retrieve_sources import build_clause_vector_search
 from retrieval.keyword_search import KeywordSearch
+from settings import load_settings
 
 
 # Constants

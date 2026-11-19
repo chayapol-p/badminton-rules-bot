@@ -10,7 +10,7 @@ from answer_flows.shared.progress_updates import (READING, SEARCHING, STILL_WRIT
                                                   call_with_still_writing_updates, describe_checking,
                                                   describe_found_rules, describe_question_parts,
                                                   describe_sources_picked, describe_tool_call)
-from evals.golden_answer_chunks import load_chunks
+from retrieval.load_rule_chunks import load_chunks
 
 
 # Constants

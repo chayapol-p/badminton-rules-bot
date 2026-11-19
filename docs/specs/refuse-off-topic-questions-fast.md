@@ -53,7 +53,7 @@ Measured against every "should refuse" item and its pass rule (18 Nov):
 1. One paid live check with "test" (done, above).
 2. Option 2: a topic screen call before the search.
 3. Target: the off-topic reply within 5 s.
-4. Screen model: `mistral-small-2603`, already pinned in `app/settings.py` as `mistral_draft_model`.
+4. Screen model: `mistral-small-2603`, already pinned in `settings.py` as `mistral_draft_model`.
 5. `RulesAnswer` says which kind of refusal it is (`off_topic` or `not_covered`), so the app drops the "Not covered by the rules" label on off-topic replies.
 
 ## Decisions (Job, 18 Nov 2026)

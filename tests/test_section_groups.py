@@ -4,7 +4,7 @@ Tests the section groups: under the word limit, every clause in exactly one grou
 
 import pytest
 
-from evals.golden_answer_chunks import CHUNKS_FILE, load_chunks
+from retrieval.load_rule_chunks import CHUNKS_FILE, load_chunks
 from retrieval.section_groups import GROUP_WORD_LIMIT, build_section_groups
 
 
