@@ -54,7 +54,8 @@ FINISH_REASON_TOOL_CALLS = "tool_calls"
 ## The search steps every flow with tools puts between finding sentences and replying. They hold what the two
 ## default agent rules said (record 0022): check-each-part (the agent read 27.5 clauses a question; the hybrid setup
 ## never searched for yellow-card-before-play) and search-before-gaps (the hybrid setup still wrote "the sources
-## don't cover" with 0 rounds, because the old rule 3 won over searching). As steps, searching comes before giving up on a part (record 0024)
+## don't cover" with 0 rounds, because the old rule 3 won over searching). As steps, searching comes before giving
+## up on a part (record 0024)
 SEARCH_STEPS = [
     "For each part that no sentence answers yet, search for it with the tools before you give up on it.",
     "Stop searching when every part has sentences, or when a search for the missing part finds nothing. "

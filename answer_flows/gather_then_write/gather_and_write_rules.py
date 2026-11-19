@@ -1,8 +1,8 @@
 """
 The gather-then-write prompts, each as a task, numbered steps and limits with reasons
-(answer_flows/shared/prompt_sections.py, record 0024): GATHER_RULES for the gather call (the tool loop adds the tools section), and WRITE_RULES with
-build_write_prompt for the write call, which sees only the parts and their numbered sentences
-and writes one natural answer with inline [n] markers (record 0027).
+(answer_flows/shared/prompt_sections.py, record 0024): GATHER_RULES for the gather call (the tool loop adds the
+tools section), and WRITE_RULES with build_write_prompt for the write call, which sees only the parts and their
+numbered sentences and writes one natural answer with inline [n] markers (record 0027).
 
 Use:
     messages = build_write_prompt(question_text, format_parts_for_writer(checked_answer, shown_chunk_by_id, label_by_id))
