@@ -9,6 +9,7 @@ import json
 from collections import Counter
 
 from retrieval.load_rule_chunks import PROJECT_FOLDER, load_chunks
+from tests.rule_data import skip_without_rule_data
 
 
 # Constants
@@ -48,6 +49,7 @@ def test_ids_are_unique_here_and_across_every_question_set():
 
 
 def test_off_topic_questions_name_no_rule_and_every_named_rule_exists():
+    skip_without_rule_data()
     chunk_ids = {chunk["id"] for chunk in load_chunks()}
     for question in OFF_TOPIC_QUESTIONS:
         if question["expected_screen"] == "off_topic":

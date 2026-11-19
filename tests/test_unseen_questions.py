@@ -3,6 +3,7 @@
 from evals.golden_answer_chunks import expected_chunk_ids, load_questions
 from evals.probes import load_probes, load_unseen_questions
 from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 
 
 # Constants
@@ -34,6 +35,7 @@ def test_only_the_unanswerable_question_has_no_answer():
 
 
 def test_every_answer_location_has_its_chunk():
+    skip_without_rule_data()
     chunks = load_chunks()
     for question in load_unseen_questions():
         for location in question["answer_locations"]:

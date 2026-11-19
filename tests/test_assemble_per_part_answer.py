@@ -8,9 +8,13 @@ from experiments.retired_flows.gather_then_write_per_part.assemble_written_answe
                                                                     format_parts_for_writer, is_refusal)
 from evals.checks.check_citations import find_citation_problems
 from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 
 
 # ===== Real clauses: Law 1.4 (one sentence) and Law 4.2.2 (two sentences, its subject in 4.2's heading) =====
+
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
 
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in load_chunks()}
 SHOWN_CHUNK_BY_ID = {chunk_id: CHUNK_BY_ID[chunk_id] for chunk_id in ["laws-1.4", "laws-4.2.2"]}

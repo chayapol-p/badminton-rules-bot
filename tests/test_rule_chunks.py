@@ -23,6 +23,7 @@ from pathlib import Path
 import pytest
 
 from scripts.build_rule_chunks import ALTERNATIVE_FORMAT_NAMES, DOCUMENTS
+from tests.rule_data import skip_without_rule_data
 
 
 # Constants
@@ -65,6 +66,9 @@ CLAUSE_NUMBER = re.compile(r"^\d+(?:\.\d+)*$")
 
 
 # ===== Load the data once =====
+
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
 
 CHUNKS = json.loads(CHUNKS_FILE.read_text(encoding="utf-8"))
 CHUNKS_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}
@@ -302,5 +306,5 @@ def test_source_pdfs_match_their_frozen_hashes():
     for document, frozen in GOLDEN_SET["corpus_frozen"].items():
         pdf_path = PDF_FOLDER / frozen["file"]
         if not pdf_path.exists():
-            pytest.skip("PDFs are not in this clone; run scripts.build_rule_chunks after fetching them")
+            pytest.skip("PDFs are not in this clone: run scripts.download_rule_books")
         assert hashlib.sha256(pdf_path.read_bytes()).hexdigest() == frozen["sha256"], f"{document} PDF changed"

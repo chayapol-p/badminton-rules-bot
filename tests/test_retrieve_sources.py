@@ -8,6 +8,7 @@ from retrieval.build_bundle import full_chunks
 from retrieval.expand_with_rule_links import load_rule_map
 from retrieval.load_rule_chunks import load_chunks
 from retrieval.retrieve_sources import build_clause_vector_search, build_retrieve_function
+from tests.rule_data import skip_test_without_saved_vectors
 from tests.sample_data import SAMPLE_CHUNKS, full_items
 
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in SAMPLE_CHUNKS}
@@ -59,7 +60,8 @@ def test_a_found_list_heading_brings_its_items():
 
 
 def test_a_question_with_no_saved_vector_stops_the_run_with_how_to_fix_it():
-    """Every question needs its vector, so the run fails fast, before any paid call (coding style rule 14)."""
+    """Every question needs its vector, so the run fails fast, before any paid call."""
+    skip_test_without_saved_vectors()
     question_without_vector = {"id": "not-embedded-yet", "question": "A question nobody embedded?"}
     with pytest.raises(KeyError, match="run scripts.build_embeddings first"):
         build_clause_vector_search(load_chunks(), [question_without_vector], "mistral-embed-2312")

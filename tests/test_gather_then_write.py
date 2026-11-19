@@ -9,10 +9,14 @@ from answer_flows.gather_then_write.answer_shape import GatheredAnswer, WrittenA
 from answer_flows.gather_then_write.gather_and_write_rules import GATHER_RULES, WRITE_RULES
 from retrieval.expand_with_rule_links import load_rule_map
 from retrieval.load_rule_chunks import load_chunks
+from tests.rule_data import skip_without_rule_data
 from tests.sample_data import full_items
 
 
 # ===== The stub client =====
+
+# Every test here reads the real clauses, built from the rule books and never committed
+skip_without_rule_data()
 
 CHUNKS = load_chunks()
 CHUNK_BY_ID = {chunk["id"]: chunk for chunk in CHUNKS}

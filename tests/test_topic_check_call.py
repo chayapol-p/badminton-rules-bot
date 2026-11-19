@@ -14,6 +14,7 @@ import pytest
 from answer_flows import rules_bot as rules_bot_module
 from answer_flows.topic_screen import (CHECK_TIMEOUT_MS, TOPIC_CHECK_PROMPT, build_mistral_topic_check)
 from settings import Settings
+from tests.rule_data import skip_test_without_saved_vectors
 from tests.test_gather_then_write import GATHER_REPLY, StubTwoCallClient
 from tests.test_rules_bot import CHUNKS, NEW_QUESTION, RULE_MAP, SETTINGS, StubSearch
 
@@ -122,6 +123,7 @@ def test_an_off_topic_reply_from_the_real_check_gives_the_off_topic_answer_witho
 # ===== Wiring =====
 
 def test_load_rules_bot_wires_in_the_real_check_on_the_settings_model(monkeypatch):
+    skip_test_without_saved_vectors()
     check_client = RecordingCheckClient('{"is_badminton_question": false}')
     monkeypatch.setattr(rules_bot_module, "build_mistral_client", lambda settings: check_client)
     monkeypatch.setattr(rules_bot_module, "load_settings",

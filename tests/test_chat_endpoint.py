@@ -18,6 +18,7 @@ from app.main import app
 from app.stub_rules_bot import SAMPLE_POSTS_ANSWER, StubRulesBot
 from retrieval.load_rule_chunks import load_chunks
 from settings import load_settings
+from tests.rule_data import skip_without_rule_data
 
 
 # Constants
@@ -68,6 +69,7 @@ class QuestionRecordingBot(StubRulesBot):
 
 # Criterion 1: a question streams back exactly one "answer" event that holds the stub's answer, markers and citations
 def test_a_question_streams_one_answer_event_with_the_stub_answer():
+    skip_without_rule_data()
     with TestClient(app) as client:
         response = client.post("/chat", json={"question": QUESTION})
 
@@ -86,6 +88,7 @@ def test_a_question_streams_one_answer_event_with_the_stub_answer():
 
 # The question in the request body is the question the bot answers
 def test_the_question_reaches_the_bot():
+    skip_without_rule_data()
     recording_bot = QuestionRecordingBot()
     app.dependency_overrides[get_rules_bot] = lambda: recording_bot
 
@@ -97,6 +100,7 @@ def test_the_question_reaches_the_bot():
 
 # The sample answer is a real sample: its quote is the clause text as printed, under the clause's own name
 def test_the_sample_answer_quotes_the_real_clause():
+    skip_without_rule_data()
     chunk_by_id = {chunk["id"]: chunk for chunk in load_chunks()}
     citation = SAMPLE_POSTS_ANSWER.citations[0]
     clause = chunk_by_id[citation.chunk_id]
