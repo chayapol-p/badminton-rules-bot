@@ -117,8 +117,8 @@ def build_refusal(checked_answer: GatheredAnswer, shown_chunk_by_id: dict[str, d
     related_citations = []
     add_citations(related_citations, checked_answer.related_sentences, shown_chunk_by_id)
     answer_lines = build_not_covered_lines(checked_answer) + build_related_lines(checked_answer, shown_chunk_by_id)
-    return RulesAnswer(reasoning=checked_answer.reasoning, refused=True, answer="\n".join(answer_lines),
-                       citations=[], related_citations=related_citations)
+    return RulesAnswer(reasoning=checked_answer.reasoning, refused=True, refusal_kind="not_covered",
+                       answer="\n".join(answer_lines), citations=[], related_citations=related_citations)
 
 
 # ===== Numbering the sentences the writer sees =====

@@ -10,6 +10,9 @@ Prices change: re-check them on the providers' pricing pages before quoting a co
 PRICE_PER_MILLION_TOKENS = {
     # Mistral's model card, checked 1 Nov 2026
     "mistral-large-4-0": {"input": 0.70, "output": 2.10},
+    # Mistral Small 4, the topic check: Mistral's first-party price as modelcompare.dev cites docs.mistral.ai
+    # (17 Oct 2026), checked 18 Nov 2026
+    "mistral-small-2603": {"input": 0.15, "output": 0.60},
     # Anthropic's pricing page, checked 7 Nov 2026
     "claude-sonnet-5-5": {"input": 2.00, "output": 10.00},
 }

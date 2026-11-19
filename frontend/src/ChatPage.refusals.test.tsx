@@ -1,10 +1,11 @@
 // Slice 5 tests for the chat page: a refusal shows the bot's own words, labelled "Not covered by the rules", with no
-// source list (spec criterion 4).
+// source list (spec criterion 4). Slice 7: an off-topic reply drops the label.
 
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, test, vi } from "vitest";
 
+import sampleOffTopicAnswer from "../../app/sample_off_topic_answer.json";
 import sampleRefusalAnswer from "../../app/sample_refusal_answer.json";
 import { ChatPage } from "./ChatPage";
 import { SAMPLE_CHAT_ANSWER } from "./sampleChatAnswer";
@@ -57,4 +58,25 @@ test("a normal answer has no refusal label", async () => {
   const answer = await askAndFindAnswer();
 
   expect(within(answer).queryByText(REFUSAL_LABEL)).not.toBeInTheDocument();
+});
+
+
+// ===== An off-topic question (slice 7) =====
+
+test("an off-topic reply shows its words with no 'Not covered' label and no sources", async () => {
+  stubChatWithAnswer(sampleOffTopicAnswer);
+
+  const answer = await askAndFindAnswer();
+
+  expect(answer).toHaveTextContent("I can only help with questions about badminton");
+  expect(within(answer).queryByText(REFUSAL_LABEL)).not.toBeInTheDocument();
+  expect(within(answer).queryByRole("list")).not.toBeInTheDocument();
+});
+
+test("a not-covered refusal still carries the label", async () => {
+  stubChatWithAnswer({ ...sampleRefusalAnswer, refusal_kind: "not_covered" });
+
+  const answer = await askAndFindAnswer();
+
+  expect(within(answer).getByText(REFUSAL_LABEL)).toBeInTheDocument();
 });

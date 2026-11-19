@@ -7,6 +7,7 @@ and "sources_picked" the quoted sentences the answer will rest on. Those keep th
 source n here is citations[n - 1] there, and the final list adds only the related sentences the answer cites.
 
 Steps, in the order they come:
+    checking_question  before anything else: the topic check (slice 7 of the chat app)
     finding_rules   before the retrieve step
     found_rules     after it, with the names of the rules it found
     checking_rules  before each gather call: the model checks which rules answer the question
@@ -37,6 +38,7 @@ from answer_flows.shared.cite_sentences import name_source
 
 # Constants
 ## The step names, in the order they come
+CHECKING_QUESTION = "checking_question"
 FINDING_RULES = "finding_rules"
 FOUND_RULES = "found_rules"
 CHECKING_RULES = "checking_rules"

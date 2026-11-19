@@ -1,0 +1,1043 @@
+{
+  "about": "Short casual rules questions for the topic check, one per rule heading across the Laws, the ITTO and the Alternative Laws, with no sport word (badminton, shuttle, racket, court, net). Every one is a badminton question, so the check must pass it. Drafted by Claude, 18 Nov 2026, on Job's request (option 4). Scores the topic check only: never the golden set, never public scores.",
+  "questions": [
+    {
+      "id": "casual-laws-1.1",
+      "question": "how wide r the lines",
+      "source": "laws-1.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.1.1",
+      "question": "is the area different for wheelchair players?",
+      "source": "laws-1.1.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.2",
+      "question": "what colour should the lines be",
+      "source": "laws-1.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.3",
+      "question": "it landed right on the line, in or out?",
+      "source": "laws-1.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.4",
+      "question": "how tall are the posts",
+      "source": "laws-1.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.5",
+      "question": "do the posts go on the singles or doubles side line",
+      "source": "laws-1.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.6",
+      "question": "how big are the holes in the mesh",
+      "source": "laws-1.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.7",
+      "question": "how deep is the mesh thing in the middle",
+      "source": "laws-1.7",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.8",
+      "question": "what's the white tape on top for",
+      "source": "laws-1.8",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.9",
+      "question": "how tight should the top cord be?",
+      "source": "laws-1.9",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.10",
+      "question": "how high is it in the middle",
+      "source": "laws-1.10",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-1.11",
+      "question": "can there be a gap between the mesh and the posts",
+      "source": "laws-1.11",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-2.1",
+      "question": "can the birdie be plastic",
+      "source": "laws-2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-2.2.1",
+      "question": "how many feathers on a bird",
+      "source": "laws-2.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-2.2.2",
+      "question": "how long r the feathers supposed to be",
+      "source": "laws-2.2.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-2.2.3",
+      "question": "how wide is the feather circle at the top",
+      "source": "laws-2.2.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-2.2.5",
+      "question": "how big is the cork bit",
+      "source": "laws-2.2.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-2.2.6",
+      "question": "how much does a birdie weigh",
+      "source": "laws-2.2.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-2.3.1",
+      "question": "is a nylon birdie allowed in a match",
+      "source": "laws-2.3.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-2.4",
+      "question": "can you change the feathers for high altitude",
+      "source": "laws-2.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-3.1",
+      "question": "how do u test if the bird is too fast",
+      "source": "laws-3.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-3.2",
+      "question": "where should it land when you test the speed",
+      "source": "laws-3.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-4.1",
+      "question": "max length of the stick?",
+      "source": "laws-4.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-4.1.1",
+      "question": "which part is the handle exactly",
+      "source": "laws-4.1.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-4.2.1",
+      "question": "do the strings have to be woven",
+      "source": "laws-4.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-4.2.2",
+      "question": "how big can the string bed be",
+      "source": "laws-4.2.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-4.3.1",
+      "question": "can i stick a weight on my frame",
+      "source": "laws-4.3.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-4.3.2",
+      "question": "can i use a frame that changes shape mid-rally",
+      "source": "laws-4.3.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-5.1",
+      "question": "who decides if my gear is legal",
+      "source": "laws-5.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-5.2",
+      "question": "can i play from a wheelchair",
+      "source": "laws-5.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-5.2.1",
+      "question": "can i strap myself into the chair",
+      "source": "laws-5.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-5.2.2",
+      "question": "are anti-tip wheels allowed on my chair",
+      "source": "laws-5.2.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-5.2.3",
+      "question": "do my feet have to stay on the footrest",
+      "source": "laws-5.2.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-6.1",
+      "question": "who picks first, the coin toss winner?",
+      "source": "laws-6.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-6.1.2",
+      "question": "can the toss winner pick which end",
+      "source": "laws-6.1.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-6.2",
+      "question": "what does the toss loser get",
+      "source": "laws-6.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-7.1",
+      "question": "is it best of 3?",
+      "source": "laws-7.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-7.2",
+      "question": "first to what?",
+      "source": "laws-7.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-7.3",
+      "question": "do u get a point even if u didnt serve",
+      "source": "laws-7.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-7.4",
+      "question": "what happens at 20 all",
+      "source": "laws-7.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-7.5",
+      "question": "is there a cap if it keeps going past 20",
+      "source": "laws-7.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-7.6",
+      "question": "who serves first in game 2",
+      "source": "laws-7.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-8.1.1",
+      "question": "do we swap sides after game one",
+      "source": "laws-8.1.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-8.1.3",
+      "question": "when do u switch ends in the decider",
+      "source": "laws-8.1.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-8.2",
+      "question": "we forgot to switch sides, now what",
+      "source": "laws-8.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1",
+      "question": "what makes a serve legal",
+      "source": "laws-9.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1.1",
+      "question": "can the other guy make me wait forever before i serve",
+      "source": "laws-9.1.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1.2",
+      "question": "can i pause halfway through my serve",
+      "source": "laws-9.1.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1.3",
+      "question": "where do i stand when serving",
+      "source": "laws-9.1.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1.4",
+      "question": "can i jump when i serve",
+      "source": "laws-9.1.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1.5",
+      "question": "can i spin it when i drop it to serve",
+      "source": "laws-9.1.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1.6",
+      "question": "can i serve overarm",
+      "source": "laws-9.1.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1.7",
+      "question": "can i stop my swing and then go again",
+      "source": "laws-9.1.7",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.1.8",
+      "question": "what if i whiff the serve completely",
+      "source": "laws-9.1.8",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.2",
+      "question": "when does the serve actually start",
+      "source": "laws-9.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.3",
+      "question": "is it still a serve if i miss",
+      "source": "laws-9.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.4",
+      "question": "can i serve before they're ready",
+      "source": "laws-9.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-9.5",
+      "question": "where can my partner stand when im serving",
+      "source": "laws-9.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-10.1.1",
+      "question": "even score, which side do i serve from",
+      "source": "laws-10.1.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-10.1.2",
+      "question": "odd score which box",
+      "source": "laws-10.1.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-10.2.1",
+      "question": "in singles can i hit it from anywhere",
+      "source": "laws-10.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-10.3.1",
+      "question": "if i win the rally do i serve again",
+      "source": "laws-10.3.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-10.3.2",
+      "question": "receiver wins the point, who serves next",
+      "source": "laws-10.3.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-11.1.1",
+      "question": "in dubs who serves from the right",
+      "source": "laws-11.1.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-11.1.3",
+      "question": "do receivers switch boxes in doubles",
+      "source": "laws-11.1.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-11.1.5",
+      "question": "when do partners swap sides in dubs",
+      "source": "laws-11.1.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-11.2",
+      "question": "after the serve, can either partner hit it",
+      "source": "laws-11.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-11.4",
+      "question": "whats the serving order in doubles",
+      "source": "laws-11.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-11.5",
+      "question": "can the same person receive twice in a row",
+      "source": "laws-11.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-11.6",
+      "question": "game 2 doubles, who has to serve first",
+      "source": "laws-11.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-12.1.1",
+      "question": "we served out of turn, what happens",
+      "source": "laws-12.1.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-12.1.2",
+      "question": "i served from the wrong box lol",
+      "source": "laws-12.1.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-12.2",
+      "question": "we only noticed the wrong server after the rally, does the point count",
+      "source": "laws-12.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.1",
+      "question": "what's a fault on the serve",
+      "source": "laws-13.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.2.1",
+      "question": "the serve got stuck on top of the tape, now what",
+      "source": "laws-13.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.2.3",
+      "question": "my partner hit the serve meant for me",
+      "source": "laws-13.2.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.1",
+      "question": "landed just outside, whose point",
+      "source": "laws-13.3.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.2",
+      "question": "didn't make it over, fault?",
+      "source": "laws-13.3.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.3",
+      "question": "what if it hits the ceiling",
+      "source": "laws-13.3.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.4",
+      "question": "it hit my shirt, is that my fault",
+      "source": "laws-13.3.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.5",
+      "question": "it clipped a light fitting outside the lines",
+      "source": "laws-13.3.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.6",
+      "question": "is a sling shot legal",
+      "source": "laws-13.3.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.7",
+      "question": "double hit by the same guy ok?",
+      "source": "laws-13.3.7",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.8",
+      "question": "can me and my partner both hit it",
+      "source": "laws-13.3.8",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.3.9",
+      "question": "it hit my frame and dropped on my side",
+      "source": "laws-13.3.9",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.4.1",
+      "question": "touched the tape with my shirt, fault?",
+      "source": "laws-13.4.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.4.2",
+      "question": "can i follow through over the top",
+      "source": "laws-13.4.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.4.3",
+      "question": "can my foot go under to their side",
+      "source": "laws-13.4.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.4.4",
+      "question": "can i block them from hitting a shot",
+      "source": "laws-13.4.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.4.5",
+      "question": "my opponent screams when i hit, allowed?",
+      "source": "laws-13.4.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-13.5",
+      "question": "what happens if someone keeps misbehaving",
+      "source": "laws-13.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-14.1",
+      "question": "who calls a let",
+      "source": "laws-14.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-14.2.1",
+      "question": "i served before they were ready",
+      "source": "laws-14.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-14.2.2",
+      "question": "both of us faulted on the serve, now what",
+      "source": "laws-14.2.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-14.2.4",
+      "question": "the cork fell off mid-rally",
+      "source": "laws-14.2.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-14.2.5",
+      "question": "a ball from the next match rolled in",
+      "source": "laws-14.2.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-14.2.6",
+      "question": "linesman couldn't see it, replay?",
+      "source": "laws-14.2.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-14.2.7",
+      "question": "something weird happened, do we replay",
+      "source": "laws-14.2.7",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-14.3",
+      "question": "after a let who serves",
+      "source": "laws-14.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-15.1",
+      "question": "it hit the post and is falling on my side, is it dead",
+      "source": "laws-15.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-15.2",
+      "question": "when is a rally over",
+      "source": "laws-15.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.1",
+      "question": "can we take breaks whenever",
+      "source": "laws-16.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.2.1",
+      "question": "how long's the break at 11",
+      "source": "laws-16.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.2.2",
+      "question": "how long between games",
+      "source": "laws-16.2.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.3.1",
+      "question": "the roof is leaking, can the ump stop play",
+      "source": "laws-16.3.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.3.3",
+      "question": "if play's suspended does the score reset",
+      "source": "laws-16.3.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.4.1",
+      "question": "can i stall to catch my breath",
+      "source": "laws-16.4.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.4.2",
+      "question": "who decides if im stalling",
+      "source": "laws-16.4.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.5.1",
+      "question": "when can my coach talk to me",
+      "source": "laws-16.5.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.5.2",
+      "question": "can i run off to the toilet mid game",
+      "source": "laws-16.5.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.6.2",
+      "question": "can i bend the feathers to slow it down",
+      "source": "laws-16.6.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.6.3",
+      "question": "can i swear at the ref",
+      "source": "laws-16.6.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.7.1",
+      "question": "what punishments can the ump give",
+      "source": "laws-16.7.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-16.7.2",
+      "question": "what's a black card for",
+      "source": "laws-16.7.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.1",
+      "question": "who's in charge of the whole tournament",
+      "source": "laws-17.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.2",
+      "question": "who runs one match",
+      "source": "laws-17.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.3",
+      "question": "what does the service judge do",
+      "source": "laws-17.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.4",
+      "question": "what do the line people do",
+      "source": "laws-17.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.5",
+      "question": "can the chair ump overrule a line call",
+      "source": "laws-17.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.5.2",
+      "question": "does hawk-eye beat the line judge",
+      "source": "laws-17.5.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.6.2",
+      "question": "when do i have to appeal a call",
+      "source": "laws-17.6.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.6.6",
+      "question": "linesman was blocked, what does the ump do",
+      "source": "laws-17.6.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-laws-17.6.8",
+      "question": "can i appeal to the referee",
+      "source": "laws-17.6.8",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-1.3",
+      "question": "who's the whole thing for, players or officials",
+      "source": "itto-1.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-2.1",
+      "question": "who appoints the ref at a big event",
+      "source": "itto-2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-2.2",
+      "question": "who picks the umpire for a match",
+      "source": "itto-2.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-2.3",
+      "question": "can the ump swap out a line judge",
+      "source": "itto-2.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-2.5",
+      "question": "what if no one saw where it landed",
+      "source": "itto-2.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-2.7",
+      "question": "when does the ump's job start and end",
+      "source": "itto-2.7",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-3.4",
+      "question": "is there a team managers meeting before it starts",
+      "source": "itto-3.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-3.5",
+      "question": "how much rest between matches do i get",
+      "source": "itto-3.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-3.6",
+      "question": "what if a player gets hurt during the event",
+      "source": "itto-3.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-3.8",
+      "question": "how do team ties work",
+      "source": "itto-3.8",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-4.2",
+      "question": "how do i make a complaint to the ref",
+      "source": "itto-4.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-4.3",
+      "question": "what about doping checks",
+      "source": "itto-4.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-4.4",
+      "question": "can journalists film the matches",
+      "source": "itto-4.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.1",
+      "question": "what does the ump check before going out",
+      "source": "itto-5.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.2",
+      "question": "what's checked on the floor before a match",
+      "source": "itto-5.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.3",
+      "question": "how does the ump start a match",
+      "source": "itto-5.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.4",
+      "question": "what does the ump say at 11",
+      "source": "itto-5.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.5",
+      "question": "what does the ump call at 20 all",
+      "source": "itto-5.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.6",
+      "question": "what happens at the end of each game",
+      "source": "itto-5.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.7",
+      "question": "what does the ump do after the match",
+      "source": "itto-5.7",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.8",
+      "question": "linesman made a bad call, can it be changed",
+      "source": "itto-5.8",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.9",
+      "question": "player kicks the bird under, what happens",
+      "source": "itto-5.9",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.10",
+      "question": "can i leave to change my shoes",
+      "source": "itto-5.10",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.11",
+      "question": "power cut mid game, what now",
+      "source": "itto-5.11",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.12",
+      "question": "my coach is shouting tips, allowed?",
+      "source": "itto-5.12",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.13",
+      "question": "can we ask for a new bird",
+      "source": "itto-5.13",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.14",
+      "question": "i'm bleeding, can i stop",
+      "source": "itto-5.14",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.15",
+      "question": "can my phone ring on the floor during play",
+      "source": "itto-5.15",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.16",
+      "question": "can the ref stop a match",
+      "source": "itto-5.16",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-5.17",
+      "question": "yellow card then red card, what happens",
+      "source": "itto-5.17",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-6.2",
+      "question": "what if the ump makes a mistake",
+      "source": "itto-6.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-6.3",
+      "question": "can the ump change their mind",
+      "source": "itto-6.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-6.9",
+      "question": "can the crowd influence the ump",
+      "source": "itto-6.9",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-6.11",
+      "question": "what do umps have to wear",
+      "source": "itto-6.11",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-7.1",
+      "question": "where does the service judge sit",
+      "source": "itto-7.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-7.2",
+      "question": "how high can i hit it on the serve",
+      "source": "itto-7.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-7.4",
+      "question": "what signals does the service judge use",
+      "source": "itto-7.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-7.5",
+      "question": "who hands out new birds",
+      "source": "itto-7.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-8.1",
+      "question": "where do linesmen sit",
+      "source": "itto-8.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-8.3",
+      "question": "how does a linesman call it out",
+      "source": "itto-8.3",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-8.4",
+      "question": "what's the signal for in",
+      "source": "itto-8.4",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-8.5",
+      "question": "what does a line judge do if they didn't see",
+      "source": "itto-8.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-itto-8.6",
+      "question": "when should the linesman make the call",
+      "source": "itto-8.6",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-alt-one-game-21:8.1",
+      "question": "one game match, when do u swap ends",
+      "source": "alt-one-game-21:8.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-alt-best-of-3-games-21:16.2.1",
+      "question": "short format, break at 8?",
+      "source": "alt-best-of-3-games-21:16.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-alt-best-of-5-games-11:7.1",
+      "question": "is there a best of 5 format",
+      "source": "alt-best-of-5-games-11:7.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-alt-best-of-5-games-11:7.2",
+      "question": "in the 11 point format, first to 11?",
+      "source": "alt-best-of-5-games-11:7.2",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-alt-best-of-5-games-11:8.1.5",
+      "question": "best of 5, when do we switch in game 5",
+      "source": "alt-best-of-5-games-11:8.1.5",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-alt-best-of-5-games-11:16.2.1",
+      "question": "best of 5, is there a break mid game",
+      "source": "alt-best-of-5-games-11:16.2.1",
+      "expected": "pass"
+    },
+    {
+      "id": "casual-alt-alternative-service:9.1.6",
+      "question": "new rule: serve below the waist?",
+      "source": "alt-alternative-service:9.1.6",
+      "expected": "pass"
+    }
+  ]
+}

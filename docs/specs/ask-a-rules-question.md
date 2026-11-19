@@ -61,7 +61,10 @@ The app answers only through `load_rules_bot()` and `RulesBot.answer(...)`.
 6. Error message for an empty question (criterion 6)
    - After this slice the user can: press Ask with an empty or blank box and see "Please type a question" at once, with no request sent and no wait
    - In scope: the check on the page before sending, the message under the box, the message clearing when the user types
-7. Refuse off-topic questions fast (plan: `docs/specs/refuse-off-topic-questions-fast.md`; its open questions wait for Job)
+7. Refuse off-topic questions fast (plan: `docs/specs/refuse-off-topic-questions-fast.md`, its slice 1; its decisions are Job's, 17 Nov)
+   - After this slice the user can: ask "test" and get a short, polite off-topic reply in a few seconds, with no "Not covered by the rules" label and no search; every other question runs as before
+   - In scope: a topic check in front of the flow (a stub that marks "test" off topic; the real Mistral Small call is the plan's slice 2), `refusal_kind` on `RulesAnswer` (`off_topic` or `not_covered`), a "Checking the question" step, the check failing open to the full flow, the page's off-topic view, the off-topic question set checked for shape
+   - The off-topic reply asks for a more specific question (Job, 19 Nov; plan decision 7): "I can only help with questions about badminton, from the official BWF rule books. If your question is about badminton, can you be more specific? For example: "I'm bleeding, can I stop playing?""
 
 ## Changes after building
 - 17 Nov, slice 1: the page reads the stream with eventsource-parser, not a hand-written reader (record 0032).

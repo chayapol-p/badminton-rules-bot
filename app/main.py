@@ -11,6 +11,7 @@ Two endpoints:
 Run it from the project root:  uv run uvicorn app.main:app --reload
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -19,6 +20,10 @@ from fastapi.staticfiles import StaticFiles
 from app.chat_endpoint import choose_rules_bot, router as chat_router
 from app.pdf_links import RULE_BOOKS_ADDRESS, RULE_BOOKS_FOLDER
 from app.settings import load_settings
+
+
+# Show the app's own info lines (such as each topic check's verdict and time) next to uvicorn's
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(name)s: %(message)s")
 
 
 # Load the settings and the bot once at startup, so a missing key or data file stops the server straight away,

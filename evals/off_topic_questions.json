@@ -1,5 +1,5 @@
 {
-  "about": "Questions for the off-topic screen (docs/specs/refuse-off-topic-questions-fast.md), refusal and screen scoring only, like the probes. Never scored for retrieval, never in public scores. expected_screen says what the screen must decide: off_topic gets the off-topic reply; on_topic goes on to the flow. Near misses come in pairs where possible (warm-up stretches vs the warm-up rule; fastest smash vs the shuttle speed test). Drafted by Claude, 17 Nov. Job's picks (17 Nov): history and rankings count as off topic, and all 20 first questions stay. Claude added 3 more near misses after that (net-touch-short, line-judge-unsighted-casual, tennis-net-let); Job kept all 23.",
+  "about": "Questions for the off-topic screen (docs/specs/refuse-off-topic-questions-fast.md), refusal and screen scoring only, like the probes. Never scored for retrieval, never in public scores. expected_screen says what the screen must decide: off_topic gets the off-topic reply; on_topic goes on to the flow. Near misses come in pairs where possible (warm-up stretches vs the warm-up rule; fastest smash vs the shuttle speed test). Drafted by Claude, 17 Nov. Job's picks (17 Nov): history and rankings count as off topic, and all 20 first questions stay. Claude added 3 more near misses after that (net-touch-short, line-judge-unsighted-casual, tennis-net-let); Job kept all 23. Relabelled 18 Nov (Job): the check is badminton-wide, so the 7 badminton questions that aren't rules (coaching, rankings, buying, records, fitness, history, equipment care) now go on to the flow: 6 off topic, 17 on topic. Added 18 Nov (Job): break-at-11-short, a near miss: 6 off topic, 18 on topic.",
   "questions": [
     {
       "id": "test-word",
@@ -70,78 +70,78 @@
     {
       "id": "backhand-clear-coaching",
       "category": "off_topic_screen",
-      "kind": "near_miss_off_topic",
+      "kind": "badminton_not_rules",
       "question": "How do I hit a stronger backhand clear?",
-      "expected_screen": "off_topic",
+      "expected_screen": "on_topic",
       "rule_locations": [],
       "why": "Coaching, not rules (smash-training in refusal_probes.json already asks for a training plan).",
-      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "pass_rule": "The screen passes it on (badminton-wide, Job, 18 Nov); the flow answers it or says the rules don't cover it.",
       "split": "probe"
     },
     {
       "id": "world-ranking-number-one",
       "category": "off_topic_screen",
-      "kind": "near_miss_off_topic",
+      "kind": "badminton_not_rules",
       "question": "Who is ranked world number one in women's singles?",
-      "expected_screen": "off_topic",
+      "expected_screen": "on_topic",
       "rule_locations": [],
       "why": "Rankings, not rules (world-champion in refusal_probes.json already asks about results).",
-      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "pass_rule": "The screen passes it on (badminton-wide, Job, 18 Nov); the flow answers it or says the rules don't cover it.",
       "split": "probe"
     },
     {
       "id": "beginner-racket",
       "category": "off_topic_screen",
-      "kind": "near_miss_off_topic",
+      "kind": "badminton_not_rules",
       "question": "Which racket should a beginner buy?",
-      "expected_screen": "off_topic",
+      "expected_screen": "on_topic",
       "rule_locations": [],
       "why": "Shopping advice; Law 4 limits rackets but names no brand or model.",
-      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "pass_rule": "The screen passes it on (badminton-wide, Job, 18 Nov); the flow answers it or says the rules don't cover it.",
       "split": "probe"
     },
     {
       "id": "fastest-smash",
       "category": "off_topic_screen",
-      "kind": "near_miss_off_topic",
+      "kind": "badminton_not_rules",
       "question": "What's the fastest badminton smash ever recorded?",
-      "expected_screen": "off_topic",
+      "expected_screen": "on_topic",
       "rule_locations": [],
       "why": "A record, not a rule; pairs with the Law 3 shuttle speed test.",
-      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "pass_rule": "The screen passes it on (badminton-wide, Job, 18 Nov); the flow answers it or says the rules don't cover it.",
       "split": "probe"
     },
     {
       "id": "warm-up-stretches",
       "category": "off_topic_screen",
-      "kind": "near_miss_off_topic",
+      "kind": "badminton_not_rules",
       "question": "What stretches should I do before playing badminton?",
-      "expected_screen": "off_topic",
+      "expected_screen": "on_topic",
       "rule_locations": [],
       "why": "Fitness; pairs with the golden question warm-up-length, which asks for the warm-up rule.",
-      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "pass_rule": "The screen passes it on (badminton-wide, Job, 18 Nov); the flow answers it or says the rules don't cover it.",
       "split": "probe"
     },
     {
       "id": "badminton-invented",
       "category": "off_topic_screen",
-      "kind": "near_miss_off_topic",
+      "kind": "badminton_not_rules",
       "question": "When was badminton invented?",
-      "expected_screen": "off_topic",
+      "expected_screen": "on_topic",
       "rule_locations": [],
       "why": "History (plan open question 5: off topic unless it asks what a rule says).",
-      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "pass_rule": "The screen passes it on (badminton-wide, Job, 18 Nov); the flow answers it or says the rules don't cover it.",
       "split": "probe"
     },
     {
       "id": "sweaty-grip",
       "category": "off_topic_screen",
-      "kind": "near_miss_off_topic",
+      "kind": "badminton_not_rules",
       "question": "How do I stop my grip slipping when my hands sweat?",
-      "expected_screen": "off_topic",
+      "expected_screen": "on_topic",
       "rule_locations": [],
       "why": "Equipment care; no rule covers it.",
-      "pass_rule": "Gets the off-topic reply within 5 s: refused, no citations, no search.",
+      "pass_rule": "The screen passes it on (badminton-wide, Job, 18 Nov); the flow answers it or says the rules don't cover it.",
       "split": "probe"
     },
     {
@@ -271,6 +271,19 @@
         "laws-14"
       ],
       "why": "Names tennis, but asks a badminton rule (pairs with tennis-ball).",
+      "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
+      "split": "probe"
+    },
+    {
+      "id": "break-at-11-short",
+      "category": "off_topic_screen",
+      "kind": "near_miss_on_topic",
+      "question": "How long is the break at 11?",
+      "expected_screen": "on_topic",
+      "rule_locations": [
+        "laws-16.2.1"
+      ],
+      "why": "Short, no sport or equipment word; the interval at 11 points is at most 60 s. Blocked 3 of 3 in a red-team check before the scoring line (18 Nov).",
       "pass_rule": "The screen passes it on; the flow answers or refuses it as it does today.",
       "split": "probe"
     }

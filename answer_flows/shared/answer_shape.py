@@ -22,6 +22,8 @@ common structured-output pattern. One public experiment found field order made l
 difference, so treat it as something to measure, not a given.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -53,6 +55,9 @@ class RulesAnswer(BaseModel):
 
     reasoning: str = Field(description="Before deciding: which sources bear on the question, and whether together they answer what was asked. Name what is missing, if anything.")
     refused: bool = Field(description="True when the sources don't answer the question that was asked")
+    # Which kind of refusal, set by code: "off_topic" from the topic check, "not_covered" from the flow, so the app
+    # labels only the second. Empty for answers, and for run files from before (Job, 17 Nov)
+    refusal_kind: Literal["off_topic", "not_covered"] | None = None
     answer: str = Field(description="The answer. When refusing, say what the sources do cover and what they don't.")
     citations: list[Citation] = Field(description="One citation per claim; empty only when no source applies")
     # Related sentences are context, never the answer, so they get their own list: with one list the judge read

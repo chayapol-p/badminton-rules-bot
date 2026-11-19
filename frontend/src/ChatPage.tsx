@@ -5,6 +5,7 @@
 // Slice 4: a failed answer shows an error instead of waiting for good (record 0035).
 // Slice 5: a refusal shows the bot's own words, labelled "Not covered by the rules", with no sources.
 // Slice 6: an empty or blank question shows "Please type a question" and sends nothing.
+// Slice 7: an off-topic reply shows without the "Not covered" label.
 
 import * as Popover from "@radix-ui/react-popover";
 import { EventSourceParserStream } from "eventsource-parser/stream";
@@ -40,6 +41,8 @@ interface AnswerSentence {
 
 interface RulesAnswer {
   refused: boolean;
+  // "off_topic" from the topic check, "not_covered" from the flow; missing in answers from before slice 7
+  refusal_kind?: "off_topic" | "not_covered" | null;
   answer: string;
   citations: Citation[];
   answer_sentences: AnswerSentence[];
@@ -323,12 +326,15 @@ function AnswerText({ text, citations }: { text: string; citations: Citation[] }
   );
 }
 
-// A refusal: the bot's own words under a label, with no sources, because nothing in the rules answers it
-// (criterion 4). Its text keeps its line breaks, so a "Related" line shows on its own line
+// A refusal: the bot's own words, with no sources, because nothing in the rules answers it (criterion 4). A rules
+// question the books don't cover gets the "Not covered by the rules" label; an off-topic reply needs none (slice 7).
+// Its text keeps its line breaks, so a "Related" line shows on its own line
 function RefusalAnswer({ rulesAnswer }: { rulesAnswer: RulesAnswer }) {
+  const isOffTopic = rulesAnswer.refusal_kind === "off_topic";
+
   return (
     <section className="answer" aria-label="Answer">
-      <p className="refusal-label">Not covered by the rules</p>
+      {!isOffTopic && <p className="refusal-label">Not covered by the rules</p>}
       <p className="answer-text refusal-text">{rulesAnswer.answer}</p>
     </section>
   );

@@ -6,7 +6,7 @@ from types import SimpleNamespace
 import pytest
 
 from answer_flows.rules_bot import AnswerFormatError, RulesBot
-from answer_flows.shared.progress_updates import (CHECKING_RULES, FINDING_RULES, FOUND_RULES, QUESTION_PARTS,
+from answer_flows.shared.progress_updates import (CHECKING_QUESTION, CHECKING_RULES, FINDING_RULES, FOUND_RULES, QUESTION_PARTS,
                                                   SEARCHING, SOURCES_PICKED, WRITING, ProgressUpdate)
 from answer_flows.shared.rule_tools import RuleTools
 from app.settings import Settings
@@ -143,13 +143,13 @@ def collect_updates(client: StubTwoCallClient) -> list[ProgressUpdate]:
 
 def test_an_answer_reports_each_step_and_the_quoted_sources_before_writing():
     updates = collect_updates(StubTwoCallClient(GATHER_REPLY))
-    assert [update.step for update in updates] == [FINDING_RULES, FOUND_RULES, CHECKING_RULES, QUESTION_PARTS,
-                                                   SOURCES_PICKED, WRITING]
+    assert [update.step for update in updates] == [CHECKING_QUESTION, FINDING_RULES, FOUND_RULES, CHECKING_RULES,
+                                                   QUESTION_PARTS, SOURCES_PICKED, WRITING]
 
     # The question's parts come at the gate, then the sources with their quotes, before the write call starts
-    assert updates[3].message == ("Your question has 2 parts: how tall the posts are · "
+    assert updates[4].message == ("Your question has 2 parts: how tall the posts are · "
                                   "the highest string tension allowed")
-    sources_update = updates[4]
+    sources_update = updates[5]
     assert sources_update.message == "Found 1 sentence that answers it"
     assert sources_update.sources[0].source_name == "Laws of Badminton 5.0 (2), Clause 1.4"
     assert sources_update.sources[0].quote in CHUNK_BY_ID["laws-1.4"]["text"]
@@ -157,13 +157,14 @@ def test_an_answer_reports_each_step_and_the_quoted_sources_before_writing():
 
 def test_a_tool_round_reports_the_search_words_and_a_second_check():
     updates = collect_updates(StubToolThenTwoCallClient(GATHER_REPLY))
-    assert [update.step for update in updates] == [FINDING_RULES, FOUND_RULES, CHECKING_RULES, SEARCHING,
-                                                   CHECKING_RULES, QUESTION_PARTS, SOURCES_PICKED, WRITING]
-    assert updates[3].message == 'Searching the rules: "post height"'
-    assert updates[4].message == "Checking what the search found"
+    assert [update.step for update in updates] == [CHECKING_QUESTION, FINDING_RULES, FOUND_RULES, CHECKING_RULES,
+                                                   SEARCHING, CHECKING_RULES, QUESTION_PARTS, SOURCES_PICKED, WRITING]
+    assert updates[4].message == 'Searching the rules: "post height"'
+    assert updates[5].message == "Checking what the search found"
 
 
 def test_a_refusal_reports_the_parts_but_no_sources_and_no_writing():
     updates = collect_updates(StubTwoCallClient(REFUSAL_GATHER_REPLY))
-    assert [update.step for update in updates] == [FINDING_RULES, FOUND_RULES, CHECKING_RULES, QUESTION_PARTS]
-    assert updates[3].message == "Your question asks about the highest string tension allowed"
+    assert [update.step for update in updates] == [CHECKING_QUESTION, FINDING_RULES, FOUND_RULES, CHECKING_RULES,
+                                                   QUESTION_PARTS]
+    assert updates[4].message == "Your question asks about the highest string tension allowed"

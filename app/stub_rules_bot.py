@@ -9,7 +9,8 @@ Its answer, SAMPLE_POSTS_ANSWER, is a real sample: the quote is the text of Laws
 (tests/test_chat_endpoint.py checks it). The front-end tests read the same file.
 
 It refuses exactly one question, STUB_REFUSED_QUESTION, with SAMPLE_REFUSAL_ANSWER: the real bot's refusal of that
-question in the 17 Nov run (slice 5; tests/test_chat_refusals.py checks the copy).
+question in the 17 Nov run (slice 5; tests/test_chat_refusals.py checks the copy). It answers "test" with the
+off-topic reply, as the real bot's topic check does (slice 7).
 
 Use:
     rules_bot = StubRulesBot()
@@ -20,6 +21,7 @@ import time
 from pathlib import Path
 
 from answer_flows.shared.answer_shape import RulesAnswer
+from answer_flows.topic_screen import build_off_topic_answer, is_rules_question_by_stub
 from answer_flows.shared.progress_updates import (
     describe_still_writing,
     describe_writing,
@@ -65,6 +67,8 @@ class StubRulesBot:
         for update in STUB_PROGRESS_UPDATES:
             report_progress(update)
             time.sleep(self.seconds_between_updates)
+        if not is_rules_question_by_stub(question_text):
+            return build_off_topic_answer()
         if question_text == STUB_REFUSED_QUESTION:
             return SAMPLE_REFUSAL_ANSWER
         return SAMPLE_POSTS_ANSWER
