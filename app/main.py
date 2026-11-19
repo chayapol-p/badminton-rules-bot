@@ -1,7 +1,7 @@
 """
 FastAPI app for the RAG workshop.
 
-Two endpoints:
+Three endpoints:
 - /health confirms the server is running and shows which models are configured.
   It never calls Mistral or Claude, so it costs nothing to hit.
 - POST /chat answers one rules question as a stream of server-sent events

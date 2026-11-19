@@ -104,6 +104,6 @@ def build_mistral_topic_check(mistral_client: Mistral, model: str) -> IsRulesQue
 
 def build_off_topic_answer() -> RulesAnswer:
     """Returns the fixed off-topic refusal: no citations, no related rules."""
-    return RulesAnswer(reasoning="The topic check found the question is not about the rules of badminton.",
+    return RulesAnswer(reasoning="The topic check found the question is not about badminton.",
                        refused=True, refusal_kind="off_topic", answer=OFF_TOPIC_REPLY, citations=[],
                        related_citations=[])

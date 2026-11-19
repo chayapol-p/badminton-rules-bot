@@ -1,5 +1,5 @@
 {
-  "reasoning": "The topic check found the question is not about the rules of badminton.",
+  "reasoning": "The topic check found the question is not about badminton.",
   "refused": true,
   "refusal_kind": "off_topic",
   "answer": "I can only help with questions about badminton, from the official BWF rule books. If your question is about badminton, can you be more specific? For example: \"I'm bleeding, can I stop playing?\"",

@@ -56,9 +56,6 @@ class Settings(BaseSettings):
     # Which bot answers /chat: the stub (a fixed answer, no API calls) unless .env says real (record 0035)
     rules_bot: Literal["stub", "real"] = "stub"
 
-    # Database address: Supabase > Connect > Session pooler. Optional, because only vector search needs it.
-    database_url: SecretStr | None = None
-
     # A key line left as "MISTRAL_API_KEY=" in .env arrives as an empty string: treat it as missing
     @field_validator("mistral_api_key")
     @classmethod
@@ -87,16 +84,6 @@ def load_settings() -> Settings:
             f"Missing or empty setting: {', '.join(problem_names)}. "
             f"Copy .env.example to .env in {PROJECT_ROOT} and paste the key after the = sign."
         ) from None
-
-
-# Return the database address, or stop with a message that says where to find it
-def require_database_url(settings: Settings) -> str:
-    if settings.database_url is None or not settings.database_url.get_secret_value().strip():
-        raise MissingSettingError(
-            "Missing setting: DATABASE_URL. In Supabase, open your project > Connect > Session pooler, "
-            "copy the URI, put your database password in it, and paste it into .env."
-        )
-    return settings.database_url.get_secret_value()
 
 
 # Return the Anthropic key, or stop with a message that says who needs it and where to put it
