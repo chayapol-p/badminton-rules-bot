@@ -24,7 +24,7 @@ import time
 from anthropic import Anthropic
 
 from answer_flows.shared.answer_shape import RulesAnswer
-from app.settings import load_settings
+from app.settings import load_settings, require_anthropic_api_key
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line, read_lines
 from evals.code_checks import find_code_failures
 from evals.golden_answer_chunks import load_chunks, load_questions
@@ -56,7 +56,7 @@ def rejudge_answer_lines(answer_lines: list[dict], question_by_id: dict[str, dic
                          run_name: str) -> dict[str, bool]:
     """Runs the code checks and the current judge on each saved answer, saves each grade line as it goes, and returns which answers passed."""
     settings = load_settings()
-    anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
+    anthropic_client = Anthropic(api_key=require_anthropic_api_key(settings))
     chunk_by_id = {chunk["id"]: chunk for chunk in chunks}
 
     # Save each grade the moment it's done, to a partial file that replaces the rejudged grades only at

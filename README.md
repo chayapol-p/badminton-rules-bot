@@ -131,7 +131,7 @@ flowchart LR
 Needs [uv](https://docs.astral.sh/uv/). It installs Python 3.12 and the packages.
 
 ```bash
-cp .env.example .env    # then paste MISTRAL_API_KEY and ANTHROPIC_API_KEY into .env
+cp .env.example .env    # then paste MISTRAL_API_KEY into .env (ANTHROPIC_API_KEY is optional: only the answer judge and experiments need it)
 uv sync                 # install packages
 uv run pytest           # tests, no API calls, no network
 ```

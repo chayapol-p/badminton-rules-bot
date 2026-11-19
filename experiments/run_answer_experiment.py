@@ -76,7 +76,7 @@ from answer_flows.shared.flow_reply import FlowReply
 from answer_flows.shared.read_model_reply import MAX_ANSWER_TOKENS
 from answer_flows.shared.rule_tools import RuleTools
 from answer_flows.shared.tool_loop import EXTRA_AGENT_RULES
-from app.settings import Settings, load_settings
+from app.settings import Settings, load_settings, require_anthropic_api_key
 from evals.answer_run_files import ANSWER_RUNS_FOLDER, append_line
 from evals.checks.check_refusals import should_refuse
 from evals.golden_answer_chunks import load_chunks, load_questions
@@ -428,7 +428,7 @@ def run_answer_experiment(choices: RunChoices) -> dict:
     if choices.is_dry_run:
         questions = questions[:1]
     mistral_client = build_mistral_client(settings)
-    anthropic_client = Anthropic(api_key=settings.anthropic_api_key.get_secret_value())
+    anthropic_client = Anthropic(api_key=require_anthropic_api_key(settings))
 
     # The starting sources and the tools, for the setups that have them
     retrieve = None

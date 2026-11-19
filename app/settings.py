@@ -4,9 +4,11 @@ Settings for the RAG workshop.
 Reads the API keys and model names from the .env file at the project root.
 Environment variables override the .env file.
 
-If a key is missing or empty, the app stops at startup with a message that
-names the missing key and says where to put it. That is better than failing
-later, deep inside an API call, with an unclear authentication error.
+If the Mistral key is missing or empty, the app stops at startup with a message
+that names the key and says where to put it. That is better than failing later,
+deep inside an API call, with an unclear authentication error. The Anthropic key
+is optional: only the answer judge and the experiment runs need it, and they ask
+for it through require_anthropic_api_key().
 """
 
 from functools import lru_cache
@@ -34,9 +36,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    # API keys: required. SecretStr keeps them out of logs, errors and printed output.
+    # API keys. SecretStr keeps them out of logs, errors and printed output.
+    # The Mistral key is required; the Anthropic key only for the answer judge and the experiment runs.
     mistral_api_key: SecretStr
-    anthropic_api_key: SecretStr
+    anthropic_api_key: SecretStr | None = None
 
     # Model names, checked against docs.mistral.ai on 1 Nov 2026.
     # Pinned to fixed major.minor IDs: aliases such as mistral-large-latest can change silently.
@@ -57,11 +60,19 @@ class Settings(BaseSettings):
     database_url: SecretStr | None = None
 
     # A key line left as "MISTRAL_API_KEY=" in .env arrives as an empty string: treat it as missing
-    @field_validator("mistral_api_key", "anthropic_api_key")
+    @field_validator("mistral_api_key")
     @classmethod
     def reject_empty_key(cls, key: SecretStr) -> SecretStr:
         if not key.get_secret_value().strip():
             raise ValueError("the key is empty")
+        return key
+
+    # The optional key left as "ANTHROPIC_API_KEY=" counts as not set, so the app still starts
+    @field_validator("anthropic_api_key", mode="before")
+    @classmethod
+    def treat_empty_key_as_missing(cls, key: str | None) -> str | None:
+        if key is not None and not key.strip():
+            return None
         return key
 
 
@@ -86,3 +97,13 @@ def require_database_url(settings: Settings) -> str:
             "copy the URI, put your database password in it, and paste it into .env."
         )
     return settings.database_url.get_secret_value()
+
+
+# Return the Anthropic key, or stop with a message that says who needs it and where to put it
+def require_anthropic_api_key(settings: Settings) -> str:
+    if settings.anthropic_api_key is None:
+        raise MissingSettingError(
+            "Missing setting: ANTHROPIC_API_KEY. Only the answer judge and the experiment runs need it. "
+            "Paste your Anthropic key into .env after ANTHROPIC_API_KEY=."
+        )
+    return settings.anthropic_api_key.get_secret_value()
