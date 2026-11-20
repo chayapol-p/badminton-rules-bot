@@ -18,8 +18,8 @@ When a rule question comes up on court, the answer is somewhere in three BWF rul
 
 | The rules don't cover it | Not about badminton |
 | --- | --- |
-| <img src="docs/demo/not-covered-racket-weight.gif" alt="Animation that shows the bot saying the rules give no racket weight, then quoting the related racket size rule"> | <img src="docs/demo/off-topic-quick-refusal.gif" alt="Animation that shows the bot turning away a question about the weather in Bangkok in under a second"> |
-| Searches, finds no rule, says so, and quotes the nearest rules. 22 s in this clip. | A small model screens the question first, so the bot says no in under a second. |
+| <img src="docs/demo/not-covered-racket-weight.gif" alt="Animation that shows the bot saying the rules give no racket weight, then quoting the related racket size rule"> | <img src="docs/demo/off-topic-quick-refusal.gif" alt="Animation that shows the bot turning away a question about the weather in Bangkok in about a second"> |
+| Searches, finds no rule, says so, and quotes the nearest rules. 22 s in this clip. | A small model screens the question first, so the bot says no in about a second. |
 
 Every number in an answer opens its quote and a link to the PDF page. Code copies each quote from the rule book word for word, so the model never retypes one. The clips are real runs. Long waits are sped up, and the label says by how much.
 
@@ -137,7 +137,7 @@ Not every idea won. Records [0011](docs/decisions/0011-complete-answers-rule-not
 
 ## What still fails
 
-- **The locked questions:** scored once at Stage 2. 7 of the 10 that need an answer passed, and both questions that need a refusal were refused.
+- **The locked questions:** scored once, on the Stage 2 setup (search plus the rule map, no tools), not on the flow the app runs today. 7 of the 10 that need an answer passed, and both questions that need a refusal were refused.
 - **Three questions fail in every flow** (the black card among them): search never finds the clause that holds the missing fact.
 - **Diagrams** reach the bot only as their captions.
 - **"Not covered" answers read like a log** ("The sources do not say…", then raw related quotes), and can quote a loosely related rule, as in the racket-weight clip.
