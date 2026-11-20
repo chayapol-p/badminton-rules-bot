@@ -93,28 +93,49 @@ def dimension_line(colors: dict, start: tuple[float, float], end: tuple[float, f
 
 # ===== Shape helpers: boxes =====
 
-## How each kind of part is drawn (the "Part kinds" rule of the shop-drawing design system):
-## kinds differ by outline colour, tint and corner tag only; corners stay square, dashes and hatching keep their own meanings
-## (red pencil is kept for notes only, because a red part would read as a mistake)
+## How each kind of part is drawn (the "Part kinds" rule of the shop-drawing design system): on a sheet with a key,
+## the key may give marks a kind meaning: a dashed outline for a model call, rounded corners for a reply to the user,
+## hatching for stored data. Red pencil stays for notes only, because a red part would read as a mistake.
 PART_KINDS = {
-    "plain": {"stroke": "ink", "fill": ""},
-    "found": {"stroke": "accent", "fill": "accent_fill"},
-    "code": {"stroke": "accent", "fill": "accent_fill"},
-    "model": {"stroke": "model", "fill": "model_fill"},
+    "plain": {"stroke": "ink", "fill": "", "corner": 0, "hatched": False, "dashed": False},
+    "found": {"stroke": "accent", "fill": "accent_fill", "corner": 0, "hatched": False, "dashed": False},
+    "code": {"stroke": "accent", "fill": "accent_fill", "corner": 0, "hatched": False, "dashed": False},
+    "model": {"stroke": "model", "fill": "model_fill", "corner": 0, "hatched": False, "dashed": True},
+    "reply": {"stroke": "ink", "fill": "", "corner": 16, "hatched": False, "dashed": False},
+    "data": {"stroke": "ink", "fill": "", "corner": 0, "hatched": True, "dashed": False},
 }
 
 
-# Draw a part on the drawing; opaque so lines behind it stay hidden, coloured by its kind
+# Draw a part on the drawing; opaque so lines behind it stay hidden, styled by its kind
 def drawn_box(colors: dict, x: float, y: float, width: float, height: float, kind: str = "plain") -> str:
     style = PART_KINDS[kind]
+    corner = style["corner"]
     is_tinted = style["fill"] != ""
     stroke_width = 1.6 if is_tinted else 1.3
-    parts = [f'<rect x="{x}" y="{y}" width="{width}" height="{height}" fill="{colors["background"]}"/>']
+    parts = [f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="{corner}" fill="{colors["background"]}"/>']
+    if style["hatched"]:
+        parts.append(hatching(colors, x, y, width, height))
+        # A clear band behind the text, so the hatching never runs through the letters
+        parts.append(f'<rect x="{x + 8}" y="{y + 10}" width="{width - 16}" height="{height - 16}" '
+                     f'fill="{colors["background"]}"/>')
     if is_tinted:
-        parts.append(f'<rect x="{x}" y="{y}" width="{width}" height="{height}" fill="{colors[style["fill"]]}"/>')
-    parts.append(f'<rect x="{x}" y="{y}" width="{width}" height="{height}" fill="none" '
-                 f'stroke="{colors[style["stroke"]]}" stroke-width="{stroke_width}"/>')
+        parts.append(f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="{corner}" '
+                     f'fill="{colors[style["fill"]]}"/>')
+
+    # Model calls get a dashed outline, so they differ by shape as well as colour
+    dash = ' stroke-dasharray="7,4"' if style["dashed"] else ""
+    parts.append(f'<rect x="{x}" y="{y}" width="{width}" height="{height}" rx="{corner}" fill="none" '
+                 f'stroke="{colors[style["stroke"]]}" stroke-width="{stroke_width}"{dash}/>')
     return "".join(parts)
+
+
+# Draw diagonal hatching inside a rectangle, the drafting mark for solid material
+def hatching(colors: dict, x: float, y: float, width: float, height: float, spacing: int = 9) -> str:
+    clip_id = f"hatch-{int(x)}-{int(y)}"
+    lines = [f'<line x1="{x + offset}" y1="{y + height}" x2="{x + offset + height}" y2="{y}" '
+             f'stroke="{colors["soft"]}" stroke-width="0.7"/>' for offset in range(-int(height), int(width), spacing)]
+    return (f'<clipPath id="{clip_id}"><rect x="{x}" y="{y}" width="{width}" height="{height}"/></clipPath>'
+            f'<g clip-path="url(#{clip_id})">' + "".join(lines) + '</g>')
 
 
 # Draw a box with a hand-lettered name, a mono line under it and, when given, a small tag in its corner
@@ -180,7 +201,7 @@ RULE_MAP_HEIGHT = 620
 FOUND_CLAUSE = ("LAW 9.1.6", "below 1.15 m when hit")
 LINKED_CLAUSES = [  # name, plain summary, link label, box position (x, y)
     ("ALTERNATIVE SERVICE", "below the server's waist", "REPLACES", (412, 112)),
-    ("LAW 17.3, ITTO 7.2, 7.4", "who calls a service fault", "CITES", (708, 112)),
+    ("LAW 17.3 + 3 ITTO", "who calls a service fault", "CITES", (708, 112)),
     ("PARA 9.1.6.1", "wheelchair: below the armpit", "EXCEPTION TO", (412, 376)),
     ("PARA 9.1.6.2", "standing: alternative service", "EXCEPTION TO", (708, 376)),
 ]
@@ -240,13 +261,13 @@ def rule_map_svg(colors: dict, slug: str) -> str:
     dimension_y = RULE_MAP_HEIGHT - 104
     parts.append(dimension_line(colors, (right_left, dimension_y), (right_right, dimension_y)))
     parts.append(hand_text(colors, (right_left + right_right) / 2, dimension_y - 8,
-                           "1 clause found + 4 linked by the books", size=14, color_key="pencil", anchor="middle"))
+                           "1 clause found + 7 linked by the books", size=14, color_key="pencil", anchor="middle"))
 
     parts.append(title_block(colors, SHEET_WIDTH, RULE_MAP_HEIGHT, "RULE MAP", 1))
     title = "One clause, or one clause and the rule map"
     description = ("A wheelchair player asks how high they may serve. Search alone finds Law 9.1.6, the standing limit "
-                   "of 1.15 m. With the rule map, four linked clauses arrive with it: the Alternative service law that "
-                   "replaces it, the clauses that cite it, and two Para Badminton exceptions, one of which says "
+                   "of 1.15 m. With the rule map, seven linked clauses arrive with it: the Alternative service law that "
+                   "replaces it, the four clauses that cite it, and two Para Badminton exceptions, one of which says "
                    "wheelchair players serve below the armpit.")
     return wrap_svg(slug, SHEET_WIDTH, RULE_MAP_HEIGHT, title, description, "".join(parts))
 
@@ -259,17 +280,27 @@ COLUMN_X = [40, 220, 400, 580, 760]          # five columns, 44 apart
 BUILT_ONCE_Y, QUESTION_ROW_Y, ANSWER_ROW_Y = 96, 264, 430
 
 
-## The key on the kinds sheets: one small sample of each kind of part
-KEY_ROWS = [("model", "model call"), ("code", "code step")]
+## The key on the kinds sheets: the name of each kind of part
+KIND_NAMES = {"model": "model call", "code": "code step", "reply": "reply to the user", "data": "stored data"}
 
 
-# Draw the key: a small sample box for each kind of part, with its name
-def drawing_key(colors: dict, x: float, y: float) -> str:
+# Draw the key: a small sample of each kind of part the sheet uses, with its name
+def drawing_key(colors: dict, x: float, y: float, kinds: list[str]) -> str:
     parts = [mono_text(colors, x, y + 6, "KEY")]
-    for row_number, (kind, label) in enumerate(KEY_ROWS):
+    for row_number, kind in enumerate(kinds):
         row_y = y + 18 + row_number * 20
-        parts.append(drawn_box(colors, x, row_y, 22, 14, kind))
-        parts.append(mono_text(colors, x + 30, row_y + 11, label, size=10, spacing="0"))
+        style = PART_KINDS[kind]
+
+        # The sample's tint or hatching, then its outline; a sample is too small for the hatching's clear band
+        if style["hatched"]:
+            parts.append(hatching(colors, x, row_y, 22, 14, spacing=5))
+        else:
+            parts.append(drawn_box(colors, x, row_y, 22, 14, kind))
+        small_corner = style["corner"] / 3
+        sample_dash = ' stroke-dasharray="4,2"' if style["dashed"] else ""
+        parts.append(f'<rect x="{x}" y="{row_y}" width="22" height="14" rx="{small_corner}" fill="none" '
+                     f'stroke="{colors[style["stroke"]]}" stroke-width="1.3"{sample_dash}/>')
+        parts.append(mono_text(colors, x + 30, row_y + 11, KIND_NAMES[kind], size=10, spacing="0"))
     return "".join(parts)
 
 
@@ -278,15 +309,15 @@ def how_it_works_svg(colors: dict, slug: str) -> str:
     parts = [sheet_paper(colors, SHEET_WIDTH, HOW_IT_WORKS_HEIGHT)]
     half_height = STEP_BOX_HEIGHT / 2
 
-    # Built once: a thin frame around the ingest steps (solid, because a dashed line means "planned")
+    # Built once: a dashed frame around the ingest steps
     parts.append(f'<rect x="28" y="64" width="704" height="112" fill="none" stroke="{colors["soft"]}" '
-                 f'stroke-width="1"/>')
+                 f'stroke-width="1" stroke-dasharray="6,5"/>')
     parts.append(mono_text(colors, 28, 54, "BUILT ONCE"))
     built_once_boxes = [("RULE BOOKS", "3 BWF PDFs", COLUMN_X[0]), ("CLAUSES", "754, one per chunk", COLUMN_X[1]),
                         ("VECTORS", "saved to files", COLUMN_X[2]), ("RULE MAP", "232 links", COLUMN_X[3])]
     for name, sublabel, box_x in built_once_boxes:
         parts.append(labelled_box(colors, box_x, BUILT_ONCE_Y, STEP_BOX_WIDTH, STEP_BOX_HEIGHT, name, sublabel,
-                                  ))
+                                  kind="data"))
     built_once_middle_y = BUILT_ONCE_Y + half_height
     parts.append(line_arrow(colors, [(COLUMN_X[0] + STEP_BOX_WIDTH, built_once_middle_y), (COLUMN_X[1], built_once_middle_y)]))
     parts.append(line_arrow(colors, [(COLUMN_X[1] + STEP_BOX_WIDTH, built_once_middle_y), (COLUMN_X[2], built_once_middle_y)]))
@@ -296,7 +327,7 @@ def how_it_works_svg(colors: dict, slug: str) -> str:
                                      (rule_map_center_x, BUILT_ONCE_Y)]))
 
     # Each question's path, left to right: question, topic check, search, gather call, code gate
-    question_row = [("QUESTION", "from the chat", "", "plain"), ("TOPIC CHECK", "about 1 s", "MODEL", "model"),
+    question_row = [("QUESTION", "from the chat", "", "reply"), ("TOPIC CHECK", "about 1 s", "MODEL", "model"),
                     ("SEARCH", "top 5 + linked", "CODE", "code"), ("GATHER CALL", "picks sentences", "MODEL", "model"),
                     ("CODE GATE", "any part answered?", "CODE", "code")]
     for column, (name, sublabel, tag, kind) in enumerate(question_row):
@@ -314,17 +345,26 @@ def how_it_works_svg(colors: dict, slug: str) -> str:
     parts.append(line_arrow(colors, [(rule_map_center_x, built_once_bottom), (rule_map_center_x, 214),
                                      (vectors_center_x + 32, 214), (vectors_center_x + 32, QUESTION_ROW_Y)]))
 
+    # The gather call can search again with its tools before it picks sentences: a loop from its bottom back to the
+    # search's bottom, below the question row, clear of the off-topic and yes arrows
+    gather_loop_x = COLUMN_X[3] + 40
+    search_return_x = COLUMN_X[2] + 100
+    loop_y = QUESTION_ROW_Y + STEP_BOX_HEIGHT + 40
+    parts.append(line_arrow(colors, [(gather_loop_x, QUESTION_ROW_Y + STEP_BOX_HEIGHT), (gather_loop_x, loop_y),
+                                     (search_return_x, loop_y), (search_return_x, QUESTION_ROW_Y + STEP_BOX_HEIGHT)]))
+    parts.append(mono_text(colors, search_return_x + 12, loop_y + 18, "SEARCHES AGAIN"))
+
     # Off-topic questions turn away at the topic check
     topic_center_x = COLUMN_X[1] + STEP_BOX_WIDTH / 2
     parts.append(labelled_box(colors, COLUMN_X[1], ANSWER_ROW_Y, STEP_BOX_WIDTH, STEP_BOX_HEIGHT,
-                              "POLITE NO", "not badminton"))
+                              "POLITE NO", "not badminton", kind="reply"))
     parts.append(line_arrow(colors, [(topic_center_x, QUESTION_ROW_Y + STEP_BOX_HEIGHT), (topic_center_x, ANSWER_ROW_Y)]))
     parts.append(mono_text(colors, topic_center_x + 8, 384, "OFF TOPIC"))
 
     # The code gate: no answered part goes up to "not covered", any answered part goes down to the write call
     gate_center_x = COLUMN_X[4] + STEP_BOX_WIDTH / 2
     parts.append(labelled_box(colors, COLUMN_X[4], BUILT_ONCE_Y, STEP_BOX_WIDTH, STEP_BOX_HEIGHT,
-                              "NOT COVERED", "+ related quotes"))
+                              "NOT COVERED", "+ related quotes", kind="reply"))
     parts.append(line_arrow(colors, [(gate_center_x, QUESTION_ROW_Y), (gate_center_x, built_once_bottom)]))
     parts.append(mono_text(colors, gate_center_x + 8, 220, "NO"))
     parts.append(line_arrow(colors, [(gate_center_x, QUESTION_ROW_Y + STEP_BOX_HEIGHT), (gate_center_x, ANSWER_ROW_Y)],
@@ -332,7 +372,7 @@ def how_it_works_svg(colors: dict, slug: str) -> str:
     parts.append(mono_text(colors, gate_center_x + 8, 384, "YES"))
 
     # The answer row, right to left: write call, code checks, answer
-    answer_row = [("ANSWER", "with its sources", "", "plain", COLUMN_X[2]),
+    answer_row = [("ANSWER", "with its sources", "", "reply", COLUMN_X[2]),
                   ("CODE CHECKS", "copies each quote", "CODE", "code", COLUMN_X[3]),
                   ("WRITE CALL", "no tools, [n] marks", "MODEL", "model", COLUMN_X[4])]
     for name, sublabel, tag, kind, box_x in answer_row:
@@ -351,15 +391,17 @@ def how_it_works_svg(colors: dict, slug: str) -> str:
     parts.append(hand_text(colors, 40, 548, "the model picks and writes,", size=16, color_key="pencil"))
     parts.append(hand_text(colors, 40, 570, "code makes every exact decision", size=16, color_key="pencil"))
 
-    parts.append(drawing_key(colors, 40, ANSWER_ROW_Y - 4))
+    parts.append(drawing_key(colors, 40, ANSWER_ROW_Y - 4, ["model", "code", "reply", "data"]))
 
     parts.append(title_block(colors, SHEET_WIDTH, HOW_IT_WORKS_HEIGHT, "HOW IT WORKS", 2))
     title = "How the bot answers a question"
     description = ("Built once: 3 BWF rule books become 754 clauses, saved vectors and a rule map of 232 links. For each "
                    "question, a small model checks the topic and turns off-topic questions away. Code searches the top 5 "
-                   "clauses plus their linked clauses, a gather call picks sentences, and a code gate says not covered "
+                   "clauses plus their linked clauses, a gather call picks sentences and may search again with its tools, "
+                   "and a code gate says not covered "
                    "when no part has a sentence. Otherwise a write call with no tools writes the answer with numbered "
-                   "markers, and code checks the markers and copies each quote. Model calls are blue and code steps green.")
+                   "markers, and code checks the markers and copies each quote. Model calls are blue and dashed, code steps "
+                   "green, replies to the user rounded, and the built-once data hatched.")
     return wrap_svg(slug, SHEET_WIDTH, HOW_IT_WORKS_HEIGHT, title, description, "".join(parts))
 
 
@@ -389,7 +431,7 @@ def result_dimension(colors: dict, left_x: float, right_x: float, line_y: float,
 
 # ===== Picture: sheet 3, refusal in code =====
 
-BEFORE_AFTER_HEIGHT = 600
+BEFORE_AFTER_HEIGHT = 620
 PART_HEIGHT = 64
 
 
@@ -401,13 +443,13 @@ def refusal_in_code_svg(colors: dict, slug: str) -> str:
     parts.append(mono_text(colors, 40, 92, "BEFORE: ONE CALL DID EVERY JOB"))
     before_x, before_width = 40, 300
     before_center_x = before_x + before_width / 2
-    parts.append(labelled_box(colors, before_x, 124, before_width, PART_HEIGHT, "QUESTION", "from the chat"))
+    parts.append(labelled_box(colors, before_x, 124, before_width, PART_HEIGHT, "QUESTION", "from the chat", kind="reply"))
     parts.append(arrow_down(colors, before_center_x, 124 + PART_HEIGHT, 240))
     parts.append(labelled_box(colors, before_x, 240, before_width, PART_HEIGHT, "ONE CALL", "searches, decides, writes",
                               kind="model", tag="MODEL"))
     parts.append(arrow_down(colors, before_center_x, 240 + PART_HEIGHT, 356))
     parts.append(labelled_box(colors, before_x, 356, before_width, PART_HEIGHT, "ANSWER OR REFUSAL",
-                              "the model's own call"))
+                              "the model's own call", kind="reply"))
     parts.append(hand_text(colors, before_x, 456, "refusals flipped between runs", size=16, color_key="pencil"))
     parts.append(hand_text(colors, before_x, 478, "on the same evidence", size=16, color_key="pencil"))
 
@@ -427,19 +469,19 @@ def refusal_in_code_svg(colors: dict, slug: str) -> str:
     gate_middle_y = 240 + PART_HEIGHT / 2
     parts.append(arrow_right(colors, left_x + box_width, right_x, gate_middle_y))
     parts.append(mono_text(colors, left_x + box_width + 12, gate_middle_y - 8, "NO"))
-    parts.append(labelled_box(colors, right_x, 240, box_width, PART_HEIGHT, "NOT COVERED", "+ related quotes"))
+    parts.append(labelled_box(colors, right_x, 240, box_width, PART_HEIGHT, "NOT COVERED", "+ related quotes", kind="reply"))
     parts.append(arrow_down(colors, left_center_x, 240 + PART_HEIGHT, 356, color_key="accent"))
     parts.append(mono_text(colors, left_center_x + 8, 336, "YES"))
     parts.append(labelled_box(colors, left_x, 356, box_width, PART_HEIGHT, "WRITE CALL", "no tools, writes from picks",
                               kind="model", tag="MODEL"))
     write_middle_y = 356 + PART_HEIGHT / 2
     parts.append(arrow_right(colors, left_x + box_width, right_x, write_middle_y))
-    parts.append(labelled_box(colors, right_x, 356, box_width, PART_HEIGHT, "ANSWER", "gaps said in words"))
+    parts.append(labelled_box(colors, right_x, 356, box_width, PART_HEIGHT, "ANSWER", "gaps said in words", kind="reply"))
 
     # The measured result (record 0023), the key and the title block
     parts.append(result_dimension(colors, left_x, right_x + box_width, 500,
                                   "0 false refusals in 9 runs, 1 missed in 126"))
-    parts.append(drawing_key(colors, 40, 516))
+    parts.append(drawing_key(colors, 40, 500, ["model", "code", "reply"]))
     parts.append(title_block(colors, SHEET_WIDTH, BEFORE_AFTER_HEIGHT, "REFUSAL IN CODE", 3))
     title = "Refusal decided in code"
     description = ("Before: one model call searched, decided whether to refuse and wrote the answer, and its refusals "
@@ -452,7 +494,7 @@ def refusal_in_code_svg(colors: dict, slug: str) -> str:
 # ===== Picture: sheet 4, citations by number =====
 
 ## The sentence the example cites: Law 9.1.6, as printed in the Laws of Badminton (data/rule_chunks.json)
-EXAMPLE_SENTENCE = "[1] the whole shuttle shall be below 1.15 metres from the surface of the court"
+EXAMPLE_SENTENCE = "[1] the whole shuttle shall be below 1.15 metres from the surface ..."
 
 
 # Draw the citations sheet: the model typing its own quotes, then the model citing numbers and code copying quotes
@@ -463,13 +505,13 @@ def citations_by_number_svg(colors: dict, slug: str) -> str:
     parts.append(mono_text(colors, 40, 92, "BEFORE: THE MODEL TYPED THE QUOTES"))
     before_x, before_width = 40, 300
     before_center_x = before_x + before_width / 2
-    parts.append(labelled_box(colors, before_x, 124, before_width, PART_HEIGHT, "SOURCES", "clauses found by search"))
+    parts.append(labelled_box(colors, before_x, 124, before_width, PART_HEIGHT, "SOURCES", "clauses found by search", kind="data"))
     parts.append(arrow_down(colors, before_center_x, 124 + PART_HEIGHT, 240))
     parts.append(labelled_box(colors, before_x, 240, before_width, PART_HEIGHT, "WRITE CALL",
                               "types the answer and the quotes", kind="model", tag="MODEL"))
     parts.append(arrow_down(colors, before_center_x, 240 + PART_HEIGHT, 356))
     parts.append(labelled_box(colors, before_x, 356, before_width, PART_HEIGHT, "ANSWER",
-                              "quotes as the model typed them"))
+                              "quotes as the model typed them", kind="reply"))
     parts.append(hand_text(colors, before_x, 456, "a quote could be reworded or cut:", size=16, color_key="pencil"))
     parts.append(hand_text(colors, before_x, 478, "about 1 answer in 30 was", size=16, color_key="pencil"))
 
@@ -478,7 +520,7 @@ def citations_by_number_svg(colors: dict, slug: str) -> str:
     # After: the model points at numbered sentences, and code does the copying and checking
     parts.append(mono_text(colors, 420, 92, "AFTER: THE MODEL CITES, CODE COPIES"))
     full_width = 480
-    parts.append(labelled_box(colors, 420, 124, full_width, PART_HEIGHT, "NUMBERED SENTENCES", EXAMPLE_SENTENCE))
+    parts.append(labelled_box(colors, 420, 124, full_width, PART_HEIGHT, "NUMBERED SENTENCES", EXAMPLE_SENTENCE, kind="data"))
     left_x, right_x, box_width = 420, 700, 200
     left_center_x = left_x + box_width / 2
     right_center_x = right_x + box_width / 2
@@ -486,19 +528,19 @@ def citations_by_number_svg(colors: dict, slug: str) -> str:
     parts.append(labelled_box(colors, left_x, 240, box_width, PART_HEIGHT, "WRITE CALL", "cites [1], types no quote",
                               kind="model", tag="MODEL"))
     parts.append(arrow_right(colors, left_x + box_width, right_x, 240 + PART_HEIGHT / 2))
-    parts.append(labelled_box(colors, right_x, 240, box_width, PART_HEIGHT, "CODE CHECKS", "every [n] is checked",
+    parts.append(labelled_box(colors, right_x, 240, box_width, PART_HEIGHT, "CHECK AND COPY", "checks [n], copies its sentence",
                               kind="code", tag="CODE"))
     parts.append(arrow_down(colors, right_center_x, 240 + PART_HEIGHT, 356, color_key="accent"))
-    parts.append(labelled_box(colors, right_x, 356, box_width, PART_HEIGHT, "ANSWER", "[1] copied word for word"))
+    parts.append(labelled_box(colors, right_x, 356, box_width, PART_HEIGHT, "ANSWER", "[1] as the book prints it", kind="reply"))
 
     # The measured result (records 0023 and 0027), the key and the title block
     parts.append(result_dimension(colors, left_x, right_x + box_width, 500, "0 citation problems in 369 answers"))
-    parts.append(drawing_key(colors, 40, 516))
+    parts.append(drawing_key(colors, 40, 500, ["model", "code", "reply", "data"]))
     parts.append(title_block(colors, SHEET_WIDTH, BEFORE_AFTER_HEIGHT, "CITATIONS", 4))
     title = "Citations by number"
     description = ("Before: the write call typed each quote itself, and about 1 answer in 30 had a quote reworded or "
                    "cut. After: the model sees numbered sentences and cites them by number, and code checks every "
-                   "number and copies each sentence word for word. Result: 0 citation problems in 369 answers.")
+                   "number and copies each sentence in as the rule book prints it. Result: 0 citation problems in 369 answers.")
     return wrap_svg(slug, SHEET_WIDTH, BEFORE_AFTER_HEIGHT, title, description, "".join(parts))
 
 

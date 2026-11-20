@@ -37,7 +37,7 @@ For example, a wheelchair player asks how high they may serve. Search finds the 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/rule-map-dark.png">
-  <img src="docs/images/rule-map.png" width="100%" alt="Drawing that shows search alone finding only the 1.15 m serve rule, and the rule map adding four linked clauses, one with the wheelchair limit">
+  <img src="docs/images/rule-map.png" width="100%" alt="Drawing that shows search alone finding only the 1.15 m serve rule, and the rule map adding seven linked clauses, one with the wheelchair limit">
 </picture>
 
 **2. The model judged its own evidence.**
