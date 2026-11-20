@@ -40,7 +40,7 @@ MONO_FONT = "'Geist Mono', ui-monospace, monospace"
 
 ## Sheet size and numbering
 PROJECT_NAME = "BADMINTON RULES BOT"
-SHEET_COUNT = 4
+SHEET_COUNT = 5
 SHEET_WIDTH = 960
 
 
@@ -140,14 +140,14 @@ def hatching(colors: dict, x: float, y: float, width: float, height: float, spac
 
 # Draw a box with a hand-lettered name, a mono line under it and, when given, a small tag in its corner
 def labelled_box(colors: dict, x: float, y: float, width: float, height: float, name: str, sublabel: str,
-                 kind: str = "plain", tag: str = "") -> str:
+                 kind: str = "plain", tag: str = "", name_size: int = 15) -> str:
     center_x = x + width / 2
     name_y = y + height / 2 + 2
     parts = [drawn_box(colors, x, y, width, height, kind)]
     if tag:
         tag_color = "model" if kind == "model" else "soft"
         parts.append(mono_text(colors, x + 7, y + 13, tag, size=8, color_key=tag_color))
-    parts.append(hand_text(colors, center_x, name_y, name, size=15, anchor="middle"))
+    parts.append(hand_text(colors, center_x, name_y, name, size=name_size, anchor="middle"))
     parts.append(mono_text(colors, center_x, name_y + 17, sublabel, size=10, anchor="middle", spacing="0"))
     return "".join(parts)
 
@@ -544,6 +544,260 @@ def citations_by_number_svg(colors: dict, slug: str) -> str:
     return wrap_svg(slug, SHEET_WIDTH, BEFORE_AFTER_HEIGHT, title, description, "".join(parts))
 
 
+# ===== Picture: sheet 5, why each part is there =====
+
+## Layout: the assembly row on top, the schedule below it, then the general notes and the key
+ASSEMBLY_TOP_Y = 176
+ASSEMBLY_STEP_WIDTH, ASSEMBLY_STEP_GAP, ASSEMBLY_STEP_HEIGHT = 112, 15, 60
+BALLOON_RADIUS = 12
+SCHEDULE_LEFT_X, SCHEDULE_RIGHT_X = 36, 924
+SCHEDULE_TOP_Y = 300
+RESULT_LEFT_X = 430
+SCALE_LEFT_X, SCALE_RIGHT_X = 440, 780
+
+## The bot today, left to right: name, sublabel, kind of part
+BOT_TODAY_STEPS = [("TOPIC CHECK", "about 1 s", "model"), ("SEARCH", "top 5 + rule map", "code"),
+                   ("GATHER CALL", "may search again", "model"), ("CODE GATE", "any part answered?", "code"),
+                   ("WRITE CALL", "no tools", "model"), ("CODE CHECKS", "copies quotes", "code"),
+                   ("ANSWER", "quote pop-ups", "reply")]
+
+## Which balloons point at which step, by the step's place in BOT_TODAY_STEPS
+BALLOONS_BY_STEP = {0: [6], 1: [1, 2], 2: [3], 3: [4], 5: [4], 6: [5]}
+
+## The schedule: one row per balloon, in the order the tests were run. A row's scale holds its points (value, is the
+## winner, label) or its ranges (low, high, is the winner); its gap is the dimension drawn between two values
+SCHEDULE_ROWS = [
+    {"balloon": 1, "part": "SEARCH", "question": "which search finds the right clause?",
+     "measure": "recall@5, 24 questions", "record": "record 0006",
+     "results": [("vector search", "0.840", True), ("hybrid (keyword + vector)", "0.771", False),
+                 ("keyword (BM25)", "0.576", False)],
+     "scale": (0.5, 0.9, "0.5", "0.9"),
+     "points": [(0.840, True, "0.840"), (0.771, False, "0.771"), (0.576, False, "0.576")],
+     "gap": (0.771, 0.840, "0.069")},
+    {"balloon": 2, "part": "SEARCH", "question": "how much should the model read?",
+     "measure": "answers passed, of 22", "record": "record 0009",
+     "results": [("top 5 + rule map", "16", True), ("top 55 + rule map, at 2.8x the cost", "15", False),
+                 ("top 5 alone", "14", False)],
+     "scale": (10, 22, "10", "22"),
+     "points": [(16, True, "16"), (15, False, "15"), (14, False, "14")],
+     "gap": (14, 16, "the rule map: +2")},
+    {"balloon": 3, "part": "GATHER CALL", "question": "should the model search by itself?",
+     "measure": "answers passed over 3 runs, of 30", "record": "record 0021",
+     "results": [("C · RAG first, then tools", "26", True), ("B · agent only", "22", False),
+                 ("A · plain RAG", "17", False)],
+     "scale": (10, 30, "10", "30"),
+     "points": [(26, True, "26"), (22, False, "22"), (17, False, "17")],
+     "gap": (22, 26, "+4")},
+    # No scale here: these are counts of problems, and the winner's count is zero
+    {"balloon": 4, "part": "CODE GATE, CODE CHECKS", "question": "who does the exact work: model or code?",
+     "measure": "quote problems, and refusal errors", "record": "record 0023",
+     "results": [("code copies the quotes", "0 in 369 answers", True), ("the model typing them", "about 1 in 30", False),
+                 ("code decides refusals", "0 false in 9 runs", True),
+                 ("the model deciding", "flipped between runs", False)]},
+    {"balloon": 5, "part": "ANSWER", "question": "what answer do people want to read?",
+     "measure": "score out of 100, range over 3 runs", "record": "record 0027",
+     "results": [("one connected answer, inline citations", "89.8 to 92.1", True),
+                 ("one line per part of the question", "82.0 to 84.6", False)],
+     "scale": (80, 95, "80", "95"),
+     "ranges": [(89.8, 92.1, True), (82.0, 84.6, False)],
+     "gap": (84.6, 89.8, "5.2 apart: no overlap")},
+    {"balloon": 6, "part": "TOPIC CHECK", "question": "how fast can it turn a question away?",
+     "measure": "seconds, shorter is better", "record": "docs/specs",
+     "results": [("a small model screens first", "about 1 s", True),
+                 ("full search, then refuse (slowest 70 s)", "median 23 s", False)],
+     "scale": (0, 25, "0 s", "25 s"),
+     "points": [(1, True, "1 s"), (23, False, "23 s")],
+     "gap": (1, 23, "22 s sooner")},
+]
+
+## How every part was measured, as the sheet's general notes
+GENERAL_NOTES = [
+    "1. start: 39 test questions, 27 to tune on, 12 locked away until the end",
+    "2. later sets: 11 unseen questions, then 41 (14 must be refused),",
+    "    then 24 topic-check questions (6 must be turned away)",
+    "3. a win needs 2 or more questions apart. The same flow scored 31, then 35",
+    "    of 41, so from Phase 2 every flow runs 3 times, and the ranges must not overlap",
+]
+
+
+# Draw a balloon: the numbered circle that ties a part to its row in the schedule
+def balloon(colors: dict, center_x: float, center_y: float, number: int, radius: float = BALLOON_RADIUS) -> str:
+    return (f'<circle cx="{center_x}" cy="{center_y}" r="{radius}" fill="{colors["background"]}" '
+            f'stroke="{colors["pencil"]}" stroke-width="1.4"/>'
+            + hand_text(colors, center_x, center_y + radius * 0.42, str(number), size=int(radius * 1.25),
+                        color_key="pencil", anchor="middle"))
+
+
+# Return how far below a row's top its scale sits: under the last result line, with room for the dimension line
+def scale_axis_offset(row: dict) -> int:
+    return 22 + len(row["results"]) * 18 + 24
+
+
+# Return the x position of a value on a schedule row's scale
+def scale_x(value: float, scale: tuple) -> float:
+    scale_start, scale_end = scale[0], scale[1]
+    return SCALE_LEFT_X + (value - scale_start) / (scale_end - scale_start) * (SCALE_RIGHT_X - SCALE_LEFT_X)
+
+
+# Draw the assembly row: the bot's steps, joined left to right, with a balloon over each part a test chose
+def assembly_row(colors: dict) -> str:
+    parts = []
+    for step_number, (name, sublabel, kind) in enumerate(BOT_TODAY_STEPS):
+        step_x = 40 + step_number * (ASSEMBLY_STEP_WIDTH + ASSEMBLY_STEP_GAP)
+        step_center_x = step_x + ASSEMBLY_STEP_WIDTH / 2
+        parts.append(labelled_box(colors, step_x, ASSEMBLY_TOP_Y, ASSEMBLY_STEP_WIDTH, ASSEMBLY_STEP_HEIGHT, name,
+                                  sublabel, kind=kind, name_size=13))
+        if step_number > 0:
+            arrow_y = ASSEMBLY_TOP_Y + ASSEMBLY_STEP_HEIGHT / 2
+            parts.append(line_arrow(colors, [(step_x - ASSEMBLY_STEP_GAP, arrow_y), (step_x, arrow_y)]))
+
+        # Two balloons on one part sit side by side; each leader runs straight down to the part's top edge
+        balloon_numbers = BALLOONS_BY_STEP.get(step_number, [])
+        for balloon_index, number in enumerate(balloon_numbers):
+            offset = (balloon_index - (len(balloon_numbers) - 1) / 2) * 32
+            balloon_x, balloon_y = step_center_x + offset, ASSEMBLY_TOP_Y - 36
+            parts.append(f'<line x1="{balloon_x}" y1="{balloon_y + BALLOON_RADIUS}" x2="{balloon_x}" '
+                         f'y2="{ASSEMBLY_TOP_Y}" stroke="{colors["pencil"]}" stroke-width="1"/>')
+            parts.append(balloon(colors, balloon_x, balloon_y, number))
+    return "".join(parts)
+
+
+# Draw a row's scale: a soft axis with its end labels, the points or ranges on it, and the pencil dimension of the gap
+def schedule_scale(colors: dict, row: dict, row_y: float) -> str:
+    scale = row["scale"]
+    axis_y = row_y + scale_axis_offset(row)
+    parts = [f'<line x1="{SCALE_LEFT_X}" y1="{axis_y}" x2="{SCALE_RIGHT_X}" y2="{axis_y}" stroke="{colors["soft"]}" '
+             f'stroke-width="0.8"/>']
+    point_xs = [scale_x(value, scale) for value, _, _ in row.get("points", [])]
+    for end_x, end_label in ((SCALE_LEFT_X, scale[2]), (SCALE_RIGHT_X, scale[3])):
+        parts.append(f'<line x1="{end_x}" y1="{axis_y - 3}" x2="{end_x}" y2="{axis_y + 3}" stroke="{colors["soft"]}" '
+                     f'stroke-width="0.8"/>')
+        is_crowded = any(abs(point_x - end_x) < 30 for point_x in point_xs)
+        if not is_crowded:
+            parts.append(mono_text(colors, end_x, axis_y + 15, end_label, size=8, anchor="middle", spacing="0"))
+
+    # Points: the winner solid in ink, the others open in soft, each with its value under it
+    for value, is_winner, label in row.get("points", []):
+        point_x = scale_x(value, scale)
+        fill_key = "ink" if is_winner else "background"
+        stroke_key = "ink" if is_winner else "soft"
+        parts.append(f'<circle cx="{point_x}" cy="{axis_y}" r="4" fill="{colors[fill_key]}" '
+                     f'stroke="{colors[stroke_key]}" stroke-width="1.3"/>')
+        parts.append(mono_text(colors, point_x, axis_y + 15, label, size=9, color_key=stroke_key, anchor="middle",
+                               spacing="0"))
+
+    # Ranges: a thick bar from the lowest to the highest of three runs
+    for low, high, is_winner in row.get("ranges", []):
+        color_key = "ink" if is_winner else "soft"
+        low_x, high_x = scale_x(low, scale), scale_x(high, scale)
+        parts.append(f'<rect x="{low_x}" y="{axis_y - 3}" width="{high_x - low_x}" height="6" '
+                     f'fill="{colors[color_key]}"/>')
+
+    # The gap between the winner and the value it beat, as a pencil dimension line with its size beside it
+    gap_start, gap_end, gap_label = row["gap"]
+    start_x, end_x = scale_x(gap_start, scale), scale_x(gap_end, scale)
+    dimension_y = axis_y - 16
+    parts.append(dimension_line(colors, (start_x, dimension_y), (end_x, dimension_y)))
+    parts.append(hand_text(colors, max(start_x, end_x) + 12, dimension_y + 5, gap_label, size=13, color_key="pencil"))
+    return "".join(parts)
+
+
+# Draw one row of the schedule: balloon, part and question, what won and what it beat, the scale, and the record
+def schedule_row(colors: dict, row: dict, row_y: float) -> str:
+    parts = [balloon(colors, SCHEDULE_LEFT_X + 24, row_y + 26, row["balloon"])]
+
+    # The part, the question it answered, and what was measured
+    parts.append(hand_text(colors, SCHEDULE_LEFT_X + 50, row_y + 24, row["part"], size=15))
+    parts.append(mono_text(colors, SCHEDULE_LEFT_X + 50, row_y + 44, row["question"], size=10, color_key="ink",
+                           spacing="0"))
+    parts.append(mono_text(colors, SCHEDULE_LEFT_X + 50, row_y + 60, row["measure"], size=9, spacing="0"))
+
+    # One line per contender: the name in small mono on the left, the score in hand lettering in its own column on
+    # the right, so the two never read as one string. The winner is in ink, the rest in soft
+    for line_number, (name, score, is_winner) in enumerate(row["results"]):
+        line_y = row_y + 22 + line_number * 18
+        color_key = "ink" if is_winner else "soft"
+        parts.append(mono_text(colors, RESULT_LEFT_X, line_y, name, size=10, color_key=color_key, spacing="0"))
+        parts.append(hand_text(colors, SCALE_RIGHT_X, line_y + 1, score, size=15, color_key=color_key, anchor="end"))
+    if "scale" in row:
+        parts.append(schedule_scale(colors, row, row_y))
+
+    # The record that holds the full result
+    parts.append(mono_text(colors, SCHEDULE_RIGHT_X - 10, row_y + 22, row["record"], size=9, anchor="end",
+                           spacing="0"))
+    return "".join(parts)
+
+
+# Return the height a schedule row needs: a scale row needs room for its axis, a text row for its lines
+def schedule_row_height(row: dict) -> int:
+    if "scale" in row:
+        return scale_axis_offset(row) + 28
+    return 34 + len(row["results"]) * 18
+
+
+# Draw the key for this sheet: the balloon, the dimension line, and the kinds of part
+def assembly_key(colors: dict, x: float, y: float) -> str:
+    parts = [mono_text(colors, x, y + 6, "KEY")]
+    parts.append(balloon(colors, x + 11, y + 26, 1, radius=9))
+    parts.append(mono_text(colors, x + 30, y + 30, "balloon: a test that chose a part", size=10, spacing="0"))
+    parts.append(dimension_line(colors, (x + 2, y + 52), (x + 22, y + 52)))
+    parts.append(mono_text(colors, x + 34, y + 56, "the winner's lead", size=10, spacing="0"))
+    parts.append(drawing_key(colors, x, y + 58, ["model", "code", "reply"]).replace(">KEY<", "><", 1))
+    return "".join(parts)
+
+
+# Draw the sheet: the bot as an assembly, each part's test in the schedule, and how everything was measured
+def why_each_part_svg(colors: dict, slug: str) -> str:
+    # Work out the schedule's height first, so the sheet knows how tall it is
+    row_heights = [schedule_row_height(row) for row in SCHEDULE_ROWS]
+    schedule_bottom_y = SCHEDULE_TOP_Y + 26 + sum(row_heights)
+    notes_y = schedule_bottom_y + 44
+    sheet_height = int(notes_y + len(GENERAL_NOTES) * 22 + 110)
+
+    parts = [sheet_paper(colors, SHEET_WIDTH, sheet_height)]
+
+    # The heading, then the assembly
+    parts.append(hand_text(colors, 36, 66, "WHY EACH PART IS THERE", size=26))
+    parts.append(mono_text(colors, 36, 92, "assembly of the bot today: each balloon points to the test that chose a part"))
+    parts.append(assembly_row(colors))
+
+    # The schedule: a header, then one row per balloon with a soft rule between rows
+    parts.append(mono_text(colors, SCHEDULE_LEFT_X, SCHEDULE_TOP_Y, "SCHEDULE · PART AND QUESTION"))
+    parts.append(mono_text(colors, RESULT_LEFT_X, SCHEDULE_TOP_Y, "WHAT WON, AND WHAT IT BEAT"))
+    parts.append(mono_text(colors, SCHEDULE_RIGHT_X - 10, SCHEDULE_TOP_Y, "RECORD", anchor="end"))
+    row_y = SCHEDULE_TOP_Y + 12
+    parts.append(f'<line x1="{SCHEDULE_LEFT_X}" y1="{row_y}" x2="{SCHEDULE_RIGHT_X}" y2="{row_y}" '
+                 f'stroke="{colors["ink"]}" stroke-width="1.2"/>')
+    for row, row_height in zip(SCHEDULE_ROWS, row_heights):
+        parts.append(schedule_row(colors, row, row_y + 6))
+        row_y += row_height
+        parts.append(f'<line x1="{SCHEDULE_LEFT_X}" y1="{row_y}" x2="{SCHEDULE_RIGHT_X}" y2="{row_y}" '
+                     f'stroke="{colors["soft"]}" stroke-width="0.8"/>')
+
+    # The general notes: how every part was measured
+    parts.append(mono_text(colors, SCHEDULE_LEFT_X, notes_y, "GENERAL NOTES"))
+    for line_number, note_line in enumerate(GENERAL_NOTES):
+        is_continuation = note_line.startswith(" ")
+        indent = 18 if is_continuation else 0
+        parts.append(hand_text(colors, SCHEDULE_LEFT_X + indent, notes_y + 24 + line_number * 22, note_line.strip(),
+                               size=14))
+
+    # The key on the right, and the title block in the corner
+    parts.append(assembly_key(colors, 690, notes_y - 6))
+    parts.append(title_block(colors, SHEET_WIDTH, sheet_height, "WHY EACH PART", 5))
+    title = "Why each part is there"
+    description = ("The bot today as an assembly of seven steps: topic check, search, gather call, code gate, write "
+                   "call, code checks and answer. Numbered balloons tie each part to the test that chose it. 1, search: "
+                   "vector search won with recall@5 0.840 against hybrid 0.771. 2, search: the top 5 clauses plus the "
+                   "rule map passed 16 of 22, against 14 without the map and 15 for the top 55 at 2.8 times the cost. "
+                   "3, gather call: RAG first, then tools passed 26 of 30, against 22 for an agent alone. 4, code gate "
+                   "and code checks: code copying quotes left 0 problems in 369 answers, and code deciding refusals "
+                   "left 0 false refusals in 9 runs. 5, answer: one connected answer scored 89.8 to 92.1 against 82.0 "
+                   "to 84.6. 6, topic check: a small model turns off-topic questions away in about 1 s instead of a "
+                   "median 23 s. General notes give the test sets and the rule of 3 runs with no overlap.")
+    return wrap_svg(slug, SHEET_WIDTH, sheet_height, title, description, "".join(parts))
+
+
 # ===== Page helpers =====
 
 # Wrap the drawing in an accessible <svg> with a title and a description
@@ -586,6 +840,7 @@ PICTURES = [  # file name, page heading, drawing function
     ("how-it-works", "How the bot answers a question", how_it_works_svg),
     ("refusal-in-code", "Refusal decided in code", refusal_in_code_svg),
     ("citations-by-number", "Citations by number", citations_by_number_svg),
+    ("why-each-part", "Why each part is there", why_each_part_svg),
 ]
 
 
