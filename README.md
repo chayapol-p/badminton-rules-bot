@@ -66,6 +66,13 @@ The pattern behind all three: **the model makes one judgement at a time, and cod
 
 Before writing any search code, I wrote 39 test questions and split them once: 27 to tune on, 12 locked away for one final score. Each run changed one thing, and each result went into `evals/runs.jsonl`. Numbers from different stages are never compared with each other.
 
+Each part of the bot today came from one of these tests. The sections below give each test in full.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/why-each-part-dark.png">
+  <img src="docs/images/why-each-part.png" width="100%" alt="Drawing that shows the bot's seven steps, each tied by a numbered balloon to the test that chose it, with the winning scores">
+</picture>
+
 ### Stages 1 to 3 · Building the pipeline
 
 **Stage 1 · Which search?** (24 answerable dev questions, top 5 results)
