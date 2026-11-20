@@ -601,13 +601,14 @@ SCHEDULE_ROWS = [
      "scale": (80, 95, "80", "95"),
      "ranges": [(89.8, 92.1, True), (82.0, 84.6, False)],
      "gap": (84.6, 89.8, "5.2 apart: no overlap")},
-    {"balloon": 6, "part": "TOPIC CHECK", "question": "how fast can it turn a question away?",
-     "measure": "seconds, shorter is better", "record": "docs/specs",
+    # Before the screen, the off-topic "test" ran the full search: 77 s live, then 14.8 s on a rerun (the spec)
+    {"balloon": 6, "part": "TOPIC CHECK", "question": "how fast can it turn an off-topic question away?",
+     "measure": "seconds for \"test\", shorter is better", "record": "docs/specs",
      "results": [("a small model screens first", "about 1 s", True),
-                 ("full search, then refuse (slowest 70 s)", "median 23 s", False)],
-     "scale": (0, 25, "0 s", "25 s"),
-     "points": [(1, True, "1 s"), (23, False, "23 s")],
-     "gap": (1, 23, "22 s sooner")},
+                 ("full search first, 2 live runs", "15 s and 77 s", False)],
+     "scale": (0, 80, "0 s", "80 s"),
+     "points": [(1, True, "1 s"), (14.8, False, "15 s"), (77, False, "77 s")],
+     "gap": (1, 14.8, "14 s sooner, or more")},
 ]
 
 ## How every part was measured, as the sheet's general notes
@@ -793,8 +794,8 @@ def why_each_part_svg(colors: dict, slug: str) -> str:
                    "3, gather call: RAG first, then tools passed 26 of 30, against 22 for an agent alone. 4, code gate "
                    "and code checks: code copying quotes left 0 problems in 369 answers, and code deciding refusals "
                    "left 0 false refusals in 9 runs. 5, answer: one connected answer scored 89.8 to 92.1 against 82.0 "
-                   "to 84.6. 6, topic check: a small model turns off-topic questions away in about 1 s instead of a "
-                   "median 23 s. General notes give the test sets and the rule of 3 runs with no overlap.")
+                   "to 84.6. 6, topic check: a small model turns the off-topic question test away in about 1 s; before, the full "
+                   "search took 15 s and 77 s in two live runs. General notes give the test sets and the rule of 3 runs with no overlap.")
     return wrap_svg(slug, SHEET_WIDTH, sheet_height, title, description, "".join(parts))
 
 
