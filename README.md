@@ -137,7 +137,7 @@ Not every idea won. Records [0011](docs/decisions/0011-complete-answers-rule-not
 
 ## What still fails
 
-- **The locked questions:** scored once at Stage 2, 7 of 10 answers passed.
+- **The locked questions:** scored once at Stage 2. 7 of the 10 that need an answer passed, and both questions that need a refusal were refused.
 - **Three questions fail in every flow** (the black card among them): search never finds the clause that holds the missing fact.
 - **Diagrams** reach the bot only as their captions.
 - **"Not covered" answers read like a log** ("The sources do not say…", then raw related quotes), and can quote a loosely related rule, as in the racket-weight clip.
@@ -166,11 +166,11 @@ Blue dashed boxes are model calls and green boxes are code. The model makes one 
 
 ## Try it
 
-Needs [uv](https://docs.astral.sh/uv/) and Node.js. The stub bot answers every question with one saved answer and refuses one set question, so you can click through the whole page at no cost. None of these steps needs a real API key.
+Needs [uv](https://docs.astral.sh/uv/) and Node.js. The stub bot answers every question with one saved answer and refuses one set question, so you can click through the whole page at no cost. None of these steps needs a real API key, but the app won't start with the Mistral key left empty.
 
 ```bash
 git clone https://github.com/chayapol-p/badminton-rules-bot && cd badminton-rules-bot
-cp .env.example .env     # then put any placeholder after MISTRAL_API_KEY= (the app won't start with it empty, but the stub never calls Mistral)
+cp .env.example .env     # then type any placeholder after MISTRAL_API_KEY=
 uv sync
 uv run python -m scripts.download_rule_books   # the 3 BWF rule books, checked against their frozen hashes
 uv run python -m scripts.build_rule_chunks     # 754 clauses, so each citation links to its PDF page
