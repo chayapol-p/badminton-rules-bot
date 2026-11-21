@@ -135,41 +135,20 @@ Most of the gain came from readability. The facts scored about the same, and the
 
 ### Final test · 40 new questions, locked before any run
 
-The 12 locked golden questions were scored once, on the Stage 2 setup. To test the final design, I wrote 40 new questions and locked them before any run: 10 not about badminton, 10 about badminton that no rule answers, and 20 that need a linked rule (Alternative Laws, Para Badminton, cross-cited clauses). Every run records the file's hash. Three flows ran 3 times each, taking turns, on 21 Nov. A tool round is one turn in which the model calls the search or read tools. Code scored every answer. The judge's lines (correct, grounded) wait for a re-grade, so they aren't here.
+The 12 locked golden questions were scored once, on the Stage 2 setup. To test the final design, I wrote 40 new questions and locked them before any run: 10 not about badminton, 10 about badminton that no rule answers, and 20 that need a linked rule (Alternative Laws, Para Badminton, cross-cited clauses). Every run records the file's hash. It is one test: the three flows ran on the same 40 questions, 3 times each, taking turns, on 21 Nov. A tool round is one turn in which the model calls the search or read tools. Code scored every answer. The judge's lines (correct, grounded) wait for a re-grade, so they aren't here.
 
 | Range over 3 runs | Plain agent | Final design | Final design, no rule map |
 | --- | --- | --- | --- |
-| Tool rounds per question | 2.5–2.8 | **0.8–0.9** | 1.1–1.3 |
 | Tool rounds, linked-rule questions | 1.8–2.1 | **0.15** | 0.45–0.65 |
+| Tool rounds, all questions | 2.53–2.80 | **0.80–0.93** | 1.05–1.28 |
 | Cost per question | $0.017–0.022 | **$0.011–0.012** | $0.011–0.013 |
 | Missed refusals, of 20 | 1–2 | 0–1 | 1 |
-| False refusals, of 20 | 0 | 1 | 1 |
 
 - **Against a plain tool-calling agent,** the final design took 67% fewer tool rounds and cost 41% less per question. The ranges don't overlap. Note: the plain agent has the rule map too. Its search tool returns each hit with the clauses the map links to. So this comparison measures the whole design (search before the tools, the topic screen, the gather and write calls), not the map. The map's own effect is the design against the design without the map.
 - **The rule map alone** cut tool rounds on linked-rule questions by 74%.
-- **Refusals didn't separate the flows.** Most misses are one question I labelled "not covered" that is answerable: the officials' instructions do cover phones and other devices on court (ITTO 5.15.1). The false refusal is real: the topic screen turned away a wheelchair question in every run.
+- **Refusals didn't separate the flows.** Most misses are one question I labelled "not covered" that is answerable: the officials' instructions do cover phones and other devices on court (ITTO 5.15.1). The design's one false refusal (the plain agent made none) is real: the topic screen turned away a wheelchair question in every run.
 
 ([`experiments/run_final_experiment.py`](experiments/run_final_experiment.py), questions in [`evals/final_experiment_questions.json`](evals/final_experiment_questions.json))
-
-### What each part adds
-
-Each gain below comes from its own test, which changed that one part and held everything else the same. The tests ran at different stages, on different question sets and with different judges, so the gains can't be added up into one number, and a number from one test can't be compared with a number from another.
-
-| Part | What it changed | Measured in |
-| --- | --- | --- |
-| Context header on each clause | Recall@5 0.764 → 0.840 | Stage 1: 24 dev questions, scored by code, 1 run each ([0003](docs/decisions/0003-add-a-context-header-to-every-chunk.md)) |
-| Vector search | Recall@5 0.840, against 0.576 for keyword and 0.771 for hybrid (hybrid within noise) | Stage 1: the same 24 questions ([0006](docs/decisions/0006-vector-search-on-clauses-goes-to-stage-2.md)) |
-| Rule map | 14 → 16 of 22 passed | Stage 2: 22 dev questions, an earlier judge, 1 run each ([0009](docs/decisions/0009-top-5-plus-rule-links.md)) |
-| Rule map | Tool rounds on linked-rule questions 0.45–0.65 → 0.15 | Final test: 20 locked linked-rule questions, scored by code, 3 runs each |
-| Search first, then tools | 17 → 26 of 30 unseen answers, against 22 for an agent alone | Stage 3: 11 unseen questions, an earlier judge, 3 runs each ([0021](docs/decisions/0021-setup-c-goes-to-phase-2.md)) |
-| Gather and write calls | Grounded 24–26 → 27 of 27 answered; pass count within noise | Phase 2: 41 questions, judge before the scorecard, 14 Nov, 5 and 4 runs ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md)) |
-| Code copies the quotes | Misquotes 43 of 1,212 → 0 of 820 answers | Code check on every saved answer: Stages 2–3 (model typed the quotes) against Phase 2 (code copied them); the question sets differ |
-| One natural answer, inline citations | Combined score 82.0–84.6 → 89.8–92.1, for 20% more cost and about 11 s more | Phase 2: 41 questions, the scorecard judge, 3 runs each ([0027](docs/decisions/0027-one-natural-answer-with-inline-citations.md)) |
-| Topic screen | An off-topic question: about $0.015 and 23 s → $0.00004 and 0.6 s. Total cost falls 5.1% when 5% of questions are off topic, 26.1% at 25% | Per-call cost logs of the screen's check runs (measured) and of the 42 Phase 2 refusals (the estimated "before") |
-| Code refusal gate | No measured gain; chosen so the same evidence always gets the same decision | [0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md) |
-| Progress updates | No measured gain; chosen so the 34 s wait shows each step | [0028](docs/decisions/0028-progress-updates-make-the-wait-feel-shorter.md) |
-
-The topic screen's "before" cost is estimated from the Phase 2 refusals, which took the same search-then-refuse path. Its own cost and time are measured.
 
 Not every idea won. Records [0011](docs/decisions/0011-complete-answers-rule-not-adopted.md) and [0001](docs/decisions/0001-test-section-groups-as-a-third-chunking.md) are ideas I tested and dropped.
 
