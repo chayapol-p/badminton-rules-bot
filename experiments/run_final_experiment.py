@@ -98,7 +98,9 @@ def build_flow_function(flow_name: str, chunks: list[dict], recording_client: Re
                                      settings.mistral_reasoning_effort, agent_rules, question_text, [], rule_tools)
         return answer_with_plain_agent
 
-    # The design, with the rule map or with an empty one; the topic screen runs first, as in RulesBot.answer
+    # The design, with the rule map or with an empty one. This repeats RulesBot.answer's steps (topic screen, retrieve,
+    # gather-then-write) instead of calling it, because RulesBot.answer returns only the answer, not the tool rounds
+    # and model calls this test counts; keep the two in step
     rule_map = load_rule_map()
     if flow_name == "design-no-map":
         rule_map = index_links([])
@@ -172,7 +174,9 @@ def score_run(answer_lines: list[dict]) -> dict:
     should_refuse_lines = [line for line in answer_lines if line["should_refuse"]]
     linked_lines = [line for line in answer_lines if not line["should_refuse"]]
     answered_linked_lines = [line for line in linked_lines if line["refusal_outcome"] == "answered"]
+    # A failed question has no tool rounds or cost to count, so the means leave it out (its id is in format_errors)
     finished_lines = [line for line in answer_lines if not line["is_format_error"]]
+    finished_linked_lines = [line for line in linked_lines if not line["is_format_error"]]
     return {
         "should_refuse": len(should_refuse_lines),
         "correct_refusals": len(ids_with_outcome(answer_lines, CORRECT_REFUSAL)),
@@ -184,9 +188,9 @@ def score_run(answer_lines: list[dict]) -> dict:
         "answers_with_citation_problems": sorted(line["id"] for line in finished_lines if line["citation_problems"]),
         "format_errors": sorted(f"{line['id']} ({line['error_message']})" for line in answer_lines
                                 if line["is_format_error"]),
-        "mean_tool_rounds": round(statistics.mean(line["tool_rounds"] for line in answer_lines), 3),
-        "mean_tool_rounds_linked": round(statistics.mean(line["tool_rounds"] for line in linked_lines), 3),
-        "mean_model_calls": round(statistics.mean(line["model_calls"] for line in answer_lines), 3),
+        "mean_tool_rounds": round(statistics.mean(line["tool_rounds"] for line in finished_lines), 3),
+        "mean_tool_rounds_linked": round(statistics.mean(line["tool_rounds"] for line in finished_linked_lines), 3),
+        "mean_model_calls": round(statistics.mean(line["model_calls"] for line in finished_lines), 3),
         "cost_per_question": round(statistics.mean(line["answer_cost"] for line in answer_lines), 5),
         "cost_per_linked_answer": round(statistics.mean(line["answer_cost"] for line in linked_lines), 5),
         "total_cost": round(sum(line["answer_cost"] for line in answer_lines), 4),

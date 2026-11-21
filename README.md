@@ -23,7 +23,6 @@ When a rule question comes up on court, the answer is somewhere in three BWF rul
 
 Every number in an answer opens its quote and a link to the PDF page. Code copies each quote from the rule book word for word, so the model never retypes one. The clips are real runs. Long waits are sped up, and the label says by how much.
 
-The topic screen pays for itself. An off-topic question costs $0.00004 and takes 0.6 s, instead of about $0.015 and 23 s through the full flow, 99.7% less. Every badminton question pays the extra $0.00004 and 0.6 s, so total cost drops 5.1% when 5% of questions are off topic, and 26.1% at 25%. The screen's own cost and time are measured; the full-flow cost of an off-topic question is estimated from the Phase 2 refusals, which take the same search-then-refuse path.
 
 I built it end to end, as practice for shipping RAG products, and measured every choice before I kept it. Each decision has a short record in [`docs/decisions`](docs/decisions/README.md) (36 so far), with the options I turned down and the runs behind it. I wrote most of the code with AI coding tools, under my review.
 
@@ -44,7 +43,7 @@ For example, a wheelchair player asks how high they may serve. Search finds the 
 
 **2. The model judged its own evidence.**
 At first, one model call did three jobs: it searched, decided whether to refuse, and wrote the answer. It made refusal errors, and the errors flipped between runs on the same evidence.
-**Fix:** split the job. A *gather call* only picks the sentences that answer each part of the question. **Code** then refuses when no part has a sentence. A *write call* with no tools writes the answer from the picked sentences. Result: across the Phase 2 runs of this flow, 0 of 210 should-refuse answers were missed and 0 of 405 answerable ones were refused. The one-call flow it replaced missed 1 of 42 on 14 Nov, and 3 of 42 on 20 Nov (the same question every time), on the same 41 questions. Fewer false refusals is not a gain I can claim: in the final test below, a plain tool-calling agent made 0 false refusals and this design made 1. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md))
+**Fix:** split the job. A *gather call* only picks the sentences that answer each part of the question. **Code** then refuses when no part has a sentence. A *write call* with no tools writes the answer from the picked sentences. Result: across the Phase 2 runs of this flow on 14–17 Nov, 0 of 210 should-refuse answers were missed and 0 of 405 answerable ones were refused. The one-call flow it replaced, which already refused in code from its picked sentences, missed 1 of 42 on 14 Nov, and 3 of 42 on 20 Nov (the same question every time), on the same 41 questions. Fewer false refusals is not a gain I can claim: in the final test below, a plain tool-calling agent made 0 false refusals and this design made 1. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md))
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/refusal-in-code-dark.png">
@@ -53,7 +52,7 @@ At first, one model call did three jobs: it searched, decided whether to refuse,
 
 **3. Citations drifted from the rule text.**
 When the model typed its own quotes, it paraphrased them or dropped parts: 44 of 1,245 saved answers from Stages 2 and 3 quote words that aren't in the clause they cite (about 1 in 28).
-**Fix:** the model cites a sentence by its number, and **code** copies the sentence in, checks every `[n]` marker, and checks that every answer sentence carries one. Result: 0 such quotes in the 820 answers of the Phase 2 runs (one answer had a broken `[n]` marker, which the check caught). This is exact by construction: it says every quote matches the rule book, not that every claim matches its quote, which the judge checks separately. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md), [0027](docs/decisions/0027-one-natural-answer-with-inline-citations.md))
+**Fix:** the model cites a sentence by its number, and **code** copies the sentence in, checks every `[n]` marker, and checks that every answer sentence carries one. Result: 0 such quotes in the 820 answers of the Phase 2 runs of 14–17 Nov (one answer had a broken `[n]` marker, which the check caught). This is exact by construction: it says every quote matches the rule book, not that every claim matches its quote, which the judge checks separately. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md), [0027](docs/decisions/0027-one-natural-answer-with-inline-citations.md))
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/citations-by-number-dark.png">
@@ -146,11 +145,13 @@ The 12 locked golden questions were scored once, on the Stage 2 setup. To test t
 | Cost per question | $0.017–0.022 | **$0.011–0.012** | $0.011–0.013 |
 | Missed refusals, of 20 | 1–2 | 0–1 | 1 |
 
-- **Against a plain tool-calling agent,** the final design took 67% fewer tool rounds and cost 41% less per question. The ranges don't overlap. Note: the plain agent has the rule map too. Its search tool returns each hit with the clauses the map links to. So this comparison measures the whole design (search before the tools, the topic screen, the gather and write calls), not the map. The map's own effect is the design against the design without the map.
+- **Against a plain tool-calling agent,** the final design took 67% fewer tool rounds and cost 41% less per question. The ranges don't overlap. The cost saving comes from this mix, where half the questions should be refused: on the 20 linked-rule questions alone, the cost was about the same ($0.0106–0.0109 against $0.0097–0.0115), and the design was a little slower (median 15–19 s against 13–17 s). The design's first search runs before the model and isn't a tool round. Note: the plain agent has the rule map too. Its search tool returns each hit with the clauses the map links to. So this comparison measures the whole design (search before the tools, the topic screen, the gather and write calls), not the map. The map's own effect is the design against the design without the map.
 - **The rule map alone** cut tool rounds on linked-rule questions by 74%.
-- **Refusals didn't separate the flows.** Most misses are one question I labelled "not covered" that is answerable: the officials' instructions do cover phones and other devices on court (ITTO 5.15.1). The design's one false refusal (the plain agent made none) is real: the topic screen turned away a wheelchair question in every run.
+- **Refusals didn't separate the flows.** Most misses are one question I labelled "not covered" that is answerable: the officials' instructions do cover phones and other devices on court (ITTO 5.15.1). Read that way, the design's one refusal of it (run 1) was a false refusal too. The design's one false refusal (the plain agent made none) is real: the topic screen turned away a wheelchair question in every run.
 
 ([`experiments/run_final_experiment.py`](experiments/run_final_experiment.py), questions in [`evals/final_experiment_questions.json`](evals/final_experiment_questions.json))
+
+**The topic screen.** A small model checks each question before any search. An off-topic question now gets its reply in about 0.6 s, for $0.00004 (measured over 3 check runs of 112 questions). Before the screen, such a question went through the full search: a live "test" took 15 s and 77 s. Its cost was never logged, so I don't claim a saving in percent. The screen adds the same 0.6 s and $0.00004 to every badminton question, and it can be wrong (see [What still fails](#what-still-fails)).
 
 Not every idea won. Records [0011](docs/decisions/0011-complete-answers-rule-not-adopted.md) and [0001](docs/decisions/0001-test-section-groups-as-a-third-chunking.md) are ideas I tested and dropped.
 
@@ -161,7 +162,7 @@ Not every idea won. Records [0011](docs/decisions/0011-complete-answers-rule-not
 - **The locked questions:** scored once at Stage 2. 7 of the 10 that need an answer passed, and both questions that need a refusal were refused.
 - **Three questions fail in every flow** (the black card among them): search never finds the clause that holds the missing fact.
 - **Diagrams** reach the bot only as their captions.
-- **The topic screen can turn away a real rules question.** In the final test it called "Can a wheelchair have extra support wheels?" off topic in every run.
+- **The topic screen can turn away a real rules question.** In the final test it called "Can a wheelchair have extra support wheels, …?" off topic in every run.
 - **"Not covered" answers read like a log** ("The sources do not say…", then raw related quotes), and can quote a loosely related rule, as in the racket-weight clip.
 - **Answers are slow:** a median of 34 s, from 9 to 104 s (122 answers, 17 Nov). The page shows each step while it waits.
 

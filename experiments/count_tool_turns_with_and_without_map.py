@@ -5,7 +5,8 @@ Counts how many tool turns the product flow takes with the rule map and without 
 The rule map is data/rule_links.json: the links between clauses (cites, overrides, para exceptions, instructions for
 officials, diagrams). "No map" swaps in an empty map, in the starting sources and in the tools alike. Everything else
 stays the same: gather-then-write, the hybrid setup, top 5, list items (those come from the clause structure, not the
-map), temperature 0 and the 41 Phase 2 questions. The arms take turns, 3 runs each.
+map), temperature 0 and the 41 Phase 2 questions. The arms take turns, 3 runs each. On 21 Nov it was stopped after
+the first pair to save credit, so runs.jsonl holds one run per arm (a preview, not a win).
 Code counts tool turns, model calls, refusals, format errors, cost and time from each reply; nothing is judged.
 
   Input:  evals/phase2_questions.json; data/ (the chunks, their saved vectors and the rule map); MISTRAL_API_KEY
