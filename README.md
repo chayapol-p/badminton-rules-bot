@@ -23,6 +23,7 @@ When a rule question comes up on court, the answer is somewhere in three BWF rul
 
 Every number in an answer opens its quote and a link to the PDF page. Code copies each quote from the rule book word for word, so the model never retypes one. The clips are real runs. Long waits are sped up, and the label says by how much.
 
+
 I built it end to end, as practice for shipping RAG products, and measured every choice before I kept it. Each decision has a short record in [`docs/decisions`](docs/decisions/README.md) (36 so far), with the options I turned down and the runs behind it. I wrote most of the code with AI coding tools, under my review.
 
 ---
@@ -31,7 +32,7 @@ I built it end to end, as practice for shipping RAG products, and measured every
 
 **1. One clause carries too little context.**
 A clause's exception often sits in another book: the Alternative Laws replace some Laws, and Para Badminton clauses sit beside the regular ones. The Laws PDF even draws clause numbers as tiny pictures, so text extraction drops them.
-**Fix:** one chunk per clause, rebuilt from the page layout, plus a *rule map* of the 232 links the books write down (which Alternative Law replaces which Law, which clause cites another). Search finds a clause, and the map brings along its linked clauses. Result: 16 of 22 questions passed with the map, and 14 without it. ([0009](docs/decisions/0009-top-5-plus-rule-links.md))
+**Fix:** one chunk per clause, rebuilt from the page layout, plus a *rule map* of the 232 links the books write down (which Alternative Law replaces which Law, which clause cites another). Search finds a clause, and the map brings along its linked clauses. Result: 16 of 22 questions passed with the map, and 14 without it ([0009](docs/decisions/0009-top-5-plus-rule-links.md)). On 40 new questions locked before any run, the map also cut the tool rounds on linked-rule questions from 0.45–0.65 to 0.15 per question ([final test](#final-test--40-new-questions-locked-before-any-run)).
 
 For example, a wheelchair player asks how high they may serve. Search finds the serve-height Law, but on its own that clause gives the standing player's limit. The rule map brings along the clauses the books link to it, and one of them holds the answer:
 
@@ -42,7 +43,7 @@ For example, a wheelchair player asks how high they may serve. Search finds the 
 
 **2. The model judged its own evidence.**
 At first, one model call did three jobs: it searched, decided whether to refuse, and wrote the answer. It made refusal errors, and the errors flipped between runs on the same evidence.
-**Fix:** split the job. A *gather call* only picks the sentences that answer each part of the question. **Code** then refuses when no part has a sentence. A *write call* with no tools writes the answer from the picked sentences. Result: 0 false refusals in 9 runs, and 1 missed refusal in 126 questions that should be refused. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md))
+**Fix:** split the job. A *gather call* only picks the sentences that answer each part of the question. **Code** then refuses when no part has a sentence. A *write call* with no tools writes the answer from the picked sentences. Result: across the Phase 2 runs of this flow on 14–17 Nov, 0 of 210 should-refuse answers were missed and 0 of 405 answerable ones were refused. The one-call flow it replaced, which already refused in code from its picked sentences, missed 1 of 42 on 14 Nov, and 3 of 42 on 20 Nov (the same question every time), on the same 41 questions. Fewer false refusals is not a gain I can claim: in the final test below, a plain tool-calling agent made 0 false refusals and this design made 1. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md))
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/refusal-in-code-dark.png">
@@ -50,8 +51,8 @@ At first, one model call did three jobs: it searched, decided whether to refuse,
 </picture>
 
 **3. Citations drifted from the rule text.**
-When the model copied quotes, it paraphrased them or dropped parts, about 1 answer in 30.
-**Fix:** the model cites a sentence by its number, and **code** copies the sentence in, checks every `[n]` marker, and checks that every answer sentence carries one. Result: 0 citation problems in 9 runs (369 answers). ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md), [0027](docs/decisions/0027-one-natural-answer-with-inline-citations.md))
+When the model typed its own quotes, it paraphrased them or dropped parts: 44 of 1,245 saved answers from Stages 2 and 3 quote words that aren't in the clause they cite (about 1 in 28).
+**Fix:** the model cites a sentence by its number, and **code** copies the sentence in, checks every `[n]` marker, and checks that every answer sentence carries one. Result: 0 such quotes in the 820 answers of the Phase 2 runs of 14–17 Nov (one answer had a broken `[n]` marker, which the check caught). This is exact by construction: it says every quote matches the rule book, not that every claim matches its quote, which the judge checks separately. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md), [0027](docs/decisions/0027-one-natural-answer-with-inline-citations.md))
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/citations-by-number-dark.png">
@@ -122,6 +123,8 @@ I predicted C would match B for less money. It also passed more questions. ([002
     - valid citations and the right clause stay as pass-or-fail gates, with no weight
 3. **3 runs per flow.** I call a win only when the two flows' score ranges don't overlap. When they do overlap, the flow with steadier runs is preferred.
 
+**The split on its own did not win.** One call against the gather and write calls, 3 runs each, graded by the same judge as the answer-style test below: 82.8 to 87.0 against 82.4 to 84.6 (the third split run was lost). The split made every answer grounded (1.0 against 0.85–0.90), but its answers read worse. The two flows also write from different prompts, so that readability drop likely comes from the prompt, not the split (not yet tested), and this test isn't clean. The split cost 28% more per answer ($0.0119 against $0.0093).
+
 **The first win: the answer style.** Take "We forgot to switch ends at 11 and noticed at 14-12. What now?" The old style gave Law 8.2(1) and Law 8.2(2) as two separate lines, each starting with its rule book name. The new style gives one connected reply, "switch now and keep 14-12", with the citations inline.
 
 | Answer style | Combined score, 3 runs |
@@ -130,6 +133,25 @@ I predicted C would match B for less money. It also passed more questions. ([002
 | **One connected answer, inline citations** | **89.8 to 92.1** |
 
 Most of the gain came from readability. The facts scored about the same, and the scorecard is what showed it.
+
+### Final test · 40 new questions, locked before any run
+
+The 12 locked golden questions were scored once, on the Stage 2 setup. To test the final design, I wrote 40 new questions and locked them before any run: 10 not about badminton, 10 about badminton that no rule answers, and 20 that need a linked rule (Alternative Laws, Para Badminton, cross-cited clauses). Every run records the file's hash. It is one test: the three flows ran on the same 40 questions, 3 times each, taking turns, on 21 Nov. A tool round is one turn in which the model calls the search or read tools. Code scored every answer. The judge's lines (correct, grounded) wait for a re-grade, so they aren't here.
+
+| Range over 3 runs | Plain agent | Final design | Final design, no rule map |
+| --- | --- | --- | --- |
+| Tool rounds, linked-rule questions | 1.8–2.1 | **0.15** | 0.45–0.65 |
+| Tool rounds, all questions | 2.53–2.80 | **0.80–0.93** | 1.05–1.28 |
+| Cost per question | $0.017–0.022 | **$0.011–0.012** | $0.011–0.013 |
+| Missed refusals, of 20 | 1–2 | 0–1 | 1 |
+
+- **Against a plain tool-calling agent,** the final design took 67% fewer tool rounds and cost 41% less per question. The ranges don't overlap. The cost saving comes from this mix, where half the questions should be refused: on the 20 linked-rule questions alone, the cost was about the same ($0.0106–0.0109 against $0.0097–0.0115), and the design was a little slower (median 15–19 s against 13–17 s). The design's first search runs before the model and isn't a tool round. Note: the plain agent has the rule map too. Its search tool returns each hit with the clauses the map links to. So this comparison measures the whole design (search before the tools, the topic screen, the gather and write calls), not the map. The map's own effect is the design against the design without the map.
+- **The rule map alone** cut tool rounds on linked-rule questions by 74%.
+- **Refusals didn't separate the flows.** Most misses are one question I labelled "not covered" that is answerable: the officials' instructions do cover phones and other devices on court (ITTO 5.15.1). Read that way, the design's one refusal of it (run 1) was a false refusal too. The design's one false refusal (the plain agent made none) is real: the topic screen turned away a wheelchair question in every run.
+
+([`experiments/run_final_experiment.py`](experiments/run_final_experiment.py), questions in [`evals/final_experiment_questions.json`](evals/final_experiment_questions.json))
+
+**The topic screen.** A small model checks each question before any search. An off-topic question now gets its reply in about 0.6 s, for $0.00004 (measured over 3 check runs of 112 questions). Before the screen, such a question went through the full search: a live "test" took 15 s and 77 s. Its cost was never logged, so I don't claim a saving in percent. The screen adds the same 0.6 s and $0.00004 to every badminton question, and it can be wrong (see [What still fails](#what-still-fails)).
 
 Not every idea won. Records [0011](docs/decisions/0011-complete-answers-rule-not-adopted.md) and [0001](docs/decisions/0001-test-section-groups-as-a-third-chunking.md) are ideas I tested and dropped.
 
@@ -140,6 +162,7 @@ Not every idea won. Records [0011](docs/decisions/0011-complete-answers-rule-not
 - **The locked questions:** scored once at Stage 2. 7 of the 10 that need an answer passed, and both questions that need a refusal were refused.
 - **Three questions fail in every flow** (the black card among them): search never finds the clause that holds the missing fact.
 - **Diagrams** reach the bot only as their captions.
+- **The topic screen can turn away a real rules question.** In the final test it called "Can a wheelchair have extra support wheels, …?" off topic in every run.
 - **"Not covered" answers read like a log** ("The sources do not say…", then raw related quotes), and can quote a loosely related rule, as in the racket-weight clip.
 - **Answers are slow:** a median of 34 s, from 9 to 104 s (122 answers, 17 Nov). The page shows each step while it waits.
 
