@@ -42,7 +42,7 @@ For example, a wheelchair player asks how high they may serve. Search finds the 
 
 **2. The model judged its own evidence.**
 At first, one model call did three jobs: it searched, decided whether to refuse, and wrote the answer. It made refusal errors, and the errors flipped between runs on the same evidence.
-**Fix:** split the job. A *gather call* only picks the sentences that answer each part of the question. **Code** then refuses when no part has a sentence. A *write call* with no tools writes the answer from the picked sentences. Result: the same evidence now gets the same decision. Across the Phase 2 runs of this flow, 0 of 210 should-refuse answers were missed and 0 of 405 answerable ones were refused. The one-call flow it replaced missed 1 of 42 in its 3 runs on the same day, too few to call a win. A plain tool-calling agent also made 0 false refusals, so the gain here is consistency, not fewer false refusals. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md))
+**Fix:** split the job. A *gather call* only picks the sentences that answer each part of the question. **Code** then refuses when no part has a sentence. A *write call* with no tools writes the answer from the picked sentences. Result: across the Phase 2 runs of this flow, 0 of 210 should-refuse answers were missed and 0 of 405 answerable ones were refused. The one-call flow it replaced missed 1 of 42 on 14 Nov, and 3 of 42 on 20 Nov (the same question every time), on the same 41 questions. Fewer false refusals is not a gain I can claim: in the final test below, a plain tool-calling agent made 0 false refusals and this design made 1. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md))
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/refusal-in-code-dark.png">
@@ -50,8 +50,8 @@ At first, one model call did three jobs: it searched, decided whether to refuse,
 </picture>
 
 **3. Citations drifted from the rule text.**
-When the model typed its own quotes, it paraphrased them or dropped parts: 43 of 1,212 answers had a misquote (about 1 in 28).
-**Fix:** the model cites a sentence by its number, and **code** copies the sentence in, checks every `[n]` marker, and checks that every answer sentence carries one. Result: 0 misquotes in 820 answers. This is exact by construction: it says every quote matches the rule book, not that every claim matches its quote, which the judge checks separately. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md), [0027](docs/decisions/0027-one-natural-answer-with-inline-citations.md))
+When the model typed its own quotes, it paraphrased them or dropped parts: 44 of 1,245 saved answers from Stages 2 and 3 quote words that aren't in the clause they cite (about 1 in 28).
+**Fix:** the model cites a sentence by its number, and **code** copies the sentence in, checks every `[n]` marker, and checks that every answer sentence carries one. Result: 0 such quotes in the 820 answers of the Phase 2 runs (one answer had a broken `[n]` marker, which the check caught). This is exact by construction: it says every quote matches the rule book, not that every claim matches its quote, which the judge checks separately. ([0023](docs/decisions/0023-move-exact-work-from-prompt-rules-to-code.md), [0027](docs/decisions/0027-one-natural-answer-with-inline-citations.md))
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/citations-by-number-dark.png">
@@ -122,7 +122,7 @@ I predicted C would match B for less money. It also passed more questions. ([002
     - valid citations and the right clause stay as pass-or-fail gates, with no weight
 3. **3 runs per flow.** I call a win only when the two flows' score ranges don't overlap. When they do overlap, the flow with steadier runs is preferred.
 
-**The split on its own did not win.** One call against the gather and write calls, 3 runs each, graded by the same judge as the answer-style test below: 82.8 to 87.0 against 82.4 to 84.6 (the third split run was lost). The split made every answer grounded (1.0 against 0.85–0.90), but its answers read worse. That readability drop came from a different write prompt in the older split flow, not from the split itself, so this test isn't clean.
+**The split on its own did not win.** One call against the gather and write calls, 3 runs each, graded by the same judge as the answer-style test below: 82.8 to 87.0 against 82.4 to 84.6 (the third split run was lost). The split made every answer grounded (1.0 against 0.85–0.90), but its answers read worse. The two flows also write from different prompts, so that readability drop likely comes from the prompt, not the split (not yet tested), and this test isn't clean. The split cost 28% more per answer ($0.0119 against $0.0093).
 
 **The first win: the answer style.** Take "We forgot to switch ends at 11 and noticed at 14-12. What now?" The old style gave Law 8.2(1) and Law 8.2(2) as two separate lines, each starting with its rule book name. The new style gives one connected reply, "switch now and keep 14-12", with the citations inline.
 
