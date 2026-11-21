@@ -23,6 +23,8 @@ When a rule question comes up on court, the answer is somewhere in three BWF rul
 
 Every number in an answer opens its quote and a link to the PDF page. Code copies each quote from the rule book word for word, so the model never retypes one. The clips are real runs. Long waits are sped up, and the label says by how much.
 
+The topic screen pays for itself. An off-topic question costs $0.00004 and takes 0.6 s, instead of about $0.015 and 23 s through the full flow, 99.7% less. Every badminton question pays the extra $0.00004 and 0.6 s, so total cost drops 5.1% when 5% of questions are off topic, and 26.1% at 25%. The screen's own cost and time are measured; the full-flow cost of an off-topic question is estimated from the Phase 2 refusals, which take the same search-then-refuse path.
+
 I built it end to end, as practice for shipping RAG products, and measured every choice before I kept it. Each decision has a short record in [`docs/decisions`](docs/decisions/README.md) (36 so far), with the options I turned down and the runs behind it. I wrote most of the code with AI coding tools, under my review.
 
 ---
