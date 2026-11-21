@@ -1,0 +1,551 @@
+{
+  "description": "Locked question set for the final experiment (21 Nov 2026): plain agent vs full design vs full design without the rule map. Written before any run; never tune on it. Linked-rule questions need a clause the rule map links to (data/rule_links.json); answer_locations list the clauses that hold the answer. Categories follow evals/checks/check_refusals.py: refusal_probe (off-topic) and unanswerable (badminton, not covered) should be refused; cross_reference (linked rule) should be answered. Golden answer text is left empty: code checks the refusal and the cited clause; the judge grades later.",
+  "status": "locked by Job, 21 Nov 2026 04:57 UTC; never tune on it",
+  "questions": [
+    {
+      "id": "weather-bangkok",
+      "category": "refusal_probe",
+      "question": "What's the weather going to be like in Bangkok tomorrow?",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "football-offside",
+      "category": "refusal_probe",
+      "question": "In football, when is a player offside?",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "tennis-tiebreak",
+      "category": "refusal_probe",
+      "question": "How does a tiebreak work in tennis?",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "pickleball-kitchen",
+      "category": "refusal_probe",
+      "question": "In pickleball, can I volley from inside the kitchen?",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "pad-thai-recipe",
+      "category": "refusal_probe",
+      "question": "Give me a simple pad thai recipe.",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "capital-australia",
+      "category": "refusal_probe",
+      "question": "What is the capital of Australia?",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "translate-thai",
+      "category": "refusal_probe",
+      "question": "Translate 'good morning, how are you?' into Thai.",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "python-sort",
+      "category": "refusal_probe",
+      "question": "Write a Python function that sorts a list of numbers.",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "stock-price",
+      "category": "refusal_probe",
+      "question": "What is Nvidia's share price today?",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "world-cup-2022",
+      "category": "refusal_probe",
+      "question": "Who won the 2022 FIFA World Cup?",
+      "split": "final",
+      "kind": "off_topic"
+    },
+    {
+      "id": "ceiling-height",
+      "category": "unanswerable",
+      "question": "What is the minimum ceiling height for a badminton hall?",
+      "why_unanswerable": "The rules only say a shuttle touching the ceiling is a fault (Law 13.3.3); no height is given.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "prize-money",
+      "category": "unanswerable",
+      "question": "How much prize money does the winner of a tournament get?",
+      "why_unanswerable": "Prize money is not in the Laws or the Instructions to Technical Officials.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "minimum-age",
+      "category": "unanswerable",
+      "question": "What is the minimum age to play in a senior BWF tournament?",
+      "why_unanswerable": "No age limit appears in the corpus.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "hall-temperature",
+      "category": "unanswerable",
+      "question": "What temperature must the hall be kept at during play?",
+      "why_unanswerable": "Only says shuttles may be retested if temperature changes (ITTO 3.5.4.7); no required temperature.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "earphones",
+      "category": "unanswerable",
+      "question": "Can a player wear earphones and listen to music during a match?",
+      "why_unanswerable": "No rule mentions earphones or music.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "court-gap",
+      "category": "unanswerable",
+      "question": "How much space must there be between two courts side by side?",
+      "why_unanswerable": "No distance between courts is given.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "shuttles-per-match",
+      "category": "unanswerable",
+      "question": "How many shuttles must the organiser supply for each match?",
+      "why_unanswerable": "No number of shuttles per match is given.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "shoe-rules",
+      "category": "unanswerable",
+      "question": "What kind of shoes are players required to wear?",
+      "why_unanswerable": "No footwear rule in the corpus.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "rest-days",
+      "category": "unanswerable",
+      "question": "How many rest days must players get between rounds?",
+      "why_unanswerable": "No rest-day rule in the corpus.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "jewellery",
+      "category": "unanswerable",
+      "question": "Are players allowed to wear jewellery on court?",
+      "why_unanswerable": "No jewellery rule in the corpus.",
+      "split": "final",
+      "kind": "not_covered"
+    },
+    {
+      "id": "bo5-games-per-match",
+      "category": "cross_reference",
+      "question": "We're playing the best-of-five, 11-point format. How many games are in a match?",
+      "link_relation": "overrides",
+      "answer_locations": [
+        {
+          "doc": "alt",
+          "clause": "7.1",
+          "alternative_format": "best-of-5-games-11"
+        },
+        {
+          "doc": "laws",
+          "clause": "7.1"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "bo5-ends-after-game-four",
+      "category": "cross_reference",
+      "question": "In the best-of-five 11-point format, do players change ends after the fourth game?",
+      "link_relation": "overrides",
+      "answer_locations": [
+        {
+          "doc": "alt",
+          "clause": "8.1.4",
+          "alternative_format": "best-of-5-games-11"
+        },
+        {
+          "doc": "laws",
+          "clause": "8.1"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "bo5-ends-after-game-two",
+      "category": "cross_reference",
+      "question": "In the best-of-five 11-point format, do players change ends after the second game?",
+      "link_relation": "overrides",
+      "answer_locations": [
+        {
+          "doc": "alt",
+          "clause": "8.1.2",
+          "alternative_format": "best-of-5-games-11"
+        },
+        {
+          "doc": "laws",
+          "clause": "8.1.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "wheelchair-belt",
+      "category": "cross_reference",
+      "question": "Can a wheelchair player be strapped into the chair?",
+      "link_relation": "para_exception_of",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "5.2.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "5.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "wheelchair-support-wheels",
+      "category": "cross_reference",
+      "question": "Can a wheelchair have extra support wheels, and may they stick out past the main wheels?",
+      "link_relation": "para_exception_of",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "5.2.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "5.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "wheelchair-feet-footrest",
+      "category": "cross_reference",
+      "question": "Do a wheelchair player's feet have to be fixed to the footrest?",
+      "link_relation": "para_exception_of",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "5.2.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "5.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "shuttle-hits-crutch",
+      "category": "cross_reference",
+      "question": "In Para badminton, the shuttle hits a player's crutch. What happens?",
+      "link_relation": "para_exception_of",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "13.3.4.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "13.3.4"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "wheelchair-shuttle-caught-in-net",
+      "category": "cross_reference",
+      "question": "In wheelchair badminton, after a return the shuttle passes over the net and gets caught in it. Let or fault?",
+      "link_relation": "para_exception_of",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "14.2.3.2.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "14.2.3.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "para-half-court-service-courts",
+      "category": "cross_reference",
+      "question": "In Para badminton classes that play half-court, which service courts do the server and receiver use?",
+      "link_relation": "para_exception_of",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "10.1.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "10.1"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "doubles-partner-positions-serve",
+      "category": "cross_reference",
+      "question": "In doubles, where can the server's and receiver's partners stand while the serve is delivered?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "laws",
+          "clause": "9.5"
+        },
+        {
+          "doc": "laws",
+          "clause": "9.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "9.3"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "umpire-call-receiver-wins",
+      "category": "cross_reference",
+      "question": "In singles, the receiver wins the rally. What does the umpire call?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.4.6"
+        },
+        {
+          "doc": "laws",
+          "clause": "10.3.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "racket-thrown-into-court",
+      "category": "cross_reference",
+      "question": "A player throws their racket into the opponent's court to distract them. What is the rule?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.9.1.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "13.4.3"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "screaming-celebration",
+      "category": "cross_reference",
+      "question": "After winning a rally, a player screams at the opponent. What can the umpire do?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.9.1.7"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.6.3"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "feathers-tampered",
+      "category": "cross_reference",
+      "question": "A player deliberately bends the shuttle's feathers to slow it down. What happens?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.13.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "skip-interval",
+      "category": "cross_reference",
+      "question": "Neither side wants the interval at 11 points. Do they have to take it?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.4.15"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "walking-between-rallies",
+      "category": "cross_reference",
+      "question": "A player keeps walking slowly around the court between rallies. What should the umpire do?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.11.1"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.4"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.7"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "who-appoints-umpire",
+      "category": "cross_reference",
+      "question": "Who appoints the umpire for a match, and who does the umpire answer to?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "2.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "17.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "irs-line-challenge",
+      "category": "cross_reference",
+      "question": "When an Instant Review System is in use, what decides a line call challenge?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "2.4.2"
+        },
+        {
+          "doc": "laws",
+          "clause": "17.5.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "service-judge-checks-posts",
+      "category": "cross_reference",
+      "question": "Can the service judge be asked to check that the posts are on the doubles side lines?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "7.6"
+        },
+        {
+          "doc": "laws",
+          "clause": "1.5"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    },
+    {
+      "id": "misconduct-in-interval",
+      "category": "cross_reference",
+      "question": "A player misbehaves during the interval. Is that treated differently from misconduct during a game?",
+      "link_relation": "cites",
+      "answer_locations": [
+        {
+          "doc": "itto",
+          "clause": "5.17.6"
+        },
+        {
+          "doc": "laws",
+          "clause": "16.2"
+        }
+      ],
+      "split": "final",
+      "kind": "linked_rule",
+      "answer": ""
+    }
+  ]
+}
